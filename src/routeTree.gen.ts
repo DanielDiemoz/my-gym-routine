@@ -12,8 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedSchedeRouteImport } from './routes/_authenticated/schede'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
+import { Route as AuthenticatedSchedeIndexRouteImport } from './routes/_authenticated/schede.index'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -29,49 +29,50 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSchedeRoute = AuthenticatedSchedeRouteImport.update({
-  id: '/schede',
-  path: '/schede',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSchedeIndexRoute =
+  AuthenticatedSchedeIndexRouteImport.update({
+    id: '/schede/',
+    path: '/schede/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/schede': typeof AuthenticatedSchedeRoute
+  '/schede/': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/schede': typeof AuthenticatedSchedeRoute
   '/': typeof AuthenticatedIndexRoute
+  '/schede': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
-  '/_authenticated/schede': typeof AuthenticatedSchedeRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/schede/': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/onboarding' | '/schede'
+  fullPaths: '/' | '/auth' | '/onboarding' | '/schede/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/onboarding' | '/schede' | '/'
+  to: '/auth' | '/onboarding' | '/' | '/schede'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/onboarding'
-    | '/_authenticated/schede'
     | '/_authenticated/'
+    | '/_authenticated/schede/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -102,13 +103,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/schede': {
-      id: '/_authenticated/schede'
-      path: '/schede'
-      fullPath: '/schede'
-      preLoaderRoute: typeof AuthenticatedSchedeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/onboarding': {
       id: '/_authenticated/onboarding'
       path: '/onboarding'
@@ -116,19 +110,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/schede/': {
+      id: '/_authenticated/schede/'
+      path: '/schede'
+      fullPath: '/schede/'
+      preLoaderRoute: typeof AuthenticatedSchedeIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
-  AuthenticatedSchedeRoute: typeof AuthenticatedSchedeRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedSchedeIndexRoute: typeof AuthenticatedSchedeIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
-  AuthenticatedSchedeRoute: AuthenticatedSchedeRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedSchedeIndexRoute: AuthenticatedSchedeIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

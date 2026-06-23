@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, ChevronRight, Dumbbell } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/schede")({
+export const Route = createFileRoute("/_authenticated/schede/")({
   component: Schede,
 });
 
