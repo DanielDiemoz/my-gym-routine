@@ -12,8 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedStoricoRouteImport } from './routes/_authenticated/storico'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedSchedeIndexRouteImport } from './routes/_authenticated/schede.index'
+import { Route as AuthenticatedSchedePlanIdRouteImport } from './routes/_authenticated/schede.$planId'
+import { Route as AuthenticatedAllenaPlanIdRouteImport } from './routes/_authenticated/allena.$planId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -29,6 +32,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedStoricoRoute = AuthenticatedStoricoRouteImport.update({
+  id: '/storico',
+  path: '/storico',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -40,17 +48,35 @@ const AuthenticatedSchedeIndexRoute =
     path: '/schede/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSchedePlanIdRoute =
+  AuthenticatedSchedePlanIdRouteImport.update({
+    id: '/schede/$planId',
+    path: '/schede/$planId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAllenaPlanIdRoute =
+  AuthenticatedAllenaPlanIdRouteImport.update({
+    id: '/allena/$planId',
+    path: '/allena/$planId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/storico': typeof AuthenticatedStoricoRoute
+  '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
+  '/schede/$planId': typeof AuthenticatedSchedePlanIdRoute
   '/schede/': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/storico': typeof AuthenticatedStoricoRoute
   '/': typeof AuthenticatedIndexRoute
+  '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
+  '/schede/$planId': typeof AuthenticatedSchedePlanIdRoute
   '/schede': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRoutesById {
@@ -58,20 +84,40 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/storico': typeof AuthenticatedStoricoRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
+  '/_authenticated/schede/$planId': typeof AuthenticatedSchedePlanIdRoute
   '/_authenticated/schede/': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/onboarding' | '/schede/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/storico'
+    | '/allena/$planId'
+    | '/schede/$planId'
+    | '/schede/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/auth' | '/onboarding' | '/' | '/schede'
+  to:
+    | '/auth'
+    | '/onboarding'
+    | '/storico'
+    | '/'
+    | '/allena/$planId'
+    | '/schede/$planId'
+    | '/schede'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/onboarding'
+    | '/_authenticated/storico'
     | '/_authenticated/'
+    | '/_authenticated/allena/$planId'
+    | '/_authenticated/schede/$planId'
     | '/_authenticated/schede/'
   fileRoutesById: FileRoutesById
 }
@@ -103,6 +149,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/storico': {
+      id: '/_authenticated/storico'
+      path: '/storico'
+      fullPath: '/storico'
+      preLoaderRoute: typeof AuthenticatedStoricoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/onboarding': {
       id: '/_authenticated/onboarding'
       path: '/onboarding'
@@ -117,18 +170,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSchedeIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/schede/$planId': {
+      id: '/_authenticated/schede/$planId'
+      path: '/schede/$planId'
+      fullPath: '/schede/$planId'
+      preLoaderRoute: typeof AuthenticatedSchedePlanIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/allena/$planId': {
+      id: '/_authenticated/allena/$planId'
+      path: '/allena/$planId'
+      fullPath: '/allena/$planId'
+      preLoaderRoute: typeof AuthenticatedAllenaPlanIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedStoricoRoute: typeof AuthenticatedStoricoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAllenaPlanIdRoute: typeof AuthenticatedAllenaPlanIdRoute
+  AuthenticatedSchedePlanIdRoute: typeof AuthenticatedSchedePlanIdRoute
   AuthenticatedSchedeIndexRoute: typeof AuthenticatedSchedeIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedStoricoRoute: AuthenticatedStoricoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAllenaPlanIdRoute: AuthenticatedAllenaPlanIdRoute,
+  AuthenticatedSchedePlanIdRoute: AuthenticatedSchedePlanIdRoute,
   AuthenticatedSchedeIndexRoute: AuthenticatedSchedeIndexRoute,
 }
 

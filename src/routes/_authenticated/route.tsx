@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthLayout() {
   const { profile } = Route.useRouteContext();
   const loc = useLocation();
-  const needsOnboarding = profile && !profile.onboarded && !loc.pathname.startsWith("/onboarding");
+  const needsOnboarding = (!profile || !profile.onboarded) && !loc.pathname.startsWith("/onboarding");
 
   if (needsOnboarding) {
     // Soft redirect via Link replacement: simplest is to just render onboarding.
