@@ -14,8 +14,8 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
+  const [mode, setMode] = useState<"login" | "signup">("signup");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,22 +23,23 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const virtualEmail = `${username.trim().toLowerCase()}@gymbro.local`;
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email,
+          email: virtualEmail,
           password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
         toast.success("Account creato. Benvenuto!");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: virtualEmail, password });
         if (error) throw error;
       }
       navigate({ to: "/" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Errore";
-      toast.error(msg.includes("Invalid login") ? "Email o password errati" : msg);
+      toast.error(msg.includes("Invalid login") ? "Username o password errati" : msg);
     } finally {
       setLoading(false);
     }
@@ -56,16 +57,16 @@ function AuthPage() {
 
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</label>
-            <input
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-base outline-none transition focus:border-foreground"
-              placeholder="tu@email.com"
-            />
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Username</label>
+              <input
+                type="text"
+                required
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-base outline-none transition focus:border-foreground"
+                placeholder="Il tuo username"
+              />
           </div>
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Password</label>

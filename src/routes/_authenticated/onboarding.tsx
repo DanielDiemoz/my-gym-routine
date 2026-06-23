@@ -42,8 +42,7 @@ function Onboarding() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: name.trim(), avatar_url: avatarUrl || null, onboarded: true })
-      .eq("id", user.id);
+      .upsert({ id: user.id, display_name: name.trim(), avatar_url: avatarUrl || null, onboarded: true });
     if (error) {
       toast.error(error.message);
       setSaving(false);
