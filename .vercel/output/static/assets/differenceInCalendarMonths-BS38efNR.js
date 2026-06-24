@@ -1,1 +1,0 @@
-import{m as e}from"./it-DTAlGFFR.js";function t(t,n,r){let[i,a]=e(r?.in,t,n),o=i.getFullYear()-a.getFullYear(),s=i.getMonth()-a.getMonth();return o*12+s}export{t};
