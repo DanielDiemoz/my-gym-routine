@@ -54,36 +54,20 @@ export function useCircle(userId: string) {
   const qc = useQueryClient();
 
   // ── Query: cerchie di cui l'utente è membro ────────────────────────────────
+  // Usa la RPC SECURITY DEFINER `get_my_circles` che:
+  //   - aggrega tutto server-side in UN solo round-trip (no N+1);
+  //   - bypassa completamente RLS (giriamo come postgres, BYPASSRLS);
+  //   - ritorna cerchie + member_count già pronto all'uso.
+  // Nessuna policy RLS viene valutata, quindi nessun rischio di
+  // recursion o di righe filtrate silenziosamente.
   const circlesQ = useQuery({
     queryKey: CIRCLES_KEY(userId),
     queryFn: async (): Promise<Circle[]> => {
-      // 1. Prendo gli id delle cerchie dove sono membro
-      const { data: memberRows, error: memberErr } = await fromCircleMembers()
-        .select("circle_id")
-        .eq("user_id", userId);
-      if (memberErr) throw memberErr;
-      const ids = ((memberRows ?? []) as unknown as { circle_id: string }[]).map(
-        (r) => r.circle_id,
-      );
-      if (ids.length === 0) return [];
-
-      // 2. Carico i dettagli delle cerchie
-      const { data: circleRows, error: circleErr } = await fromCircles()
-        .select("id, name, code, owner_id, created_at")
-        .in("id", ids);
-      if (circleErr) throw circleErr;
-
-      // 3. Per ogni cerchia, conto i membri (N+1 accettabile: pochi cerchie).
-      const withCount = await Promise.all(
-        ((circleRows ?? []) as unknown as Circle[]).map(async (circle) => {
-          const { count } = await fromCircleMembers()
-            .select("id", { count: "exact", head: true } as any)
-            .eq("circle_id", circle.id);
-          return { ...circle, member_count: count ?? 0 };
-        }),
-      );
-
-      return withCount;
+      const { data, error } = await (supabase as any).rpc("get_my_circles");
+      if (error) {
+        throw new Error(error.message || "Errore nel caricamento delle cerchie");
+      }
+      return ((data ?? []) as unknown as Circle[]);
     },
     staleTime: 1000 * 30, // 30 secondi
   });
@@ -110,27 +94,23 @@ export function useCircle(userId: string) {
     qc.invalidateQueries({ queryKey: CIRCLES_KEY(userId) });
 
   // ── Mutation: entra in una cerchia ────────────────────────────────────────
+  // Usa la RPC SECURITY DEFINER `join_circle_by_code` perché la policy
+  // `circles_select` non permette a un NON-membro di SELECT una cerchia.
+  // La RPC gira come owner: vede tutte le cerchie per codice e poi inserisce
+  // il membro (idempotente via ON CONFLICT DO NOTHING).
   const joinMut = useMutation({
-    mutationFn: async (code: string) => {
-      // 1. Cerca la cerchia per codice
-      const { data: circle, error: circleErr } = await fromCircles()
-        .select("id")
-        .eq("code", code.toUpperCase().trim())
-        .maybeSingle();
-      if (circleErr) throw circleErr;
-      if (!circle) throw new Error("Codice non trovato. Controlla e riprova.");
-
-      const circleId = (circle as unknown as { id: string }).id;
-
-      // 2. Controlla se è già membro (cache client; il vincolo unique salva
-      //    da un race-condition sulla cache stale).
-      const existing = circlesQ.data?.find((c) => c.id === circleId);
-      if (existing) throw new Error("Sei già membro di questa cerchia.");
-
-      // 3. Inserisci il membro.
-      const { error: insertErr } = await fromCircleMembers()
-        .insert({ circle_id: circleId, user_id: userId });
-      if (insertErr) throw insertErr;
+    mutationFn: async (code: string): Promise<string> => {
+      const { data: circleId, error } = await (supabase as any).rpc(
+        "join_circle_by_code",
+        { invite_code: code },
+      );
+      if (error) {
+        // Il messaggio Postgres (`'Codice non trovato...'`) viene propagato
+        // tale e quale → lo mostriamo direttamente come toast.
+        throw new Error(error.message || "Errore durante l'accesso");
+      }
+      if (!circleId) throw new Error("Risposta RPC non valida.");
+      return circleId as string;
     },
     onSuccess: () => {
       toast.success("Sei entrato nella cerchia!");
@@ -142,48 +122,24 @@ export function useCircle(userId: string) {
   });
 
   // ── Mutation: crea una cerchia (solo coach) ───────────────────────────────
+  // Usa la RPC SECURITY DEFINER `create_circle_as_coach` che esegue tutto
+  // atomicamente lato DB:
+  //   - valida il ruolo coach (bypassando l'overhead della subquery in RLS);
+  //   - genera un codice univoco (controllo collisioni NON soggetto a RLS,
+  //     quindi non può "perdere" cerchie altrui come faceva la query client);
+  //   - INSERT cerchia + INSERT membro con rollback automatico in caso di errore.
+  // Il client deve solo passare il nome: niente più corse RLS o rollback manuali.
   const createMut = useMutation({
     mutationFn: async (name: string): Promise<Circle> => {
-      // 1. Genera il codice via RPC (MAX_RETRIES per evitare collisione unique).
-      const MAX_RETRIES = 3;
-      let code: string | null = null;
-      for (let i = 0; i < MAX_RETRIES; i++) {
-        // `as any` sul client: la firma `supabase.rpc` richiede una chiave
-        // letterale di `Database['public']['Functions']` (qui è `never`,
-        // perché il types.ts non è ancora stato rigenerato).
-        const { data: codeData, error: codeErr } = await (supabase as any).rpc(
-          "generate_circle_code",
-        );
-        if (codeErr) throw codeErr;
-        code = codeData as string;
-        const { data: existing } = await fromCircles()
-          .select("id")
-          .eq("code", code)
-          .maybeSingle();
-        if (!existing) break;
-        code = null;
+      const { data: newCircle, error } = await (supabase as any).rpc(
+        "create_circle_as_coach",
+        { circle_name: name },
+      );
+      if (error) {
+        throw new Error(error.message || "Errore durante la creazione");
       }
-      if (!code) throw new Error("Impossibile generare un codice univoco, riprova.");
-
-      // 2. Crea la cerchia
-      const { data: newCircle, error: circleErr } = await fromCircles()
-        .insert({ name: name.trim(), code, owner_id: userId })
-        .select("id, name, code, owner_id, created_at")
-        .single();
-      if (circleErr) throw circleErr;
       if (!newCircle) throw new Error("Creazione cerchia fallita");
-      const created = newCircle as unknown as Circle;
-
-      // 3. Aggiunge automaticamente il coach come primo membro.
-      //    Se fallisce qui, abbiamo un "cerchio orfano" → rollback.
-      const { error: memberErr } = await fromCircleMembers()
-        .insert({ circle_id: created.id, user_id: userId });
-      if (memberErr) {
-        await fromCircles().delete().eq("id", created.id);
-        throw memberErr;
-      }
-
-      return created;
+      return newCircle as unknown as Circle;
     },
     onSuccess: () => {
       invalidateCircles();
