@@ -27,6 +27,55 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 
+// no-op client used when Supabase env vars are missing. Returns the same shape
+// the real client returns, but with empty data — so SSR doesn't crash and the
+// app degrades gracefully (auth appears logged-out, queries return null).
+function makeFallbackClient(reason: string): ReturnType<typeof createClient<Database>> {
+  const empty = { data: null, error: null } as const;
+  const terminator: any = {
+    select: () => terminator,
+    insert: async () => empty,
+    update: async () => empty,
+    delete: async () => empty,
+    upsert: async () => empty,
+    eq: () => terminator,
+    neq: () => terminator,
+    in: () => terminator,
+    gte: () => terminator,
+    lte: () => terminator,
+    gt: () => terminator,
+    lt: () => terminator,
+    is: () => terminator,
+    match: () => terminator,
+    or: () => terminator,
+    not: () => terminator,
+    filter: () => terminator,
+    order: () => terminator,
+    limit: () => terminator,
+    range: () => terminator,
+    single: async () => empty,
+    maybeSingle: async () => empty,
+  };
+  const authApi: any = {
+    getUser: async () => empty,
+    getSession: async () => empty,
+    getClaims: async () => empty,
+    onAuthStateChange: () => ({
+      data: { subscription: { unsubscribe: () => {} } },
+      error: null,
+    }),
+    signInWithPassword: async () => ({ data: null, error: { message: reason } }),
+    signUp: async () => ({ data: null, error: { message: reason } }),
+    signOut: async () => empty,
+    signInWithOAuth: async () => ({ data: null, error: { message: reason } }),
+    resetPasswordForEmail: async () => ({ data: null, error: { message: reason } }),
+  };
+  return {
+    auth: authApi,
+    from: () => terminator,
+  } as unknown as ReturnType<typeof createClient<Database>>;
+}
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering); guard against
@@ -42,9 +91,9 @@ function createSupabaseClient() {
       ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
       ...(!SUPABASE_PUBLISHABLE_KEY ? ['SUPABASE_PUBLISHABLE_KEY'] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Connect Supabase in Lovable Cloud. Falling back to a no-op client so SSR doesn't crash.`;
     console.error(`[Supabase] ${message}`);
-    throw new Error(message);
+    return makeFallbackClient(message);
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
