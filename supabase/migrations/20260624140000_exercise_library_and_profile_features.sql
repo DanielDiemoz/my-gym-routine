@@ -10,10 +10,14 @@ CREATE TABLE IF NOT EXISTS public.exercise_library (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   muscle_group TEXT NOT NULL,
-  name_search TSVECTOR
-    GENERATED ALWAYS AS (to_tsvector('italian', name)) STORED,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Aggiunge name_search ANCHE se la tabella esisteva già da un tentativo
+-- precedente (CREATE TABLE IF NOT EXISTS non l'avrebbe alterata).
+ALTER TABLE public.exercise_library
+  ADD COLUMN IF NOT EXISTS name_search TSVECTOR
+    GENERATED ALWAYS AS (to_tsvector('italian', name)) STORED;
 
 ALTER TABLE public.exercise_library ENABLE ROW LEVEL SECURITY;
 

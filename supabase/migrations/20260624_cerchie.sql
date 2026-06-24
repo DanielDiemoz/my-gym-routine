@@ -1,6 +1,5 @@
 -- =============================================================================
 -- Migration: Cerchie (Circles) feature
--- Esegui questo file nell'SQL Editor di Supabase (Dashboard → SQL Editor)
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -44,16 +43,16 @@ CREATE TABLE IF NOT EXISTS circles (
 ALTER TABLE circles ENABLE ROW LEVEL SECURITY;
 
 -- Lettura: visibile solo all'owner e ai membri
+DROP POLICY IF EXISTS "circles_select" ON circles;
 CREATE POLICY "circles_select" ON circles
   FOR SELECT
   USING (
     owner_id = auth.uid()
-    OR id IN (
-      SELECT circle_id FROM circle_members WHERE user_id = auth.uid()
-    )
+    OR id IN (SELECT public.get_my_circle_ids())
   );
 
 -- Inserimento: solo utenti con role = 'coach'
+DROP POLICY IF EXISTS "circles_insert" ON circles;
 CREATE POLICY "circles_insert" ON circles
   FOR INSERT
   WITH CHECK (
@@ -62,11 +61,13 @@ CREATE POLICY "circles_insert" ON circles
   );
 
 -- Eliminazione: solo l'owner
+DROP POLICY IF EXISTS "circles_delete" ON circles;
 CREATE POLICY "circles_delete" ON circles
   FOR DELETE
   USING (owner_id = auth.uid());
 
 -- Update: solo l'owner (per future funzionalità)
+DROP POLICY IF EXISTS "circles_update" ON circles;
 CREATE POLICY "circles_update" ON circles
   FOR UPDATE
   USING (owner_id = auth.uid());
@@ -84,23 +85,42 @@ CREATE TABLE IF NOT EXISTS circle_members (
 
 ALTER TABLE circle_members ENABLE ROW LEVEL SECURITY;
 
+-- ---------------------------------------------------------------------------
+-- 4.bis Helper SECURITY DEFINER: evita ricorsione infinita nelle policy RLS.
+--      Creato DOPO la tabella circle_members ma PRIMA delle policy che la usano.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_my_circle_ids()
+RETURNS SETOF UUID
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT circle_id
+  FROM public.circle_members
+  WHERE user_id = auth.uid();
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_my_circle_ids() TO authenticated;
+
 -- Lettura: visibile solo ai membri della stessa cerchia
+DROP POLICY IF EXISTS "circle_members_select" ON circle_members;
 CREATE POLICY "circle_members_select" ON circle_members
   FOR SELECT
   USING (
     user_id = auth.uid()
-    OR circle_id IN (
-      SELECT circle_id FROM circle_members WHERE user_id = auth.uid()
-    )
+    OR circle_id IN (SELECT public.get_my_circle_ids())
   );
 
 -- Inserimento: l'utente può aggiungersi da solo
+DROP POLICY IF EXISTS "circle_members_insert" ON circle_members;
 CREATE POLICY "circle_members_insert" ON circle_members
   FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
 -- Eliminazione: l'utente può rimuovere sé stesso;
 --              l'owner può rimuovere chiunque dalla propria cerchia
+DROP POLICY IF EXISTS "circle_members_delete" ON circle_members;
 CREATE POLICY "circle_members_delete" ON circle_members
   FOR DELETE
   USING (
@@ -116,9 +136,10 @@ CREATE POLICY "circle_members_delete" ON circle_members
 --    In caso di errore "policy already exists", rinomina quella vecchia prima.
 -- ---------------------------------------------------------------------------
 
--- Elimina la vecchia policy SELECT se esiste (cambia il nome se diverso)
+-- Elimina le vecchie policy SELECT se esistono
 DROP POLICY IF EXISTS "sessions_select_owner" ON sessions;
 DROP POLICY IF EXISTS "Users can view their own sessions" ON sessions;
+DROP POLICY IF EXISTS "sessions_select" ON sessions;
 
 -- Nuova policy: proprio proprietario O membro della stessa cerchia
 CREATE POLICY "sessions_select" ON sessions
@@ -126,10 +147,9 @@ CREATE POLICY "sessions_select" ON sessions
   USING (
     user_id = auth.uid()
     OR user_id IN (
-      SELECT cm2.user_id
-      FROM circle_members cm1
-      JOIN circle_members cm2 ON cm1.circle_id = cm2.circle_id
-      WHERE cm1.user_id = auth.uid()
+      SELECT cm.user_id
+      FROM public.circle_members cm
+      WHERE cm.circle_id IN (SELECT public.get_my_circle_ids())
     )
   );
 
@@ -138,16 +158,16 @@ CREATE POLICY "sessions_select" ON sessions
 -- ---------------------------------------------------------------------------
 DROP POLICY IF EXISTS "session_logs_select_owner" ON session_logs;
 DROP POLICY IF EXISTS "Users can view their own session logs" ON session_logs;
+DROP POLICY IF EXISTS "session_logs_select" ON session_logs;
 
 CREATE POLICY "session_logs_select" ON session_logs
   FOR SELECT
   USING (
     user_id = auth.uid()
     OR user_id IN (
-      SELECT cm2.user_id
-      FROM circle_members cm1
-      JOIN circle_members cm2 ON cm1.circle_id = cm2.circle_id
-      WHERE cm1.user_id = auth.uid()
+      SELECT cm.user_id
+      FROM public.circle_members cm
+      WHERE cm.circle_id IN (SELECT public.get_my_circle_ids())
     )
   );
 
