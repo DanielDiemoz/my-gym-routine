@@ -3,58 +3,176 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Check, Timer, Plus, Minus } from "lucide-react";
+import { X, Check, Plus, Minus } from "lucide-react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { useLastSessionLog } from "@/hooks/useLastSessionLog";
+import { RestTimer } from "@/components/RestTimer";
+import { useWeightUnit } from "@/hooks/useWeightUnit";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/allena/$planId")({
   component: ActiveSession,
 });
 
 type Exercise = {
-  id: string; name: string; muscle_group: string | null;
-  sets: number; reps: number; weight: number; notes: string | null;
+  id: string;
+  name: string;
+  muscle_group: string | null;
+  sets: number;
+  reps: number;
+  weight: number;
+  notes: string | null;
 };
 
 type LoggedSet = { reps: number; weight: number; done: boolean };
+
+type OrphanSession = { id: string; started_at: string };
 
 function ActiveSession() {
   const { planId } = Route.useParams();
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
 
+  const { display: fmtWeight } = useWeightUnit();
+
   const planQ = useQuery({
     queryKey: ["session-plan", planId],
     queryFn: async () => {
-      const { data: plan } = await supabase.from("plans").select("id, name").eq("id", planId).maybeSingle();
+      const { data: plan } = await supabase
+        .from("plans")
+        .select("id, name")
+        .eq("id", planId)
+        .maybeSingle();
       const { data: ex } = await supabase
-        .from("exercises").select("*").eq("plan_id", planId).order("position", { ascending: true });
+        .from("exercises")
+        .select("*")
+        .eq("plan_id", planId)
+        .order("position", { ascending: true });
       return { plan, exercises: (ex ?? []) as Exercise[] };
     },
+  });
+
+  // TASK 3 — Query per sessioni orfane (started_at valorizzato, completed_at NULL).
+  const orphanQ = useQuery({
+    queryKey: ["orphan-session", user.id, planId],
+    queryFn: async (): Promise<OrphanSession | null> => {
+      const { data, error } = await supabase
+        .from("sessions")
+        .select("id, started_at")
+        .eq("plan_id", planId)
+        .eq("user_id", user.id)
+        .is("completed_at", null)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 0,
   });
 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [logs, setLogs] = useState<Record<string, LoggedSet[]>>({});
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
+  const sessionCreated = useRef(false);
+  const [userDecision, setUserDecision] = useState<"resume" | "start-new" | null>(null);
+  const [orphanIdAtDecision, setOrphanIdAtDecision] = useState<string | null>(null);
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
 
-  // create session row once
+  // ── TASK 3: State-machine per la creazione della sessione ──────────────────
+  // Regole:
+  // - Skip se già eseguita (ref flag anti-StrictMode).
+  // - Aspetta planQ espresso e orphanQ risolto.
+  // - Se esiste un'orfana, l'utente DEVE scegliere (riprendi o inizia nuovo).
+  // - Pattern "create-first, delete-later": se start-new, inserisco la nuova
+  //   sessione PRIMA e cancello la vecchia DOPO (in caso di errore sul nuovo
+  //   insert, l'orfana resta intatta per un successivo retry).
+  // - Snapshot `orphanIdAtDecision` per evitare race su refetch di React Query
+  //   scegliendo l'id "vecchio" piuttosto che uno aggiornato.
   useEffect(() => {
-    if (!planQ.data?.plan || sessionId) return;
-    (async () => {
-      const { data } = await supabase
-        .from("sessions")
-        .insert({ user_id: user.id, plan_id: planId, plan_name: planQ.data!.plan!.name })
-        .select("id").single();
-      if (data) setSessionId(data.id);
-    })();
-  }, [planQ.data, sessionId, planId, user.id]);
+    if (sessionCreated.current) return;
+    if (!planQ.data?.plan || orphanQ.isLoading || sessionId) return;
 
-  // init logs
+    const orphan = orphanQ.data;
+    if (orphan && !userDecision) return; // aspetta click utente
+
+    sessionCreated.current = true;
+
+    (async () => {
+      try {
+        let resolvedId: string | null = null;
+
+        if (orphan && userDecision === "resume" && orphanIdAtDecision) {
+          // Caso A: l'utente vuole riprendere l'orfana, riusiamo l'id snapshot.
+          resolvedId = orphanIdAtDecision;
+        } else if (planQ.data?.plan) {
+          // Caso B/C: nessuna orfana OPPURE "Inizia nuovo". Insert SEMPRE PRIMA.
+          const { data, error } = await supabase
+            .from("sessions")
+            .insert({
+              user_id: user.id,
+              plan_id: planId,
+              plan_name: planQ.data.plan.name,
+            })
+            .select("id")
+            .single();
+          if (error) throw error;
+          resolvedId = data?.id ?? null;
+
+          // Solo DOPO che il nuovo insert è andato bene, cancello l'orfana vecchia.
+          if (userDecision === "start-new" && orphanIdAtDecision) {
+            const { error: delErr } = await supabase
+              .from("sessions")
+              .delete()
+              .eq("id", orphanIdAtDecision);
+            if (delErr) {
+              // Non bloccare: l'utente ha già la nuova sessione attiva.
+              console.warn("Cleanup vecchia sessione fallito:", delErr.message);
+            }
+          }
+        }
+
+        if (resolvedId) setSessionId(resolvedId);
+      } catch (err) {
+        // Rollback del lock: l'utente può ricaricare per riprovare.
+        sessionCreated.current = false;
+        toast.error(err instanceof Error ? err.message : "Errore di sessione");
+      }
+    })();
+  }, [
+    planQ.data,
+    orphanQ.data,
+    orphanQ.isLoading,
+    userDecision,
+    orphanIdAtDecision,
+    sessionId,
+    planId,
+    user.id,
+  ]);
+
+  // Init logs dal piano (snapshot dei default di serie).
   useEffect(() => {
     if (!planQ.data?.exercises) return;
     setLogs((prev) => {
       const next = { ...prev };
       planQ.data!.exercises.forEach((e) => {
-        if (!next[e.id]) next[e.id] = Array.from({ length: e.sets }, () => ({ reps: e.reps, weight: Number(e.weight), done: false }));
+        if (!next[e.id]) {
+          next[e.id] = Array.from({ length: e.sets }, () => ({
+            reps: e.reps,
+            weight: Number(e.weight),
+            done: false,
+          }));
+        }
       });
       return next;
     });
@@ -63,8 +181,62 @@ function ActiveSession() {
   const exercises = planQ.data?.exercises ?? [];
   const current = exercises[currentIdx];
 
+  // TASK 1 — Query dell'ultima session_log per l'esercizio corrente.
+  const lastLogQ = useLastSessionLog(current?.name);
+
+  // TASK 2 — Smart default: sovrascrive reps+weight della prima serie SOLO SE
+  // l'utente non ha ancora toccato nulla e l'ultimo log è disponibile.
+  // Reapplicato a ogni cambio esercizio (current.id / current.name) o quando
+  // il log risolve. Il guard `lastLogQ.isFetching` evita di applicare dati
+  // stantii dell'esercizio precedente durante la transizione.
+  useEffect(() => {
+    if (!current || !lastLogQ.data || lastLogQ.isFetching) return;
+    setLogs((prev) => {
+      const sets = prev[current.id];
+      if (!sets || sets.length === 0) return prev;
+      const allDefault = sets.every(
+        (s) => !s.done && s.reps === current.reps && s.weight === Number(current.weight),
+      );
+      if (!allDefault) return prev; // utente ha già interagito
+      const updated = [...sets];
+      updated[0] = {
+        ...updated[0],
+        reps: lastLogQ.data!.reps,
+        weight: Number(lastLogQ.data!.weight),
+      };
+      return { ...prev, [current.id]: updated };
+    });
+  }, [current?.id, current?.name, lastLogQ.data, lastLogQ.isFetching]);
+
+  // Handlers della dialog orfana.
+  function decideResume() {
+    if (!orphanQ.data?.id) return;
+    setOrphanIdAtDecision(orphanQ.data.id);
+    setUserDecision("resume");
+  }
+  function decideStartNew() {
+    if (!orphanQ.data?.id) return;
+    setOrphanIdAtDecision(orphanQ.data.id);
+    setUserDecision("start-new");
+  }
+
+  // Mostra la dialog solo se c'è un'orfana e l'utente non ha ancora deciso.
+  const showOrphanModal = !!orphanQ.data && !userDecision;
+  // Blocca la chiusura dell'AlertDialog tramite escape / click esterno:
+  // l'utente DEVE premere "Riprendi" o "Inizia nuovo". Nessuna dispersione.
+  // ATTENZIONE: il `return;` è INTENZIONALE — `showOrphanModal` resta `true`
+  // fintanto che l'utente non ha scelto esplicitamente. Non aggiornare lo
+  // stato in questa callback, altrimenti la forzatura sparisce.
+  const blockForcedClose = (next: boolean) => {
+    if (!next && !userDecision && orphanQ.data?.id) return;
+  };
+
   async function cancelSession() {
-    if (!confirm("Annullare l'allenamento? I dati non saranno salvati.")) return;
+    const ok = await confirmDialog(
+      "Annullare l'allenamento?",
+      "I dati non saranno salvati.",
+    );
+    if (!ok) return;
     if (sessionId) await supabase.from("sessions").delete().eq("id", sessionId);
     navigate({ to: "/" });
   }
@@ -72,16 +244,28 @@ function ActiveSession() {
   async function finishWorkout() {
     if (!sessionId) return;
     setFinishing(true);
-    const rows: { session_id: string; user_id: string; exercise_name: string; muscle_group: string | null; set_number: number; reps: number; weight: number }[] = [];
+    const rows: {
+      session_id: string;
+      user_id: string;
+      exercise_name: string;
+      muscle_group: string | null;
+      set_number: number;
+      reps: number;
+      weight: number;
+    }[] = [];
     let totalVolume = 0;
     for (const ex of exercises) {
       const sets = logs[ex.id] ?? [];
       sets.forEach((s, i) => {
         if (s.done) {
           rows.push({
-            session_id: sessionId, user_id: user.id,
-            exercise_name: ex.name, muscle_group: ex.muscle_group,
-            set_number: i + 1, reps: s.reps, weight: s.weight,
+            session_id: sessionId,
+            user_id: user.id,
+            exercise_name: ex.name,
+            muscle_group: ex.muscle_group,
+            set_number: i + 1,
+            reps: s.reps,
+            weight: s.weight,
           });
           totalVolume += s.reps * s.weight;
         }
@@ -93,10 +277,49 @@ function ActiveSession() {
       return;
     }
     await supabase.from("session_logs").insert(rows);
-    await supabase.from("sessions").update({ completed_at: new Date().toISOString(), total_volume: totalVolume }).eq("id", sessionId);
+    await supabase.from("sessions").update({
+      completed_at: new Date().toISOString(),
+      total_volume: totalVolume,
+    }).eq("id", sessionId);
     toast.success("Allenamento salvato!");
     navigate({ to: "/" });
   }
+
+  // Dialog sempre montata (anche in loading) per evitare race se l'utente
+  // clicca su "Riprendi" mentre il resto della pagina sta ancora caricando.
+  const orphanDialog = (
+    <AlertDialog open={showOrphanModal} onOpenChange={blockForcedClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Allenamento in corso</AlertDialogTitle>
+          <AlertDialogDescription>
+            {orphanQ.data ? (
+              <>
+                Hai una sessione interrotta iniziata il{" "}
+                <strong>
+                  {new Date(orphanQ.data.started_at).toLocaleString("it-IT", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </strong>
+                . Vuoi riprenderla o iniziarne una nuova?
+              </>
+            ) : (
+              "Caricamento…"
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={decideStartNew} disabled={!orphanQ.data?.id}>
+            Inizia nuovo
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={decideResume} disabled={!orphanQ.data?.id}>
+            Riprendi
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   if (!current) {
     return (
@@ -104,11 +327,18 @@ function ActiveSession() {
         {planQ.data && exercises.length === 0 ? (
           <>
             <p className="text-sm text-muted-foreground">Questa scheda non ha esercizi.</p>
-            <button onClick={() => navigate({ to: "/schede/$planId", params: { planId } })} className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">Aggiungi esercizi</button>
+            <button
+              onClick={() => navigate({ to: "/schede/$planId", params: { planId } })}
+              className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+            >
+              Aggiungi esercizi
+            </button>
           </>
         ) : (
           <p className="text-sm text-muted-foreground">Caricamento…</p>
         )}
+        {orphanDialog}
+        {ConfirmDialog}
       </div>
     );
   }
@@ -119,7 +349,7 @@ function ActiveSession() {
   function updateSet(idx: number, patch: Partial<LoggedSet>) {
     setLogs((prev) => ({
       ...prev,
-      [current.id]: prev[current.id].map((s, i) => i === idx ? { ...s, ...patch } : s),
+      [current.id]: prev[current.id].map((s, i) => (i === idx ? { ...s, ...patch } : s)),
     }));
   }
 
@@ -138,12 +368,19 @@ function ActiveSession() {
 
         {/* Progress */}
         <div className="mb-6 h-1 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full bg-primary transition-all" style={{ width: `${((currentIdx + 1) / exercises.length) * 100}%` }} />
+          <div
+            className="h-full bg-primary transition-all"
+            style={{ width: `${((currentIdx + 1) / exercises.length) * 100}%` }}
+          />
         </div>
 
-        <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{current.muscle_group ?? "Esercizio"}</div>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          {current.muscle_group ?? "Esercizio"}
+        </div>
         <h1 className="text-3xl font-black tracking-tight">{current.name}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Target: {current.sets} × {current.reps} @ {Number(current.weight)}kg</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Target: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
+        </p>
         {current.notes && <p className="mt-2 rounded-xl bg-muted p-3 text-sm">{current.notes}</p>}
 
         <div className="mt-6 space-y-2">
@@ -154,56 +391,112 @@ function ActiveSession() {
             <div />
           </div>
           {setsLog.map((s, i) => (
-            <div key={i} className={`grid grid-cols-[2.5rem_1fr_1fr_2.5rem] items-center gap-2 rounded-2xl border p-2 ${s.done ? "border-foreground bg-foreground/5" : "border-border bg-card"}`}>
+            <div
+              key={i}
+              className={`grid grid-cols-[2.5rem_1fr_1fr_2.5rem] items-center gap-2 rounded-2xl border p-2 ${
+                s.done ? "border-foreground bg-foreground/5" : "border-border bg-card"
+              }`}
+            >
               <div className="text-center text-lg font-black">{i + 1}</div>
               <StepperInput value={s.reps} onChange={(v) => updateSet(i, { reps: v })} step={1} />
-              <StepperInput value={s.weight} onChange={(v) => updateSet(i, { weight: v })} step={2.5} />
+              <StepperInput
+                value={s.weight}
+                onChange={(v) => updateSet(i, { weight: v })}
+                step={2.5}
+              />
               <button
                 onClick={() => updateSet(i, { done: !s.done })}
-                className={`flex h-10 w-10 items-center justify-center rounded-full transition ${s.done ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
+                  s.done ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                }`}
               >
                 <Check className="h-4 w-4" />
               </button>
             </div>
           ))}
           <button
-            onClick={() => setLogs((p) => ({ ...p, [current.id]: [...p[current.id], { reps: current.reps, weight: Number(current.weight), done: false }] }))}
+            onClick={() =>
+              setLogs((p) => ({
+                ...p,
+                [current.id]: [
+                  ...p[current.id],
+                  { reps: current.reps, weight: Number(current.weight), done: false },
+                ],
+              }))
+            }
             className="w-full rounded-2xl border-2 border-dashed border-border py-3 text-xs font-semibold text-muted-foreground"
           >
             + Serie extra
           </button>
         </div>
 
+        {/* TASK 1 — ultima volta inline */}
+        <div className="mt-4 h-5">
+          {lastLogQ.isLoading ? null : lastLogQ.data ? (
+            <p className="text-xs text-muted-foreground">
+              Ultima volta: {lastLogQ.data.reps} rip ×{" "}
+              {fmtWeight(Number(lastLogQ.data.weight))}
+            </p>
+          ) : !lastLogQ.isError ? (
+            <p className="text-xs text-muted-foreground">Prima volta 💪</p>
+          ) : null}
+        </div>
+
+        {/* TASK 4 timer (estratto) */}
         <RestTimer />
       </div>
 
-      {/* Footer actions */}
+      {/* Footer */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur">
         <div className="container-app flex gap-2 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           {currentIdx > 0 && (
-            <button onClick={() => setCurrentIdx((i) => i - 1)} className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold">
+            <button
+              onClick={() => setCurrentIdx((i) => i - 1)}
+              className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
+            >
               Indietro
             </button>
           )}
           {!isLast ? (
-            <button onClick={() => setCurrentIdx((i) => i + 1)} className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]">
+            <button
+              onClick={() => setCurrentIdx((i) => i + 1)}
+              className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+            >
               Prossimo esercizio
             </button>
           ) : (
-            <button onClick={finishWorkout} disabled={finishing} className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60">
+            <button
+              onClick={finishWorkout}
+              disabled={finishing}
+              className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+            >
               {finishing ? "..." : "Termina allenamento"}
             </button>
           )}
         </div>
       </div>
+
+      {orphanDialog}
+      {ConfirmDialog}
     </div>
   );
 }
 
-function StepperInput({ value, onChange, step }: { value: number; onChange: (n: number) => void; step: number }) {
+function StepperInput({
+  value,
+  onChange,
+  step,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  step: number;
+}) {
   return (
     <div className="flex items-center justify-center gap-1">
-      <button onClick={() => onChange(Math.max(0, +(value - step).toFixed(2)))} className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <button
+        onClick={() => onChange(Math.max(0, +(value - step).toFixed(2)))}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground"
+      >
         <Minus className="h-3.5 w-3.5" />
       </button>
       <input
@@ -213,55 +506,12 @@ function StepperInput({ value, onChange, step }: { value: number; onChange: (n: 
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-12 bg-transparent text-center text-lg font-bold outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
       />
-      <button onClick={() => onChange(+(value + step).toFixed(2))} className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <button
+        onClick={() => onChange(+(value + step).toFixed(2))}
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground"
+      >
         <Plus className="h-3.5 w-3.5" />
       </button>
-    </div>
-  );
-}
-
-function RestTimer() {
-  const [seconds, setSeconds] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [target, setTarget] = useState(90);
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (running) {
-      ref.current = setInterval(() => setSeconds((s) => s + 1), 1000);
-    } else if (ref.current) clearInterval(ref.current);
-    return () => { if (ref.current) clearInterval(ref.current); };
-  }, [running]);
-
-  const remaining = Math.max(0, target - seconds);
-  const mm = String(Math.floor(remaining / 60)).padStart(1, "0");
-  const ss = String(remaining % 60).padStart(2, "0");
-
-  return (
-    <div className="mt-8 rounded-3xl bg-card border border-border p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <Timer className="h-4 w-4" /> Recupero
-        </div>
-        <div className="flex gap-1">
-          {[60, 90, 120, 180].map((t) => (
-            <button
-              key={t}
-              onClick={() => { setTarget(t); setSeconds(0); }}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${target === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-            >{t}s</button>
-          ))}
-        </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between">
-        <div className="text-5xl font-black tracking-tighter tabular-nums">{mm}:{ss}</div>
-        <div className="flex gap-2">
-          <button onClick={() => { setSeconds(0); setRunning(false); }} className="rounded-full border border-border px-4 py-2 text-xs font-semibold">Reset</button>
-          <button onClick={() => setRunning((r) => !r)} className="rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground">
-            {running ? "Pausa" : "Avvia"}
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

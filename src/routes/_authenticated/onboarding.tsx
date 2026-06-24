@@ -3,6 +3,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Camera } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import type { WeightUnit } from "@/hooks/useWeightUnit";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
@@ -15,6 +17,7 @@ function Onboarding() {
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [unit, setUnit] = useState<WeightUnit>("kg");
 
   async function handleAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -40,15 +43,23 @@ function Onboarding() {
       return;
     }
     setSaving(true);
+    // Cast a never perché profiles.weight_unit è aggiunto dalla migration
+    // 20260624 ma il types.ts auto-generato non lo conosce ancora.
     const { error } = await supabase
       .from("profiles")
-      .upsert({ id: user.id, display_name: name.trim(), avatar_url: avatarUrl || null, onboarded: true });
+      .upsert({
+        id: user.id,
+        display_name: name.trim(),
+        avatar_url: avatarUrl || null,
+        onboarded: true,
+        weight_unit: unit,
+      } as never);
     if (error) {
       toast.error(error.message);
       setSaving(false);
       return;
     }
-    window.location.replace("/");
+    navigate({ to: "/" });
   }
 
   return (
@@ -83,6 +94,34 @@ function Onboarding() {
           placeholder="Il tuo nome"
           autoFocus
         />
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">Unità di misura</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Come vuoi registrare i pesi?
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span
+              className={`text-xs font-semibold ${unit === "kg" ? "text-foreground" : "text-muted-foreground"}`}
+            >
+              kg
+            </span>
+            <Switch
+              checked={unit === "lbs"}
+              onCheckedChange={(v) => setUnit(v ? "lbs" : "kg")}
+              aria-label="Cambia unità di misura"
+            />
+            <span
+              className={`text-xs font-semibold ${unit === "lbs" ? "text-foreground" : "text-muted-foreground"}`}
+            >
+              lbs
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="mt-auto pt-12">

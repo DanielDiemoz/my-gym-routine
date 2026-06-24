@@ -1,0 +1,168 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Timer, Volume2, VolumeX } from "lucide-react";
+
+const SOUND_STORAGE_KEY = "gymbro_sound_enabled";
+
+function readSoundPref(): boolean {
+  if (typeof window === "undefined") return true;
+  const v = window.localStorage.getItem(SOUND_STORAGE_KEY);
+  return v === null ? true : v === "true";
+}
+
+/**
+ * Rest timer con:
+ * - Vibrazione al termine (`navigator.vibrate`) se supportata
+ * - Audio finale (`/sounds/beep.mp3`) — toggle persistito in localStorage
+ * - Notification API al termine SOLO se l'app è in background e il permesso è concesso
+ */
+export function RestTimer() {
+  const [seconds, setSeconds] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [target, setTarget] = useState(90);
+  const [soundOn, setSoundOn] = useState(readSoundPref);
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const finishedRef = useRef(false);
+
+  // Persisti la preferenza audio (in Safari private mode / quota exceeded
+  // setItem può lanciare: catturiamo per non rompere l'effect chain).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(SOUND_STORAGE_KEY, soundOn ? "true" : "false");
+    } catch {
+      // Modalità privata / quota piena: ignoriamo silenziosamente.
+    }
+  }, [soundOn]);
+
+  // Tick del timer.
+  useEffect(() => {
+    if (running) {
+      // Resetta il flag di "già terminato" quando il timer riparte o cambia preset.
+      finishedRef.current = false;
+      tickRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    } else if (tickRef.current) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
+    return () => {
+      if (tickRef.current) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+    };
+  }, [running]);
+
+  // Cambio target: reset del flag di terminazione così un cambio preset
+  // durante la corsa non causa un "finish" prematuro.
+  useEffect(() => {
+    finishedRef.current = false;
+  }, [target]);
+
+  // Side effects al termine del countdown.
+  useEffect(() => {
+    if (!running || seconds < target || finishedRef.current) return;
+    finishedRef.current = true;
+    setRunning(false);
+
+    // Vibrazione (feature detection safe)
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate([200, 100, 200]);
+      } catch {
+        // ignora: alcuni browser sollevano se la pagina non ha user-activation
+      }
+    }
+
+    // Suono
+    if (soundOn && typeof Audio !== "undefined") {
+      try {
+        const audio = new Audio("/sounds/beep.mp3");
+        audio.volume = 0.8;
+        void audio.play().catch(() => {
+          // 404 del file o autoplay bloccato: silente
+        });
+      } catch {
+        // ignora
+      }
+    }
+
+    // Notifica SOLO in background + permesso concesso.
+    if (
+      typeof window !== "undefined" &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted" &&
+      document.visibilityState !== "visible"
+    ) {
+      try {
+        new Notification("GymBro", { body: "Riposo terminato! Prossima serie 💪" });
+      } catch {
+        // ignora
+      }
+    }
+  }, [running, seconds, target, soundOn]);
+
+  const toggleSound = useCallback(() => setSoundOn((v) => !v), []);
+
+  const remaining = Math.max(0, target - seconds);
+  const mm = String(Math.floor(remaining / 60));
+  const ss = String(remaining % 60).padStart(2, "0");
+
+  return (
+    <div className="mt-8 rounded-3xl border border-border bg-card p-5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <Timer className="h-4 w-4" /> Recupero
+        </div>
+        <div className="flex gap-1">
+          {[60, 90, 120, 180].map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => {
+                setTarget(t);
+                setSeconds(0);
+              }}
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                target === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {t}s
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-between">
+        <div className="text-5xl font-black tracking-tighter tabular-nums">{mm}:{ss}</div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={toggleSound}
+            className="rounded-full border border-border px-3 py-2 text-xs font-semibold"
+            aria-label={soundOn ? "Disattiva suono" : "Attiva suono"}
+            aria-pressed={soundOn}
+            title={soundOn ? "Suono attivo" : "Suono disattivato"}
+          >
+            {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSeconds(0);
+              setRunning(false);
+            }}
+            className="rounded-full border border-border px-4 py-2 text-xs font-semibold"
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            onClick={() => setRunning((r) => !r)}
+            className="rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground"
+          >
+            {running ? "Pausa" : "Avvia"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

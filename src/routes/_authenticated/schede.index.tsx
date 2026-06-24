@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, ChevronRight, Dumbbell } from "lucide-react";
+import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
 
 export const Route = createFileRoute("/_authenticated/schede/")({
   component: Schede,
@@ -41,6 +42,11 @@ function Schede() {
     qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
     qc.invalidateQueries({ queryKey: ["plans", user.id] });
     navigate({ to: "/schede/$planId", params: { planId: data.id } });
+  }
+
+  // TASK 4 — skeleton gate.
+  if (plansQ.isLoading) {
+    return <SchedeSkeleton />;
   }
 
   return (

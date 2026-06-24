@@ -12,11 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AuthenticatedStoricoRouteImport } from './routes/_authenticated/storico'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedSchedeIndexRouteImport } from './routes/_authenticated/schede.index'
+import { Route as AuthenticatedCerchiaIndexRouteImport } from './routes/_authenticated/cerchia.index'
 import { Route as AuthenticatedSchedePlanIdRouteImport } from './routes/_authenticated/schede.$planId'
+import { Route as AuthenticatedCerchiaCircleIdRouteImport } from './routes/_authenticated/cerchia.$circleId'
 import { Route as AuthenticatedAllenaPlanIdRouteImport } from './routes/_authenticated/allena.$planId'
+import { Route as AuthenticatedAdminSetCoachRouteImport } from './routes/_authenticated/admin.set-coach'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -31,6 +35,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthResetRoute = AuthResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthenticatedStoricoRoute = AuthenticatedStoricoRouteImport.update({
   id: '/storico',
@@ -48,10 +57,22 @@ const AuthenticatedSchedeIndexRoute =
     path: '/schede/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCerchiaIndexRoute =
+  AuthenticatedCerchiaIndexRouteImport.update({
+    id: '/cerchia/',
+    path: '/cerchia/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSchedePlanIdRoute =
   AuthenticatedSchedePlanIdRouteImport.update({
     id: '/schede/$planId',
     path: '/schede/$planId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCerchiaCircleIdRoute =
+  AuthenticatedCerchiaCircleIdRouteImport.update({
+    id: '/cerchia/$circleId',
+    path: '/cerchia/$circleId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAllenaPlanIdRoute =
@@ -60,34 +81,52 @@ const AuthenticatedAllenaPlanIdRoute =
     path: '/allena/$planId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminSetCoachRoute =
+  AuthenticatedAdminSetCoachRouteImport.update({
+    id: '/admin/set-coach',
+    path: '/admin/set-coach',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/storico': typeof AuthenticatedStoricoRoute
+  '/auth/reset': typeof AuthResetRoute
+  '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
+  '/cerchia/$circleId': typeof AuthenticatedCerchiaCircleIdRoute
   '/schede/$planId': typeof AuthenticatedSchedePlanIdRoute
+  '/cerchia/': typeof AuthenticatedCerchiaIndexRoute
   '/schede/': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRoutesByTo {
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/storico': typeof AuthenticatedStoricoRoute
+  '/auth/reset': typeof AuthResetRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
+  '/cerchia/$circleId': typeof AuthenticatedCerchiaCircleIdRoute
   '/schede/$planId': typeof AuthenticatedSchedePlanIdRoute
+  '/cerchia': typeof AuthenticatedCerchiaIndexRoute
   '/schede': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/storico': typeof AuthenticatedStoricoRoute
+  '/auth/reset': typeof AuthResetRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/_authenticated/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
+  '/_authenticated/cerchia/$circleId': typeof AuthenticatedCerchiaCircleIdRoute
   '/_authenticated/schede/$planId': typeof AuthenticatedSchedePlanIdRoute
+  '/_authenticated/cerchia/': typeof AuthenticatedCerchiaIndexRoute
   '/_authenticated/schede/': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRouteTypes {
@@ -97,17 +136,25 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/storico'
+    | '/auth/reset'
+    | '/admin/set-coach'
     | '/allena/$planId'
+    | '/cerchia/$circleId'
     | '/schede/$planId'
+    | '/cerchia/'
     | '/schede/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/onboarding'
     | '/storico'
+    | '/auth/reset'
     | '/'
+    | '/admin/set-coach'
     | '/allena/$planId'
+    | '/cerchia/$circleId'
     | '/schede/$planId'
+    | '/cerchia'
     | '/schede'
   id:
     | '__root__'
@@ -115,15 +162,19 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/onboarding'
     | '/_authenticated/storico'
+    | '/auth/reset'
     | '/_authenticated/'
+    | '/_authenticated/admin/set-coach'
     | '/_authenticated/allena/$planId'
+    | '/_authenticated/cerchia/$circleId'
     | '/_authenticated/schede/$planId'
+    | '/_authenticated/cerchia/'
     | '/_authenticated/schede/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -149,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/auth/reset': {
+      id: '/auth/reset'
+      path: '/reset'
+      fullPath: '/auth/reset'
+      preLoaderRoute: typeof AuthResetRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/_authenticated/storico': {
       id: '/_authenticated/storico'
       path: '/storico'
@@ -170,11 +228,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSchedeIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cerchia/': {
+      id: '/_authenticated/cerchia/'
+      path: '/cerchia'
+      fullPath: '/cerchia/'
+      preLoaderRoute: typeof AuthenticatedCerchiaIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/schede/$planId': {
       id: '/_authenticated/schede/$planId'
       path: '/schede/$planId'
       fullPath: '/schede/$planId'
       preLoaderRoute: typeof AuthenticatedSchedePlanIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cerchia/$circleId': {
+      id: '/_authenticated/cerchia/$circleId'
+      path: '/cerchia/$circleId'
+      fullPath: '/cerchia/$circleId'
+      preLoaderRoute: typeof AuthenticatedCerchiaCircleIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/allena/$planId': {
@@ -184,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAllenaPlanIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/set-coach': {
+      id: '/_authenticated/admin/set-coach'
+      path: '/admin/set-coach'
+      fullPath: '/admin/set-coach'
+      preLoaderRoute: typeof AuthenticatedAdminSetCoachRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -191,8 +270,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedStoricoRoute: typeof AuthenticatedStoricoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminSetCoachRoute: typeof AuthenticatedAdminSetCoachRoute
   AuthenticatedAllenaPlanIdRoute: typeof AuthenticatedAllenaPlanIdRoute
+  AuthenticatedCerchiaCircleIdRoute: typeof AuthenticatedCerchiaCircleIdRoute
   AuthenticatedSchedePlanIdRoute: typeof AuthenticatedSchedePlanIdRoute
+  AuthenticatedCerchiaIndexRoute: typeof AuthenticatedCerchiaIndexRoute
   AuthenticatedSchedeIndexRoute: typeof AuthenticatedSchedeIndexRoute
 }
 
@@ -200,17 +282,30 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedStoricoRoute: AuthenticatedStoricoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminSetCoachRoute: AuthenticatedAdminSetCoachRoute,
   AuthenticatedAllenaPlanIdRoute: AuthenticatedAllenaPlanIdRoute,
+  AuthenticatedCerchiaCircleIdRoute: AuthenticatedCerchiaCircleIdRoute,
   AuthenticatedSchedePlanIdRoute: AuthenticatedSchedePlanIdRoute,
+  AuthenticatedCerchiaIndexRoute: AuthenticatedCerchiaIndexRoute,
   AuthenticatedSchedeIndexRoute: AuthenticatedSchedeIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthRouteChildren {
+  AuthResetRoute: typeof AuthResetRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthResetRoute: AuthResetRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

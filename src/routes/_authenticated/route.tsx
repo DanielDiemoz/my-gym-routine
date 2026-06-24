@@ -1,32 +1,45 @@
-import { createFileRoute, Outlet, redirect, Link, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Dumbbell, History as HistoryIcon } from "lucide-react";
+import { Home, Dumbbell, History as HistoryIcon, Users } from "lucide-react";
+import { WeightUnitProvider } from "@/hooks/useWeightUnit";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     // Check onboarding
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("onboarded")
+      .select("onboarded, display_name")
       .eq("id", data.user.id)
       .maybeSingle();
+    
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+    } else if (!profile?.onboarded && !location.pathname.startsWith("/onboarding")) {
+      throw redirect({ to: "/onboarding" });
+    }
+    
     return { user: data.user, profile };
   },
   component: AuthLayout,
 });
 
 function AuthLayout() {
-  const { profile } = Route.useRouteContext();
+  const { profile, user } = Route.useRouteContext();
   const loc = useLocation();
-  const needsOnboarding = (!profile || !profile.onboarded) && !loc.pathname.startsWith("/onboarding");
+  const navigate = useNavigate();
+  const needsOnboarding = !profile?.onboarded && !loc.pathname.startsWith("/onboarding");
+
+  // Safety net: primaLoad dovrebbe già aver lanciato redirect,
+  // ma se mai il dato `profile` cambia post-mount, navighiamo comunque.
+  useEffect(() => {
+    if (needsOnboarding) navigate({ to: "/onboarding" });
+  }, [needsOnboarding, navigate]);
 
   if (needsOnboarding) {
-    // Soft redirect via Link replacement: simplest is to just render onboarding.
-    // Use TanStack redirect via window for safety in client-only layout.
-    if (typeof window !== "undefined") window.location.replace("/onboarding");
     return null;
   }
 
@@ -34,7 +47,9 @@ function AuthLayout() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <Outlet />
+      <WeightUnitProvider userId={user.id}>
+        <Outlet />
+      </WeightUnitProvider>
       {showNav && <BottomNav pathname={loc.pathname} />}
     </div>
   );
@@ -45,6 +60,7 @@ function BottomNav({ pathname }: { pathname: string }) {
     { to: "/", icon: Home, label: "Oggi" },
     { to: "/schede", icon: Dumbbell, label: "Schede" },
     { to: "/storico", icon: HistoryIcon, label: "Storico" },
+    { to: "/cerchia", icon: Users, label: "Cerchia" },
   ] as const;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">

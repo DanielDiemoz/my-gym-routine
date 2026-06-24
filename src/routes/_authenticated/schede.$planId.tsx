@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ChevronLeft, Plus, Trash2, GripVertical, Play, Pencil } from "lucide-react";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { ExerciseAutocomplete, type ExerciseLibraryEntry } from "@/components/ExerciseAutocomplete";
 import {
   DndContext,
   closestCenter,
@@ -33,6 +35,7 @@ type Exercise = {
   weight: number;
   notes: string | null;
   position: number;
+  exercise_library_id?: string | null;
 };
 
 const MUSCLES = ["Petto", "Schiena", "Gambe", "Spalle", "Braccia", "Core", "Glutei", "Altro"];
@@ -42,6 +45,7 @@ function PlanEditor() {
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
 
   const planQ = useQuery({
     queryKey: ["plan", planId],
@@ -57,11 +61,11 @@ function PlanEditor() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("exercises")
-        .select("*")
+        .select("*, exercise_library_id")
         .eq("plan_id", planId)
         .order("position", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Exercise[];
+      return (data ?? []) as unknown as Exercise[];
     },
   });
 
@@ -103,7 +107,8 @@ function PlanEditor() {
   }
 
   async function deletePlan() {
-    if (!confirm("Eliminare questa scheda?")) return;
+    const ok = await confirmDialog("Eliminare questa scheda?", "L'azione è irreversibile.");
+    if (!ok) return;
     await supabase.from("plans").delete().eq("id", planId);
     qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
     qc.invalidateQueries({ queryKey: ["plans", user.id] });
@@ -175,6 +180,7 @@ function PlanEditor() {
           onSaved={() => { setAdding(false); setEditing(null); qc.invalidateQueries({ queryKey: ["exercises", planId] }); }}
         />
       )}
+      {ConfirmDialog}
     </div>
   );
 }
@@ -215,16 +221,58 @@ function ExerciseSheet({
   const [reps, setReps] = useState(ex?.reps ?? 10);
   const [weight, setWeight] = useState<number>(Number(ex?.weight ?? 0));
   const [notes, setNotes] = useState(ex?.notes ?? "");
+  const [libraryId, setLibraryId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Reset locale quando si entra in modalità "modifica" con un altro esercizio.
+  useEffect(() => {
+    if (ex) {
+      setName(ex.name);
+      setMuscle(ex.muscle_group ?? "Petto");
+      setSets(ex.sets);
+      setReps(ex.reps);
+      setWeight(Number(ex.weight));
+      setNotes(ex.notes ?? "");
+      setLibraryId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ex?.id]);
+
+  function handlePick(entry: ExerciseLibraryEntry) {
+    setName(entry.name);
+    setMuscle(entry.muscle_group);
+    setLibraryId(entry.id);
+  }
 
   async function save() {
     if (!name.trim()) { toast.error("Inserisci un nome"); return; }
     setSaving(true);
-    const payload = { name: name.trim(), muscle_group: muscle, sets, reps, weight, notes: notes.trim() || null };
+    // Mantieni il payload come Record<string, unknown> cosi lo spread in
+    // `.insert({ ...data, ... })` è type-safe. `as never` solo al call site
+    // .update() per bypassare l'excess-property check su
+    // exercise_library_id (colonna aggiunta dalla migration 20260624 non
+    // ancora presente nel Database type generato).
+    const data: Record<string, unknown> = {
+      name: name.trim(),
+      muscle_group: muscle,
+      sets,
+      reps,
+      weight,
+      notes: notes.trim() || null,
+      exercise_library_id: libraryId,
+    };
     if (ex) {
-      await supabase.from("exercises").update(payload).eq("id", ex.id);
+      await supabase
+        .from("exercises")
+        .update(data as never)
+        .eq("id", ex.id);
     } else {
-      await supabase.from("exercises").insert({ ...payload, plan_id: planId, user_id: userId, position: nextPosition });
+      await supabase.from("exercises").insert({
+        ...data,
+        plan_id: planId,
+        user_id: userId,
+        position: nextPosition,
+      } as never);
     }
     onSaved();
   }
@@ -240,13 +288,15 @@ function ExerciseSheet({
 
         <div className="mt-5 space-y-4">
           <Field label="Nome">
-            <input
+            <ExerciseAutocomplete
               value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus={!ex}
-              className="w-full rounded-xl border border-border bg-card px-4 py-3 outline-none focus:border-foreground"
-              placeholder="Panca piana"
+              onChange={setName}
+              onPick={handlePick}
+              placeholder="Cerca esercizio (es. Panca piana)"
             />
+            <p className="mt-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+              Seleziona un suggerimento per auto-compilare il gruppo muscolare.
+            </p>
           </Field>
 
           <Field label="Gruppo muscolare">
