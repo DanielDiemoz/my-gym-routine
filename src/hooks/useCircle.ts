@@ -36,14 +36,8 @@ export interface CircleMember {
   joined_at: string;
 }
 
-// ── Shortcut ─────────────────────────────────────────────────────────────────
-// `as unknown as { from: ... }` perché il types.ts non conosce ancora le nuove
-// tabelle e Supabase inferisce SelectQueryError sugli overrides. Mantenere
-// il cast qui evita di inquinare ogni chiamata.
-const fromCircles = () =>
-  (supabase as unknown as { from: (t: string) => any }).from("circles");
-const fromCircleMembers = () =>
-  (supabase as unknown as { from: (t: string) => any }).from("circle_members");
+const fromCircles = () => supabase.from("circles");
+const fromCircleMembers = () => supabase.from("circle_members");
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 const CIRCLES_KEY = (userId: string) => ["circles", userId] as const;
@@ -63,11 +57,11 @@ export function useCircle(userId: string) {
   const circlesQ = useQuery({
     queryKey: CIRCLES_KEY(userId),
     queryFn: async (): Promise<Circle[]> => {
-      const { data, error } = await (supabase as any).rpc("get_my_circles");
+      const { data, error } = await supabase.rpc("get_my_circles");
       if (error) {
         throw new Error(error.message || "Errore nel caricamento delle cerchie");
       }
-      return ((data ?? []) as unknown as Circle[]);
+      return (data ?? []) as Circle[];
     },
     staleTime: 1000 * 30, // 30 secondi
   });
@@ -81,10 +75,10 @@ export function useCircle(userId: string) {
         .from("profiles")
         // Selezioniamo direttamente `role` per non trasferire tutti gli altri
         // campi del profilo via RLS quando ci serve solo il flag coach.
-        .select("role" as any)
+        .select("role")
         .eq("id", userId)
         .maybeSingle();
-      const raw = (data as unknown as { role?: string } | null)?.role;
+      const raw = data?.role;
       return raw === "coach" ? "coach" : "user";
     },
     staleTime: 1000 * 60 * 5,
@@ -100,7 +94,7 @@ export function useCircle(userId: string) {
   // il membro (idempotente via ON CONFLICT DO NOTHING).
   const joinMut = useMutation({
     mutationFn: async (code: string): Promise<string> => {
-      const { data: circleId, error } = await (supabase as any).rpc(
+      const { data: circleId, error } = await supabase.rpc(
         "join_circle_by_code",
         { invite_code: code },
       );
@@ -131,7 +125,7 @@ export function useCircle(userId: string) {
   // Il client deve solo passare il nome: niente più corse RLS o rollback manuali.
   const createMut = useMutation({
     mutationFn: async (name: string): Promise<Circle> => {
-      const { data: newCircle, error } = await (supabase as any).rpc(
+      const { data: newCircle, error } = await supabase.rpc(
         "create_circle_as_coach",
         { circle_name: name },
       );
@@ -139,7 +133,7 @@ export function useCircle(userId: string) {
         throw new Error(error.message || "Errore durante la creazione");
       }
       if (!newCircle) throw new Error("Creazione cerchia fallita");
-      return newCircle as unknown as Circle;
+      return newCircle as Circle;
     },
     onSuccess: () => {
       invalidateCircles();

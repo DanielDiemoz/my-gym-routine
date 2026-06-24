@@ -169,23 +169,19 @@ function Dashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("*")
+        .select("weekly_goal")
         .eq("id", user.id)
         .maybeSingle();
-      const goal = (data as unknown as { weekly_goal?: number } | null)?.weekly_goal;
+      const goal = data?.weekly_goal;
       return typeof goal === "number" && goal >= 1 && goal <= 7 ? goal : 3;
     },
   });
 
   const setGoal = useMutation({
     mutationFn: async (n: number) => {
-      // profiles.weekly_goal aggiunta dalla migration 20260624130000 ma
-      // types.ts auto-generato non la conosce ancora. `as never` sull'object
-      // literal bypassa l'excess-property check. Rimuovere dopo rigenerazione
-      // dei types Supabase.
       const { error } = await supabase
         .from("profiles")
-        .update({ weekly_goal: n } as never)
+        .update({ weekly_goal: n })
         .eq("id", user.id);
       if (error) throw error;
     },

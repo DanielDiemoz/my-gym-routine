@@ -47,24 +47,24 @@ function CircleDetailPage() {
     queryFn: async () => {
       // 1. Dettaglio cerchia
       const { data: circle, error: cErr } = await supabase
-        .from("circles" as never)
+        .from("circles")
         .select("id, name, code, owner_id, created_at")
         .eq("id", circleId)
         .maybeSingle();
       if (cErr) throw cErr;
       if (!circle) throw new Error("Cerchia non trovata o non accessibile.");
 
-      // 2. Membri (solo user_ids)
-      const membersRes = await supabase
-        .from("circle_members" as never)
-        .select("user_id")
-        .eq("circle_id", circleId);
-      const userIds = ((membersRes.data ?? []) as { user_id: string }[]).map(
-        (m) => m.user_id,
+      // 2. Membri (solo user_ids) — usa RPC SECURITY DEFINER che bypassa
+      //    la policy circle_members_select limitata a user_id = auth.uid().
+      const { data: rawIds, error: mErr } = await supabase.rpc(
+        "get_circle_members",
+        { p_circle_id: circleId },
       );
+      if (mErr) throw mErr;
+      const userIds = (rawIds ?? []) as string[];
       if (userIds.length === 0) {
         return {
-          circle: circle as Circle,
+          circle,
           profiles: [],
           sessions: [],
           feedLogs: [],

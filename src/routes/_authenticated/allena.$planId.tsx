@@ -108,6 +108,8 @@ function ActiveSession() {
 
     sessionCreated.current = true;
 
+    let cancelled = false;
+
     (async () => {
       try {
         let resolvedId: string | null = null;
@@ -126,6 +128,7 @@ function ActiveSession() {
             })
             .select("id")
             .single();
+          if (cancelled) return;
           if (error) throw error;
           resolvedId = data?.id ?? null;
 
@@ -142,13 +145,18 @@ function ActiveSession() {
           }
         }
 
-        if (resolvedId) setSessionId(resolvedId);
+        if (!cancelled && resolvedId) setSessionId(resolvedId);
       } catch (err) {
+        if (cancelled) return;
         // Rollback del lock: l'utente può ricaricare per riprovare.
         sessionCreated.current = false;
         toast.error(err instanceof Error ? err.message : "Errore di sessione");
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     planQ.data,
     orphanQ.data,

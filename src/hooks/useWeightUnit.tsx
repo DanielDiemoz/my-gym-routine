@@ -35,10 +35,10 @@ export function WeightUnitProvider({ userId, children }: ProviderProps) {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("*")
+        .select("weight_unit")
         .eq("id", userId)
         .maybeSingle();
-      const raw = (data as unknown as { weight_unit?: string } | null)?.weight_unit;
+      const raw = data?.weight_unit;
       return (raw === "lbs" ? "lbs" : "kg") as WeightUnit;
     },
     staleTime: 1000 * 60 * 5,
@@ -47,11 +47,9 @@ export function WeightUnitProvider({ userId, children }: ProviderProps) {
   const toggle = useCallback(async () => {
     const current: WeightUnit = q.data ?? "kg";
     const next: WeightUnit = current === "kg" ? "lbs" : "kg";
-    // `as never` sull'object literal bypassa l'excess-property check di update()
-    // finché types.ts non viene rigenerato dopo l'application della migration.
     await supabase
       .from("profiles")
-      .update({ weight_unit: next } as never)
+      .update({ weight_unit: next })
       .eq("id", userId);
     qc.invalidateQueries({ queryKey: ["profile", userId] });
   }, [q.data, qc, userId]);

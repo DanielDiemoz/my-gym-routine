@@ -43,8 +43,6 @@ function Onboarding() {
       return;
     }
     setSaving(true);
-    // Cast a never perché profiles.weight_unit è aggiunto dalla migration
-    // 20260624 ma il types.ts auto-generato non lo conosce ancora.
     const { error } = await supabase
       .from("profiles")
       .upsert({
@@ -53,7 +51,7 @@ function Onboarding() {
         avatar_url: avatarUrl || null,
         onboarded: true,
         weight_unit: unit,
-      } as never);
+      });
     if (error) {
       toast.error(error.message);
       setSaving(false);

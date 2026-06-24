@@ -67,12 +67,8 @@ export function ExerciseAutocomplete({
     enabled: debounced.length >= 2,
     queryFn: async (): Promise<ExerciseLibraryEntry[]> => {
       const pattern = `%${debounced}%`;
-      // `as never` perché exercise_library non è ancora nel Database type
-      // (la tabella viene creata dalla migration 20260624). Rimuovere dopo
-      // `supabase gen types typescript --local`.
       const { data, error } = await supabase
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from("exercise_library" as any)
+        .from("exercise_library")
         .select("id, name, muscle_group")
         .ilike("name", pattern)
         .order("name", { ascending: true })
@@ -82,7 +78,7 @@ export function ExerciseAutocomplete({
         console.warn("[ExerciseAutocomplete]", error.message);
         return [];
       }
-      return (data ?? []) as unknown as ExerciseLibraryEntry[];
+      return (data ?? []) as ExerciseLibraryEntry[];
     },
     staleTime: 1000 * 60 * 2,
   });

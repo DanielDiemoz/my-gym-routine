@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Users, Globe, Copy, Plus, Hash, LogIn, Check } from "lucide-react";
+import { Users, Copy, Plus, Hash, LogIn, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
@@ -9,13 +9,6 @@ import { useCircle, type Circle } from "@/hooks/useCircle";
 export const Route = createFileRoute("/_authenticated/cerchia/")({
   component: CerchiePage,
 });
-
-// ── Costanti della cerchia di default ─────────────────────────────────────────
-// Popolate dalla migration supabase/migrations/20260624_default_community.sql.
-// Vengono qui come costanti (e non da una query) perché sono record statici
-// di sistema: non cambiano nel tempo e l'utente non può modificarli.
-const DEFAULT_COMMUNITY_ID = "00000000-0000-0000-0000-000000000002";
-const DEFAULT_COMMUNITY_CODE = "GYMBRO";
 
 /**
  * Pagina "Cerchie" — TASK 4.
@@ -50,16 +43,6 @@ function CerchiePage() {
   }
 
   const hasCircles = myCircles.length > 0;
-  // La community di default è pinnata in cima alla pagina (sempre visibile),
-  // quindi va esclusa dalla CirclesList per evitare la duplicazione visiva.
-  // Le "altre cerchie" sono tutte le altre (personali, create dall'utente,
-  // oppure joinate via codice).
-  const visibleCircles = myCircles.filter(
-    (c) => c.id !== DEFAULT_COMMUNITY_ID,
-  );
-  const isInCommunity = myCircles.some(
-    (c) => c.id === DEFAULT_COMMUNITY_ID,
-  );
   const anySheetOpen = joinOpen || createOpen;
 
   function closeSheet() {
@@ -77,13 +60,6 @@ function CerchiePage() {
         <h1 className="mt-1 text-3xl font-black tracking-tight">Cerchie</h1>
       </header>
 
-      {/* Community di default: sempre pinnata in cima, prima di tutto il resto. */}
-      <CommunityCard
-        isMember={isInCommunity}
-        isJoining={isJoining}
-        onJoin={() => joinCircle(DEFAULT_COMMUNITY_CODE)}
-      />
-
       {!hasCircles ? (
         <EmptyState
           isCoach={isCoach}
@@ -92,7 +68,7 @@ function CerchiePage() {
         />
       ) : (
         <CirclesList
-          circles={visibleCircles}
+          circles={myCircles}
           selfId={user.id}
           onJoin={() => setJoinOpen(true)}
         />
@@ -137,63 +113,6 @@ function CerchiePage() {
             />
           )}
         </CerchieModal>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Cerchia di default ("GymBro Community")
-// Card pinned in cima alla pagina, sempre visibile a tutti gli utenti.
-// - Se NON sei membro: bottone "Entra subito →" che usa joinCircle('GYMBRO')
-//   (riusa la mutation esistente — la cerchia ha code='GYMBRO' in DB).
-// - Se SEI già membro: bottone "Vai alla community →" che naviga al dettaglio.
-// Stesso layout delle altre cerchie (avatar + nome + subtitle), con un chip
-// "⭐ Ufficiale" inline al titolo.
-// ─────────────────────────────────────────────────────────────────────────────
-function CommunityCard({
-  isMember,
-  isJoining,
-  onJoin,
-}: {
-  isMember: boolean;
-  isJoining: boolean;
-  onJoin: () => void;
-}) {
-  return (
-    <div className="mb-2 flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
-          <Globe className="h-4 w-4" />
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="truncate font-semibold">GymBro Community</span>
-            <span className="shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
-              ⭐ Ufficiale
-            </span>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            La community ufficiale di GymBro
-          </div>
-        </div>
-      </div>
-      {isMember ? (
-        <Link
-          to="/cerchia/$circleId"
-          params={{ circleId: DEFAULT_COMMUNITY_ID }}
-          className="no-tap-highlight shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground active:scale-[0.98]"
-        >
-          Vai alla community →
-        </Link>
-      ) : (
-        <button
-          onClick={onJoin}
-          disabled={isJoining}
-          className="no-tap-highlight shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground active:scale-[0.98] disabled:opacity-60"
-        >
-          {isJoining ? "..." : "Entra subito →"}
-        </button>
       )}
     </div>
   );

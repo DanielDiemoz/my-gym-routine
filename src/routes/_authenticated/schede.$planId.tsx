@@ -65,7 +65,7 @@ function PlanEditor() {
         .eq("plan_id", planId)
         .order("position", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as unknown as Exercise[];
+      return data ?? [];
     },
   });
 
@@ -247,12 +247,7 @@ function ExerciseSheet({
   async function save() {
     if (!name.trim()) { toast.error("Inserisci un nome"); return; }
     setSaving(true);
-    // Mantieni il payload come Record<string, unknown> cosi lo spread in
-    // `.insert({ ...data, ... })` è type-safe. `as never` solo al call site
-    // .update() per bypassare l'excess-property check su
-    // exercise_library_id (colonna aggiunta dalla migration 20260624 non
-    // ancora presente nel Database type generato).
-    const data: Record<string, unknown> = {
+    const data = {
       name: name.trim(),
       muscle_group: muscle,
       sets,
@@ -264,7 +259,7 @@ function ExerciseSheet({
     if (ex) {
       await supabase
         .from("exercises")
-        .update(data as never)
+        .update(data)
         .eq("id", ex.id);
     } else {
       await supabase.from("exercises").insert({
@@ -272,7 +267,7 @@ function ExerciseSheet({
         plan_id: planId,
         user_id: userId,
         position: nextPosition,
-      } as never);
+      });
     }
     onSaved();
   }

@@ -12,11 +12,126 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      circle_members: {
+        Row: {
+          circle_id: string
+          id: string
+          joined_at: string | null
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          id?: string
+          joined_at?: string | null
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          id?: string
+          joined_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_members_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circle_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      circles: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          name: string
+          owner_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circles_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exercise_library: {
+        Row: {
+          id: string
+          muscle_group: string
+          name: string
+          name_search: unknown
+        }
+        Insert: {
+          id?: string
+          muscle_group: string
+          name: string
+          name_search?: unknown
+        }
+        Update: {
+          id?: string
+          muscle_group?: string
+          name?: string
+          name_search?: unknown
+        }
+        Relationships: []
+      }
       exercises: {
         Row: {
           created_at: string
+          exercise_library_id: string | null
           id: string
           muscle_group: string | null
           name: string
@@ -30,6 +145,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          exercise_library_id?: string | null
           id?: string
           muscle_group?: string | null
           name: string
@@ -43,6 +159,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          exercise_library_id?: string | null
           id?: string
           muscle_group?: string | null
           name?: string
@@ -55,6 +172,13 @@ export type Database = {
           weight?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "exercises_exercise_library_id_fkey"
+            columns: ["exercise_library_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_library"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "exercises_plan_id_fkey"
             columns: ["plan_id"]
@@ -94,24 +218,33 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
-          onboarded: boolean
+          onboarded: boolean | null
+          role: string | null
           updated_at: string
+          weekly_goal: number | null
+          weight_unit: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id: string
-          onboarded?: boolean
+          onboarded?: boolean | null
+          role?: string | null
           updated_at?: string
+          weekly_goal?: number | null
+          weight_unit?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
-          onboarded?: boolean
+          onboarded?: boolean | null
+          role?: string | null
           updated_at?: string
+          weekly_goal?: number | null
+          weight_unit?: string
         }
         Relationships: []
       }
@@ -136,7 +269,7 @@ export type Database = {
           session_id: string
           set_number: number
           user_id: string
-          weight?: number
+          weight: number
         }
         Update: {
           created_at?: string
@@ -202,7 +335,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_orphaned_sessions: { Args: never; Returns: undefined }
+      create_circle_as_coach: {
+        Args: { circle_name: string }
+        Returns: {
+          code: string
+          created_at: string | null
+          id: string
+          name: string
+          owner_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "circles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      generate_circle_code: { Args: never; Returns: string }
+      get_circle_members: { Args: { p_circle_id: string }; Returns: string[] }
+      get_my_circle_ids: { Args: never; Returns: string[] }
+      get_my_circles: {
+        Args: never
+        Returns: {
+          code: string
+          created_at: string
+          id: string
+          member_count: number
+          name: string
+          owner_id: string
+        }[]
+      }
+      join_circle_by_code: { Args: { invite_code: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
@@ -331,6 +495,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
