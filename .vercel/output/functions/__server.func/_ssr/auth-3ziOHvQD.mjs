@@ -5,7 +5,7 @@ import { t as supabase } from "./client-Ya_BWEKn.mjs";
 import { P as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as cn } from "./utils-C_uf36nf.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { P as ArrowLeft } from "../_libs/lucide-react.mjs";
+import { N as ArrowLeft } from "../_libs/lucide-react.mjs";
 import { n as useForm, t as u } from "../_libs/@hookform/resolvers+[...].mjs";
 import { n as stringType, t as objectType } from "../_libs/zod.mjs";
 import { i as Trigger, n as List, r as Root2, t as Content } from "../_libs/radix-ui__react-tabs.mjs";

@@ -7,7 +7,7 @@ import { P as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[..
 import { t as cn } from "./utils-C_uf36nf.mjs";
 import { i as useQueryClient, n as useQuery } from "../_libs/tanstack__react-query.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { c as Trash2, f as Search, h as Pencil, k as ChevronLeft, m as Play, p as Plus, x as GripVertical } from "../_libs/lucide-react.mjs";
+import { O as ChevronLeft, c as Trash2, f as Search, h as Pencil, m as Play, p as Plus, x as GripVertical } from "../_libs/lucide-react.mjs";
 import { l as useConfirmDialog } from "./useConfirmDialog-Dl4MI-Wg.mjs";
 import { t as Route } from "./schede._planId-CP8Sd1mJ.mjs";
 import { t as _e } from "../_libs/cmdk.mjs";

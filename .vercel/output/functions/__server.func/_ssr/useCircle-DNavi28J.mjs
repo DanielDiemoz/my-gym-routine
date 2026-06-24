@@ -5,7 +5,7 @@ import { t as supabase } from "./client-Ya_BWEKn.mjs";
 import { t as cn } from "./utils-C_uf36nf.mjs";
 import { i as useQueryClient, n as useQuery, t as useMutation } from "../_libs/tanstack__react-query.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { E as Copy, j as Check } from "../_libs/lucide-react.mjs";
+import { A as Check, T as Copy } from "../_libs/lucide-react.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/useCircle-DNavi28J.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();

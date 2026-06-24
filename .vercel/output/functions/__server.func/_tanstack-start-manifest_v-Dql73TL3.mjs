@@ -1,17 +1,17 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-ocic_DH9.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-Dql73TL3.js
 var tsrStartManifest = () => ({ routes: {
 	__root__: {
 		filePath: "/home/daniel/github/gymBro/src/routes/__root.tsx",
 		children: ["/_authenticated", "/auth"],
 		preloads: [
-			"/assets/index-BrQM3II8.js",
+			"/assets/index-CwqW7MgI.js",
 			"/assets/jsx-runtime-n5LQ9ujS.js",
 			"/assets/link-C3Ix4Mjd.js"
 		],
 		scripts: [{ attrs: {
 			type: "module",
 			async: !0,
-			src: "/assets/index-BrQM3II8.js"
+			src: "/assets/index-CwqW7MgI.js"
 		} }]
 	},
 	"/_authenticated": {
@@ -28,18 +28,18 @@ var tsrStartManifest = () => ({ routes: {
 			"/_authenticated/schede/"
 		],
 		preloads: [
-			"/assets/route-COw_8Jbb.js",
+			"/assets/route-TWqsl4Do.js",
 			"/assets/createLucideIcon-D1l_1SOF.js",
 			"/assets/dumbbell-B3KVhJha.js",
 			"/assets/users-DB7gkLXZ.js",
-			"/assets/useWeightUnit-CkPRuGhz.js"
+			"/assets/useWeightUnit-xxJ1KI_9.js"
 		]
 	},
 	"/auth": {
 		filePath: "/home/daniel/github/gymBro/src/routes/auth.tsx",
 		children: ["/auth/reset"],
 		preloads: [
-			"/assets/auth-DXc1_ndU.js",
+			"/assets/auth-BqkuTEX_.js",
 			"/assets/arrow-left-CIHsSa3h.js",
 			"/assets/utils-B6KiDbIe.js",
 			"/assets/dist-C6MbqnVR.js",
@@ -51,7 +51,7 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/onboarding.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/onboarding-D2GCl1FE.js",
+			"/assets/onboarding-Bu3llVU7.js",
 			"/assets/utils-B6KiDbIe.js",
 			"/assets/dist-C6MbqnVR.js",
 			"/assets/dist-lmrRA5W9.js"
@@ -61,8 +61,8 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/storico.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/storico-Cq_dHZLt.js",
-			"/assets/useQuery-BdHmXp66.js",
+			"/assets/storico-jLEpQKAV.js",
+			"/assets/useQuery-BOxv63oC.js",
 			"/assets/chevron-left-B1tl3yNR.js",
 			"/assets/chevron-right-DDqFe1yb.js",
 			"/assets/it-DTAlGFFR.js",
@@ -75,15 +75,15 @@ var tsrStartManifest = () => ({ routes: {
 	"/auth/reset": {
 		filePath: "/home/daniel/github/gymBro/src/routes/auth.reset.tsx",
 		children: void 0,
-		preloads: ["/assets/auth.reset-Kb7XkSy9.js", "/assets/createLucideIcon-D1l_1SOF.js"]
+		preloads: ["/assets/auth.reset-DviEvVys.js", "/assets/createLucideIcon-D1l_1SOF.js"]
 	},
 	"/_authenticated/": {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/_authenticated-Dc3vaELw.js",
-			"/assets/useMutation-VI77FfK-.js",
-			"/assets/useQuery-BdHmXp66.js",
+			"/assets/_authenticated-k_YCfIL-.js",
+			"/assets/useMutation-yzqBwpad.js",
+			"/assets/useQuery-BOxv63oC.js",
 			"/assets/check-CQQm2O1c.js",
 			"/assets/trophy-Dv42bzA8.js",
 			"/assets/chevron-right-DDqFe1yb.js",
@@ -102,14 +102,14 @@ var tsrStartManifest = () => ({ routes: {
 	"/_authenticated/admin/set-coach": {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/admin.set-coach.tsx",
 		children: void 0,
-		preloads: ["/assets/admin.set-coach-DrgHssDN.js", "/assets/arrow-left-CIHsSa3h.js"]
+		preloads: ["/assets/admin.set-coach-DqVAAj56.js", "/assets/arrow-left-CIHsSa3h.js"]
 	},
 	"/_authenticated/allena/$planId": {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/allena.$planId.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/allena._planId-DHhKTZZw.js",
-			"/assets/useQuery-BdHmXp66.js",
+			"/assets/allena._planId-DqBZqeGp.js",
+			"/assets/useQuery-BOxv63oC.js",
 			"/assets/check-CQQm2O1c.js",
 			"/assets/plus-BCxKnURr.js",
 			"/assets/useConfirmDialog-OS1hUz40.js"
@@ -119,11 +119,11 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/cerchia.$circleId.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/cerchia._circleId-Bq1Z6Ddt.js",
-			"/assets/useQuery-BdHmXp66.js",
+			"/assets/cerchia._circleId-BqEhstEr.js",
+			"/assets/useQuery-BOxv63oC.js",
 			"/assets/trophy-Dv42bzA8.js",
 			"/assets/chevron-left-B1tl3yNR.js",
-			"/assets/useCircle-C1KsV4vb.js",
+			"/assets/useCircle-dbuHfxaR.js",
 			"/assets/trash-2-amUGsBKV.js",
 			"/assets/it-DTAlGFFR.js",
 			"/assets/differenceInCalendarMonths-BS38efNR.js",
@@ -136,8 +136,8 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/schede.$planId.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/schede._planId-BgzFvOOH.js",
-			"/assets/useQuery-BdHmXp66.js",
+			"/assets/schede._planId-CEd2oKSb.js",
+			"/assets/useQuery-BOxv63oC.js",
 			"/assets/chevron-left-B1tl3yNR.js",
 			"/assets/plus-BCxKnURr.js",
 			"/assets/trash-2-amUGsBKV.js",
@@ -151,9 +151,9 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/cerchia.index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/cerchia.index-B3GJPJlg.js",
+			"/assets/cerchia.index-PJnbGjCE.js",
 			"/assets/check-CQQm2O1c.js",
-			"/assets/useCircle-C1KsV4vb.js",
+			"/assets/useCircle-dbuHfxaR.js",
 			"/assets/plus-BCxKnURr.js",
 			"/assets/skeleton-DvxycCww.js"
 		]
@@ -162,8 +162,8 @@ var tsrStartManifest = () => ({ routes: {
 		filePath: "/home/daniel/github/gymBro/src/routes/_authenticated/schede.index.tsx",
 		children: void 0,
 		preloads: [
-			"/assets/schede.index-HoW1WKWv.js",
-			"/assets/useQuery-BdHmXp66.js",
+			"/assets/schede.index-DVqMwzJO.js",
+			"/assets/useQuery-BOxv63oC.js",
 			"/assets/chevron-right-DDqFe1yb.js",
 			"/assets/plus-BCxKnURr.js",
 			"/assets/skeleton-DvxycCww.js"

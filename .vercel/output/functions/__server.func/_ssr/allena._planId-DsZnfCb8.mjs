@@ -6,10 +6,10 @@ import { P as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as useQuery } from "../_libs/tanstack__react-query.mjs";
 import { n as useWeightUnit } from "./useWeightUnit-6izDvxCm.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { g as Minus, j as Check, l as Timer, n as VolumeX, p as Plus, r as Volume2, t as X } from "../_libs/lucide-react.mjs";
-import { t as Route } from "./allena._planId-CXgpBNAd.mjs";
+import { A as Check, g as Minus, l as Timer, n as VolumeX, p as Plus, r as Volume2, t as X } from "../_libs/lucide-react.mjs";
+import { t as Route } from "./allena._planId-B7tYhvZ9.mjs";
 import { a as AlertDialogDescription, c as AlertDialogTitle, i as AlertDialogContent, l as useConfirmDialog, n as AlertDialogAction, o as AlertDialogFooter, r as AlertDialogCancel, s as AlertDialogHeader, t as AlertDialog } from "./useConfirmDialog-Dl4MI-Wg.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/allena._planId-CDOoqs0A.js
+//#region node_modules/.nitro/vite/services/ssr/assets/allena._planId-DsZnfCb8.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 /**
@@ -211,6 +211,7 @@ function ActiveSession() {
 		const orphan = orphanQ.data;
 		if (orphan && !userDecision) return;
 		sessionCreated.current = true;
+		let cancelled = false;
 		(async () => {
 			try {
 				let resolvedId = null;
@@ -221,6 +222,7 @@ function ActiveSession() {
 						plan_id: planId,
 						plan_name: planQ.data.plan.name
 					}).select("id").single();
+					if (cancelled) return;
 					if (error) throw error;
 					resolvedId = data?.id ?? null;
 					if (userDecision === "start-new" && orphanIdAtDecision) {
@@ -228,12 +230,16 @@ function ActiveSession() {
 						if (delErr) console.warn("Cleanup vecchia sessione fallito:", delErr.message);
 					}
 				}
-				if (resolvedId) setSessionId(resolvedId);
+				if (!cancelled && resolvedId) setSessionId(resolvedId);
 			} catch (err) {
+				if (cancelled) return;
 				sessionCreated.current = false;
 				toast.error(err instanceof Error ? err.message : "Errore di sessione");
 			}
 		})();
+		return () => {
+			cancelled = true;
+		};
 	}, [
 		planQ.data,
 		orphanQ.data,

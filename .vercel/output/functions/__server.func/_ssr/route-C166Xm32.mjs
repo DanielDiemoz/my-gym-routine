@@ -3,7 +3,7 @@ import { A as require_jsx_runtime } from "../_libs/@radix-ui/react-alert-dialog+
 import { i as require_react } from "../_libs/dnd-kit__accessibility+react.mjs";
 import { P as useNavigate, f as Outlet, g as Link, l as useLocation } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as WeightUnitProvider } from "./useWeightUnit-6izDvxCm.mjs";
-import { I as House, i as Users, w as Dumbbell, y as History } from "../_libs/lucide-react.mjs";
+import { C as Dumbbell, F as House, i as Users, y as History } from "../_libs/lucide-react.mjs";
 import { t as Route } from "./route-DcgBjeMy.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/route-C166Xm32.js
 var import_react = /* @__PURE__ */ __toESM(require_react());

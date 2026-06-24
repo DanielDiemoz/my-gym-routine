@@ -5,7 +5,7 @@ import { t as supabase } from "./client-Ya_BWEKn.mjs";
 import { P as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as cn } from "./utils-C_uf36nf.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { M as Camera } from "../_libs/lucide-react.mjs";
+import { j as Camera } from "../_libs/lucide-react.mjs";
 import { t as Route } from "./onboarding-C-nB1tCs.mjs";
 import { n as SwitchThumb, t as Switch$1 } from "../_libs/radix-ui__react-switch.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/onboarding-BNk4gJHo.js

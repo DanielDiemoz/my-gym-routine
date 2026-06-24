@@ -6,7 +6,7 @@ import { P as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[..
 import { i as useQueryClient, n as useQuery } from "../_libs/tanstack__react-query.mjs";
 import { t as Skeleton } from "./skeleton-D9W9wFsj.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { O as ChevronRight, p as Plus, w as Dumbbell } from "../_libs/lucide-react.mjs";
+import { C as Dumbbell, D as ChevronRight, p as Plus } from "../_libs/lucide-react.mjs";
 import { t as Route } from "./schede.index-C7VAu3WU.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/schede.index-wqn6t-Xz.js
 var import_react = /* @__PURE__ */ __toESM(require_react());

@@ -8,11 +8,11 @@ import { n as useQuery } from "../_libs/tanstack__react-query.mjs";
 import { n as useWeightUnit } from "./useWeightUnit-6izDvxCm.mjs";
 import { t as Skeleton } from "./skeleton-D9W9wFsj.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { A as ChevronDown, _ as LogOut, a as Trophy, c as Trash2, i as Users, k as ChevronLeft } from "../_libs/lucide-react.mjs";
+import { O as ChevronLeft, _ as LogOut, a as Trophy, c as Trash2, i as Users, k as ChevronDown } from "../_libs/lucide-react.mjs";
 import { l as useConfirmDialog } from "./useConfirmDialog-Dl4MI-Wg.mjs";
-import { t as Route } from "./cerchia._circleId-CdvqwC59.mjs";
+import { t as Route } from "./cerchia._circleId-Dyrr7hOy.mjs";
 import { n as useCircle, t as CopyCodeButton } from "./useCircle-DNavi28J.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/cerchia._circleId-BYMxJY99.js
+//#region node_modules/.nitro/vite/services/ssr/assets/cerchia._circleId-XRvciOPu.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 /**
@@ -36,7 +36,9 @@ function CircleDetailPage() {
 			const { data: circle, error: cErr } = await supabase.from("circles").select("id, name, code, owner_id, created_at").eq("id", circleId).maybeSingle();
 			if (cErr) throw cErr;
 			if (!circle) throw new Error("Cerchia non trovata o non accessibile.");
-			const userIds = ((await supabase.from("circle_members").select("user_id").eq("circle_id", circleId)).data ?? []).map((m) => m.user_id);
+			const { data: rawIds, error: mErr } = await supabase.rpc("get_circle_members", { p_circle_id: circleId });
+			if (mErr) throw mErr;
+			const userIds = rawIds ?? [];
 			if (userIds.length === 0) return {
 				circle,
 				profiles: [],

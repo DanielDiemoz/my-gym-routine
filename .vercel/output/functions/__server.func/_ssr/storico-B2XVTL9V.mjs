@@ -6,7 +6,7 @@ import { t as supabase } from "./client-Ya_BWEKn.mjs";
 import { n as useQuery } from "../_libs/tanstack__react-query.mjs";
 import { n as useWeightUnit } from "./useWeightUnit-6izDvxCm.mjs";
 import { t as Skeleton } from "./skeleton-D9W9wFsj.mjs";
-import { N as Calendar, O as ChevronRight, k as ChevronLeft } from "../_libs/lucide-react.mjs";
+import { D as ChevronRight, M as Calendar, O as ChevronLeft } from "../_libs/lucide-react.mjs";
 import { t as Route } from "./storico-CxRCfeBe.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/storico-B2XVTL9V.js
 var import_react = /* @__PURE__ */ __toESM(require_react());

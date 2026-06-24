@@ -4,7 +4,7 @@ import { i as require_react } from "../_libs/dnd-kit__accessibility+react.mjs";
 import { t as supabase } from "./client-Ya_BWEKn.mjs";
 import { P as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { L as CircleCheck, P as ArrowLeft } from "../_libs/lucide-react.mjs";
+import { I as CircleCheck, N as ArrowLeft } from "../_libs/lucide-react.mjs";
 import { n as useForm, t as u } from "../_libs/@hookform/resolvers+[...].mjs";
 import { n as stringType, t as objectType } from "../_libs/zod.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/auth.reset-C27tIttd.js

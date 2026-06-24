@@ -4,7 +4,7 @@ import { i as require_react } from "../_libs/dnd-kit__accessibility+react.mjs";
 import { t as supabase } from "./client-Ya_BWEKn.mjs";
 import { P as useNavigate, g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { i as useQueryClient } from "../_libs/tanstack__react-query.mjs";
-import { F as TriangleAlert, P as ArrowLeft, d as ShieldCheck } from "../_libs/lucide-react.mjs";
+import { N as ArrowLeft, P as TriangleAlert, d as ShieldCheck } from "../_libs/lucide-react.mjs";
 import { t as Route } from "./admin.set-coach-DW3Pb3ey.mjs";
 //#region node_modules/.nitro/vite/services/ssr/assets/admin.set-coach-Dmdu2H9g.js
 var import_react = /* @__PURE__ */ __toESM(require_react());

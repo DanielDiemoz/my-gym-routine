@@ -345,28 +345,6 @@ var Flame = createLucideIcon("flame", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
-var Globe = createLucideIcon("globe", [
-	["circle", {
-		cx: "12",
-		cy: "12",
-		r: "10",
-		key: "1mglay"
-	}],
-	["path", {
-		d: "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20",
-		key: "13o1zl"
-	}],
-	["path", {
-		d: "M2 12h20",
-		key: "9i4pu4"
-	}]
-]);
-/**
-* @license lucide-react v0.575.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
 var GripVertical = createLucideIcon("grip-vertical", [
 	["circle", {
 		cx: "9",
@@ -801,4 +779,4 @@ var X = createLucideIcon("x", [["path", {
 	key: "d8bk6v"
 }]]);
 //#endregion
-export { ChevronDown as A, Flame as C, ChevronUp as D, Copy as E, TriangleAlert as F, House as I, CircleCheck as L, Camera as M, Calendar as N, ChevronRight as O, ArrowLeft as P, Globe as S, Download as T, LogOut as _, Trophy as a, Hash as b, Trash2 as c, ShieldCheck as d, Search as f, Minus as g, Pencil as h, Users as i, Check as j, ChevronLeft as k, Timer as l, Play as m, VolumeX as n, TrendingUp as o, Plus as p, Volume2 as r, TrendingDown as s, X as t, Target as u, LogIn as v, Dumbbell as w, GripVertical as x, History as y };
+export { Check as A, Dumbbell as C, ChevronRight as D, ChevronUp as E, House as F, CircleCheck as I, Calendar as M, ArrowLeft as N, ChevronLeft as O, TriangleAlert as P, Flame as S, Copy as T, LogOut as _, Trophy as a, Hash as b, Trash2 as c, ShieldCheck as d, Search as f, Minus as g, Pencil as h, Users as i, Camera as j, ChevronDown as k, Timer as l, Play as m, VolumeX as n, TrendingUp as o, Plus as p, Volume2 as r, TrendingDown as s, X as t, Target as u, LogIn as v, Download as w, GripVertical as x, History as y };

@@ -4,14 +4,12 @@ import { i as require_react } from "../_libs/dnd-kit__accessibility+react.mjs";
 import { g as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { t as Skeleton } from "./skeleton-D9W9wFsj.mjs";
 import { n as toast } from "../_libs/sonner.mjs";
-import { S as Globe, b as Hash, i as Users, j as Check, p as Plus, v as LogIn } from "../_libs/lucide-react.mjs";
+import { A as Check, b as Hash, i as Users, p as Plus, v as LogIn } from "../_libs/lucide-react.mjs";
 import { n as useCircle, t as CopyCodeButton } from "./useCircle-DNavi28J.mjs";
-import { t as Route } from "./cerchia.index-DBrrOs2n.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/cerchia.index-zuF7gk2n.js
+import { t as Route } from "./cerchia.index-DS4hFXTe.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/cerchia.index-j89MZq4k.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-var DEFAULT_COMMUNITY_ID = "00000000-0000-0000-0000-000000000002";
-var DEFAULT_COMMUNITY_CODE = "GYMBRO";
 /**
 * Pagina "Cerchie" — TASK 4.
 * - Se l'utente non è in nessuna cerchia: empty state con CTA "Entra con codice"
@@ -27,8 +25,6 @@ function CerchiePage() {
 	const [lastCreated, setLastCreated] = (0, import_react.useState)(null);
 	if (isLoadingCircles || isLoadingRole) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CerchieSkeleton, {});
 	const hasCircles = myCircles.length > 0;
-	const visibleCircles = myCircles.filter((c) => c.id !== DEFAULT_COMMUNITY_ID);
-	const isInCommunity = myCircles.some((c) => c.id === DEFAULT_COMMUNITY_ID);
 	const anySheetOpen = joinOpen || createOpen;
 	function closeSheet() {
 		setJoinOpen(false);
@@ -48,17 +44,12 @@ function CerchiePage() {
 					children: "Cerchie"
 				})]
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CommunityCard, {
-				isMember: isInCommunity,
-				isJoining,
-				onJoin: () => joinCircle(DEFAULT_COMMUNITY_CODE)
-			}),
 			!hasCircles ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EmptyState, {
 				isCoach,
 				onJoin: () => setJoinOpen(true),
 				onCreate: () => setCreateOpen(true)
 			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CirclesList, {
-				circles: visibleCircles,
+				circles: myCircles,
 				selfId: user.id,
 				onJoin: () => setJoinOpen(true)
 			}),
@@ -91,43 +82,6 @@ function CerchiePage() {
 				]
 			})
 		]
-	});
-}
-function CommunityCard({ isMember, isJoining, onJoin }) {
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "mb-2 flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex min-w-0 items-center gap-3",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Globe, { className: "h-4 w-4" })
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "min-w-0",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-1.5",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: "truncate font-semibold",
-						children: "GymBro Community"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: "shrink-0 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary-foreground",
-						children: "⭐ Ufficiale"
-					})]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "text-xs text-muted-foreground",
-					children: "La community ufficiale di GymBro"
-				})]
-			})]
-		}), isMember ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-			to: "/cerchia/$circleId",
-			params: { circleId: DEFAULT_COMMUNITY_ID },
-			className: "no-tap-highlight shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground active:scale-[0.98]",
-			children: "Vai alla community →"
-		}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-			onClick: onJoin,
-			disabled: isJoining,
-			className: "no-tap-highlight shrink-0 rounded-full bg-primary px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary-foreground active:scale-[0.98] disabled:opacity-60",
-			children: isJoining ? "..." : "Entra subito →"
-		})]
 	});
 }
 function EmptyState({ isCoach, onJoin, onCreate }) {
