@@ -43,21 +43,26 @@ function Onboarding() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({
-        id: user.id,
-        display_name: name.trim(),
-        avatar_url: avatarUrl || null,
-        onboarded: true,
-        weight_unit: unit,
-      });
-    if (error) {
-      toast.error(error.message);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          display_name: name.trim(),
+          avatar_url: avatarUrl || null,
+          onboarded: true,
+          weight_unit: unit,
+        });
+      if (error) {
+        toast.error(error.message);
+        setSaving(false);
+        return;
+      }
+      await navigate({ to: "/" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Qualcosa è andato storto");
       setSaving(false);
-      return;
     }
-    navigate({ to: "/" });
   }
 
   return (

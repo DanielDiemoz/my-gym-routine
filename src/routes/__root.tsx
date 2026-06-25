@@ -100,16 +100,19 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    let invalidating = false;
+    let initial = true;
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      // Supabase fires SIGNED_IN synchronously during subscribe() when a
+      // session already exists. We must skip it because the router is still
+      // resolving the initial route — calling router.invalidate() during that
+      // phase causes race conditions that surface as "Qualcosa è andato storto".
+      if (initial) {
+        initial = false;
+        return;
+      }
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      if (invalidating) return;
-      invalidating = true;
-      setTimeout(() => {
-        invalidating = false;
-        router.invalidate().catch(() => {});
-        if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-      }, 0);
+      router.invalidate().catch(() => {});
+      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
     return () => { sub.subscription.unsubscribe(); };
   }, [router, queryClient]);
