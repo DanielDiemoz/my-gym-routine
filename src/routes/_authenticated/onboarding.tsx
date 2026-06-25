@@ -11,9 +11,9 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 });
 
 function Onboarding() {
-  const { user } = Route.useRouteContext();
+  const { user, profile } = Route.useRouteContext();
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(profile?.display_name ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);

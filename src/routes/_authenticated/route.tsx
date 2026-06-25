@@ -31,7 +31,7 @@ function AuthLayout() {
   const { profile, user } = Route.useRouteContext();
   const loc = useLocation();
   const navigate = useNavigate();
-  const needsOnboarding = !profile?.onboarded && !loc.pathname.startsWith("/onboarding");
+  const needsOnboarding = profile !== null && !profile.onboarded && !loc.pathname.startsWith("/onboarding");
 
   // Safety net: primaLoad dovrebbe già aver lanciato redirect,
   // ma se mai il dato `profile` cambia post-mount, navighiamo comunque.
