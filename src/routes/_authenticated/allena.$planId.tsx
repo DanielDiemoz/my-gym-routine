@@ -541,7 +541,13 @@ function ActiveSession() {
                 Prossimo esercizio
               </button>
               <button
-                onClick={finishWorkout}
+                onClick={async () => {
+                  const ok = await confirmDialog(
+                    "Salvare l'allenamento?",
+                    "Verranno salvate solo le serie completate.",
+                  );
+                  if (ok) finishWorkout();
+                }}
                 disabled={finishing}
                 className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
               >
