@@ -18,11 +18,21 @@ import {
   Dumbbell,
   ChevronRight,
   LogOut,
+  MoreVertical,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { StreakCard } from "@/components/StreakCard";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -31,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 type SessionRow = {
   id: string;
+  plan_id: string | null;
   started_at: string;
   completed_at: string | null;
   total_volume: number;
@@ -87,7 +98,7 @@ function Dashboard() {
 
       const { data: sessions } = await supabase
         .from("sessions")
-        .select("id, started_at, completed_at, total_volume, plan_name")
+        .select("id, plan_id, started_at, completed_at, total_volume, plan_name")
         .eq("user_id", user.id)
         .not("completed_at", "is", null)
         .gte("started_at", lastStart.toISOString())
@@ -207,6 +218,18 @@ function Dashboard() {
 
   const name = profileQ.data?.display_name || profile?.display_name || "Atleta";
   const stats = weekQ.data;
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
+
+  async function deleteSession(id: string) {
+    const ok = await confirmDialog(
+      "Eliminare questo allenamento?",
+      "I dati verranno rimossi definitivamente.",
+    );
+    if (!ok) return;
+    await supabase.from("sessions").delete().eq("id", id);
+    qc.invalidateQueries({ queryKey: ["week-stats", user.id] });
+    toast.success("Allenamento eliminato");
+  }
 
   return (
     <div className="container-app pt-10">
@@ -333,22 +356,54 @@ function Dashboard() {
                 key={s.id}
                 className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-3.5"
               >
-                <div>
-                  <div className="text-sm font-semibold">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-semibold truncate">
                     {s.plan_name ?? "Allenamento"}
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {format(new Date(s.started_at), "EEE d MMM", { locale: it })}
                   </div>
                 </div>
-                <div className="text-sm font-bold">
-                  {fmtWeight(Number(s.total_volume), { digits: 0 })}
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="text-sm font-bold">
+                    {fmtWeight(Number(s.total_volume), { digits: 0 })}
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label="Azioni"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          navigate({
+                            to: s.plan_id ? "/schede/$planId" : "/",
+                            params: s.plan_id ? { planId: s.plan_id } : {},
+                          })
+                        }
+                      >
+                        <Pencil className="mr-2 h-4 w-4" /> Modifica
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => deleteSession(s.id)}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Elimina
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
           </div>
         </section>
       )}
+      {ConfirmDialog}
     </div>
   );
 }
