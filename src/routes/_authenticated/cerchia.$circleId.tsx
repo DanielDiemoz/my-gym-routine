@@ -301,16 +301,7 @@ function CircleDetailPage() {
 
       {isOwner && (
         <div className="mb-6 rounded-2xl border border-border bg-card p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            Codice invito
-          </p>
-          <div className="mt-2 flex items-center justify-between">
-            <code className="text-2xl font-black tracking-[0.3em]">{circle.code}</code>
-            <CopyCodeButton text={circle.code} label="Copia codice" />
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Condividi questo codice per invitare nuovi compagni di allenamento.
-          </p>
+          <RevealCode code={circle.code} />
         </div>
       )}
 
@@ -560,6 +551,42 @@ function Avatar({
     >
       {initials}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Codice invito a svelamento
+// ─────────────────────────────────────────────────────────────────────────────
+function RevealCode({ code }: { code: string }) {
+  const [show, setShow] = useState(false);
+  if (!show) {
+    return (
+      <button
+        onClick={() => setShow(true)}
+        className="w-full text-left"
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Codice invito
+        </p>
+        <p className="mt-2 text-sm font-semibold text-muted-foreground/70">
+          Tocca per mostrare
+        </p>
+      </button>
+    );
+  }
+  return (
+    <>
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        Codice invito
+      </p>
+      <div className="mt-2 flex items-center justify-between">
+        <code className="text-2xl font-black tracking-[0.3em]">{code}</code>
+        <CopyCodeButton text={code} label="Copia codice" />
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Condividi questo codice per invitare nuovi compagni di allenamento.
+      </p>
+    </>
   );
 }
 
