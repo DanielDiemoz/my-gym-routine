@@ -2,12 +2,8 @@
 -- Usa nome EN e gruppo principale (come richiesto).
 -- L'indice unico su lower(name) evita duplicati per nome (case‑insensitive).
 
--- Elimina duplicati per nome (case‑insensitive) prima di creare l'indice.
--- Tiene la riga più vecchia (created_at minimo).
-DELETE FROM public.exercise_library a
-USING public.exercise_library b
-WHERE a.created_at > b.created_at
-  AND lower(a.name) = lower(b.name);
+-- Svuota e ripopola: la tabella è solo seed (FK punta con ON DELETE SET NULL).
+DELETE FROM public.exercise_library;
 
 DROP INDEX IF EXISTS exercise_library_name_unique_idx;
 CREATE UNIQUE INDEX exercise_library_name_unique_idx
