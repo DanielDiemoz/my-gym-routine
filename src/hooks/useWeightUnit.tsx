@@ -31,7 +31,7 @@ export function WeightUnitProvider({ userId, children }: ProviderProps) {
   const qc = useQueryClient();
 
   const q = useQuery({
-    queryKey: ["profile", userId],
+    queryKey: ["profile-weight-unit", userId],
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
@@ -51,7 +51,7 @@ export function WeightUnitProvider({ userId, children }: ProviderProps) {
       .from("profiles")
       .update({ weight_unit: next })
       .eq("id", userId);
-    qc.invalidateQueries({ queryKey: ["profile", userId] });
+    qc.invalidateQueries({ queryKey: ["profile-weight-unit", userId] });
   }, [q.data, qc, userId]);
 
   const value = useMemo<WeightUnitContextValue>(() => {
@@ -69,7 +69,7 @@ export function WeightUnitProvider({ userId, children }: ProviderProps) {
               minimumFractionDigits: digits,
               maximumFractionDigits: digits,
             });
-      const label = unit === "kg" ? "Kg" : unit;
+      const label = typeof unit === "string" ? (unit === "kg" ? "Kg" : unit) : "Kg";
       return `${formatted} ${label}`;
     };
     return {
