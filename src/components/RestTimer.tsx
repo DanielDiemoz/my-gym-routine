@@ -23,6 +23,10 @@ export function RestTimer() {
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishedRef = useRef(false);
 
+  const remaining = Math.max(0, target - seconds);
+  const mm = String(Math.floor(remaining / 60));
+  const ss = String(remaining % 60).padStart(2, "0");
+
   // Persisti la preferenza audio (in Safari private mode / quota exceeded
   // setItem può lanciare: catturiamo per non rompere l'effect chain).
   useEffect(() => {
@@ -33,6 +37,34 @@ export function RestTimer() {
       // Modalità privata / quota piena: ignoriamo silenziosamente.
     }
   }, [soundOn]);
+
+  // Registra il service worker per le notifiche (usa sempre lo stesso "sw.js").
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+
+  // Richiede il permesso notifiche e mostra la notifica all'avvio del timer.
+  useEffect(() => {
+    if (!running || typeof window === "undefined" || typeof Notification === "undefined") return;
+    if (Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+    if (Notification.permission !== "granted") return;
+    const time = `${mm}:${ss}`;
+    navigator.serviceWorker.ready
+      .then((reg) => {
+        reg.showNotification("GymBro", {
+          body: `Recupero: ${time}`,
+          tag: "rest-timer",
+        });
+      })
+      .catch(() => {
+        try {
+          new Notification("GymBro", { body: `Recupero: ${time}` });
+        } catch {}
+      });
+  }, [running]);
 
   // Tick del timer.
   useEffect(() => {
@@ -86,26 +118,24 @@ export function RestTimer() {
       }
     }
 
-    // Notifica SOLO in background + permesso concesso.
-    if (
-      typeof window !== "undefined" &&
-      typeof Notification !== "undefined" &&
-      Notification.permission === "granted" &&
-      document.visibilityState !== "visible"
-    ) {
+    // Notifica di completamento (sostituisce quella di avvio se presente)
+    if (typeof window !== "undefined" && typeof Notification !== "undefined" && Notification.permission === "granted") {
       try {
-        new Notification("GymBro", { body: "Riposo terminato! Prossima serie 💪" });
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.showNotification("GymBro", {
+            body: "Riposo terminato! Prossima serie 💪",
+            tag: "rest-timer",
+          });
+        });
       } catch {
-        // ignora
+        try {
+          new Notification("GymBro", { body: "Riposo terminato! Prossima serie 💪" });
+        } catch {}
       }
     }
   }, [running, seconds, target, soundOn]);
 
   const toggleSound = useCallback(() => setSoundOn((v) => !v), []);
-
-  const remaining = Math.max(0, target - seconds);
-  const mm = String(Math.floor(remaining / 60));
-  const ss = String(remaining % 60).padStart(2, "0");
 
   return (
     <div className="mt-8 rounded-3xl border border-border bg-card p-5">
