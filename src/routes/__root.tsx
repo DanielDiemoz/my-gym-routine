@@ -111,8 +111,13 @@ function RootComponent() {
         return;
       }
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate().catch(() => {});
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      // Usa navigate invece di router.invalidate() per evitare race condition
+      // con navigazioni in corso (es. dopo onboarding)
+      if (event === "SIGNED_OUT") {
+        router.navigate({ to: "/auth" }).catch(() => {});
+      } else {
+        queryClient.invalidateQueries();
+      }
     });
     return () => { sub.subscription.unsubscribe(); };
   }, [router, queryClient]);

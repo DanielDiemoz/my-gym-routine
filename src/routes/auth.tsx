@@ -156,12 +156,16 @@ function UsernameForm({
     try {
       const virtualEmail = `${values.username.trim().toLowerCase()}@gymbro.local`;
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: virtualEmail,
           password: values.password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+        if (!data.session) {
+          toast.success("Account creato. Controlla la tua email per confermare.");
+          return;
+        }
         toast.success("Account creato. Benvenuto!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -239,13 +243,17 @@ function EmailForm({
   async function onSubmit(values: EmailForm) {
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: values.email,
           password: values.password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        toast.success("Account creato. Controlla la tua email per confermare.");
+        // Se non c'è sessione significa che l'email va confermata
+        if (!data.session) {
+          toast.success("Account creato. Controlla la tua email per confermare.");
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: values.email,

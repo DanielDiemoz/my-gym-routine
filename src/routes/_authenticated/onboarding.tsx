@@ -44,7 +44,7 @@ function Onboarding() {
     }
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { error: upsertError } = await supabase
         .from("profiles")
         .upsert({
           id: user.id,
@@ -53,14 +53,24 @@ function Onboarding() {
           onboarded: true,
           weight_unit: unit,
         });
-      if (error) {
-        toast.error(error.message);
-        setSaving(false);
+      if (upsertError) {
+        toast.error(upsertError.message);
         return;
+      }
+      // Poll finché il DB non conferma onboarded=true
+      for (let i = 0; i < 10; i++) {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("onboarded")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (p?.onboarded) break;
+        await new Promise((r) => setTimeout(r, 300));
       }
       await navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Qualcosa è andato storto");
+    } finally {
       setSaving(false);
     }
   }
