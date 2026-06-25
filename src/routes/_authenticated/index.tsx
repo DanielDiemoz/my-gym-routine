@@ -228,6 +228,7 @@ function Dashboard() {
     if (!ok) return;
     await supabase.from("sessions").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["week-stats", user.id] });
+    qc.invalidateQueries({ queryKey: ["streak", user.id] });
     toast.success("Allenamento eliminato");
   }
 
