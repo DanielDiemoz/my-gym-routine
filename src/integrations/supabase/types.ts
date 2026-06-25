@@ -353,6 +353,16 @@ export type Database = {
         }
       }
       generate_circle_code: { Args: never; Returns: string }
+      get_circle_by_id: {
+        Args: { p_circle_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+        }[]
+      }
       get_circle_members: { Args: { p_circle_id: string }; Returns: string[] }
       get_my_circle_ids: { Args: never; Returns: string[] }
       get_my_circles: {

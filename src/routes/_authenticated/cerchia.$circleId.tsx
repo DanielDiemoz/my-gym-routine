@@ -45,13 +45,11 @@ function CircleDetailPage() {
   const detailQ = useQuery({
     queryKey: ["circle-detail", circleId],
     queryFn: async () => {
-      // 1. Dettaglio cerchia
-      const { data: circle, error: cErr } = await supabase
-        .from("circles")
-        .select("id, name, code, owner_id, created_at")
-        .eq("id", circleId)
-        .maybeSingle();
+      // 1. Dettaglio cerchia — usa RPC SECURITY DEFINER che bypassa RLS
+      const { data: raw, error: cErr } = await supabase
+        .rpc("get_circle_by_id", { p_circle_id: circleId });
       if (cErr) throw cErr;
+      const circle = ((raw ?? [])[0] ?? null) as Circle | null;
       if (!circle) throw new Error("Cerchia non trovata o non accessibile.");
 
       // 2. Membri (solo user_ids) — usa RPC SECURITY DEFINER che bypassa
