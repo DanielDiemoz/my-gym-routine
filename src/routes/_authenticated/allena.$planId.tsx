@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Check, Plus, Minus } from "lucide-react";
+import { X, Check, Plus, Minus, RotateCcw, Search } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useLastSessionLog } from "@/hooks/useLastSessionLog";
 import { RestTimer } from "@/components/RestTimer";
@@ -88,6 +88,18 @@ function ActiveSession() {
   const [userDecision, setUserDecision] = useState<"resume" | "start-new" | null>(null);
   const [orphanIdAtDecision, setOrphanIdAtDecision] = useState<string | null>(null);
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
+
+  // Copia mutabile degli esercizi (per la sostituzione in sessione).
+  const [localExercises, setLocalExercises] = useState<Exercise[]>([]);
+  const [showReplace, setShowReplace] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Sincronizza localExercises dal piano al caricamento.
+  useEffect(() => {
+    if (planQ.data?.exercises && localExercises.length === 0) {
+      setLocalExercises(planQ.data.exercises);
+    }
+  }, [planQ.data]);
 
   // ── TASK 3: State-machine per la creazione della sessione ──────────────────
   // Regole:
@@ -186,11 +198,27 @@ function ActiveSession() {
     });
   }, [planQ.data]);
 
-  const exercises = planQ.data?.exercises ?? [];
+  const exercises = localExercises.length > 0 ? localExercises : (planQ.data?.exercises ?? []);
   const current = exercises[currentIdx];
 
   // TASK 1 — Query dell'ultima session_log per l'esercizio corrente.
   const lastLogQ = useLastSessionLog(current?.name);
+
+  // Query di ricerca esercizi per la sostituzione.
+  const searchQ = useQuery({
+    queryKey: ["exercise-search", searchQuery],
+    queryFn: async () => {
+      if (searchQuery.length < 1) return [];
+      const { data } = await supabase
+        .from("exercise_library")
+        .select("id, name, muscle_group")
+        .ilike("name", `%${searchQuery}%`)
+        .limit(20);
+      return data ?? [];
+    },
+    enabled: showReplace && searchQuery.length >= 1,
+    staleTime: 60_000,
+  });
 
   // TASK 2 — Smart default: sovrascrive reps+weight della prima serie SOLO SE
   // l'utente non ha ancora toccato nulla e l'ultimo log è disponibile.
@@ -293,6 +321,33 @@ function ActiveSession() {
     navigate({ to: "/" });
   }
 
+  function replaceExercise(name: string, muscleGroup: string | null) {
+    const newExercise: Exercise = {
+      id: `custom-${Date.now()}`,
+      name,
+      muscle_group: muscleGroup,
+      sets: 3,
+      reps: 10,
+      weight: 20,
+      notes: null,
+    };
+    setLocalExercises((prev) => {
+      const next = [...prev];
+      next[currentIdx] = newExercise;
+      return next;
+    });
+    setLogs((prev) => ({
+      ...prev,
+      [newExercise.id]: Array.from({ length: newExercise.sets }, () => ({
+        reps: newExercise.reps,
+        weight: Number(newExercise.weight),
+        done: false,
+      })),
+    }));
+    setShowReplace(false);
+    setSearchQuery("");
+  }
+
   // Dialog sempre montata (anche in loading) per evitare race se l'utente
   // clicca su "Riprendi" mentre il resto della pagina sta ancora caricando.
   const orphanDialog = (
@@ -351,6 +406,7 @@ function ActiveSession() {
     );
   }
 
+  const searchResults = searchQ.data ?? [];
   const setsLog = logs[current.id] ?? [];
   const isLast = currentIdx === exercises.length - 1;
 
@@ -385,7 +441,18 @@ function ActiveSession() {
         <div className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {current.muscle_group ?? "Esercizio"}
         </div>
-        <h1 className="text-3xl font-black tracking-tight">{current.name}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-3xl font-black tracking-tight">{current.name}</h1>
+          <button
+            type="button"
+            onClick={() => setShowReplace(true)}
+            className="rounded-full border border-border p-2 text-muted-foreground"
+            aria-label="Sostituisci esercizio"
+            title="Sostituisci con un altro esercizio"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
+        </div>
         <p className="mt-2 text-sm text-muted-foreground">
           Target: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
         </p>
@@ -466,12 +533,21 @@ function ActiveSession() {
             </button>
           )}
           {!isLast ? (
-            <button
-              onClick={() => setCurrentIdx((i) => i + 1)}
-              className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
-            >
-              Prossimo esercizio
-            </button>
+            <>
+              <button
+                onClick={() => setCurrentIdx((i) => i + 1)}
+                className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+              >
+                Prossimo esercizio
+              </button>
+              <button
+                onClick={finishWorkout}
+                disabled={finishing}
+                className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
+              >
+                {finishing ? "..." : "Termina"}
+              </button>
+            </>
           ) : (
             <button
               onClick={finishWorkout}
@@ -485,6 +561,54 @@ function ActiveSession() {
       </div>
 
       {orphanDialog}
+
+      {/* Sostituisci esercizio dialog */}
+      <AlertDialog open={showReplace} onOpenChange={setShowReplace}>
+        <AlertDialogContent className="max-h-[80vh] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sostituisci esercizio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cerca un esercizio dalla libreria per sostituire "{current.name}".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="relative mb-3 mt-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cerca esercizio…"
+              className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none focus:border-foreground"
+              autoFocus
+            />
+          </div>
+          <div className="space-y-1">
+            {searchQuery.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Inizia a digitare per cercare</p>
+            ) : searchQ.isLoading ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Ricerca…</p>
+            ) : searchResults.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Nessun esercizio trovato</p>
+            ) : (
+              searchResults.map((ex) => (
+                <button
+                  key={ex.id}
+                  type="button"
+                  onClick={() => replaceExercise(ex.name, ex.muscle_group)}
+                  className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition hover:bg-muted"
+                >
+                  <div>
+                    <div className="text-sm font-semibold">{ex.name}</div>
+                    <div className="text-xs text-muted-foreground">{ex.muscle_group}</div>
+                  </div>
+                  <RotateCcw className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))
+            )}
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {ConfirmDialog}
     </div>
   );
