@@ -42,7 +42,7 @@ type AuthMode = "login" | "signup";
 function AuthPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<AuthTab>("email");
-  const [mode, setMode] = useState<AuthMode>("signup");
+  const [mode, setMode] = useState<AuthMode>("login");
   const [forgot, setForgot] = useState(false);
 
   // Reset forgot quando si cambia tab.
