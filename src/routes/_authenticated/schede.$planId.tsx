@@ -199,7 +199,7 @@ function SortableRow({ ex, onEdit, onDelete }: { ex: Exercise; onEdit: () => voi
       <button onClick={onEdit} className="flex-1 text-left">
         <div className="font-semibold">{ex.name}</div>
         <div className="text-xs text-muted-foreground">
-          {ex.sets}×{ex.reps} · {Number(ex.weight)}kg{ex.muscle_group ? ` · ${ex.muscle_group}` : ""}
+          {ex.sets}×{ex.reps} · {Number(ex.weight)} Kg{ex.muscle_group ? ` · ${ex.muscle_group}` : ""}
         </div>
       </button>
       <button onClick={onDelete} className="p-2 text-muted-foreground hover:text-destructive">

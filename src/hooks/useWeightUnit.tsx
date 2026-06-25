@@ -69,7 +69,8 @@ export function WeightUnitProvider({ userId, children }: ProviderProps) {
               minimumFractionDigits: digits,
               maximumFractionDigits: digits,
             });
-      return `${formatted} ${unit}`;
+      const label = unit === "kg" ? "Kg" : unit;
+      return `${formatted} ${label}`;
     };
     return {
       unit,

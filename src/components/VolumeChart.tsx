@@ -88,7 +88,7 @@ function VolumeTooltip({
   const item = payload[0].payload;
   const label = formatter
     ? formatter(item.volume)
-    : `${Math.round(item.volume).toLocaleString("it-IT")} kg`;
+    : `${Math.round(item.volume).toLocaleString("it-IT")} Kg`;
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
       <p className="font-bold">{item.range}</p>
