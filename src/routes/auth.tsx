@@ -162,7 +162,9 @@ function UsernameForm({
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        if (!data.session) {
+        // Se l'email non è già confermata, fai sloggare e chiedi conferma
+        if (!data.user?.email_confirmed_at) {
+          if (data.session) await supabase.auth.signOut();
           toast.success("Account creato. Controlla la tua email per confermare.");
           return;
         }
@@ -249,8 +251,9 @@ function EmailForm({
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        // Se non c'è sessione significa che l'email va confermata
-        if (!data.session) {
+        // Se l'email non è già confermata, fai sloggare e chiedi conferma
+        if (!data.user?.email_confirmed_at) {
+          if (data.session) await supabase.auth.signOut();
           toast.success("Account creato. Controlla la tua email per confermare.");
           return;
         }

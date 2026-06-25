@@ -3,26 +3,25 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Home, Dumbbell, History as HistoryIcon, Users } from "lucide-react";
 import { WeightUnitProvider } from "@/hooks/useWeightUnit";
+import { checkOnboardingFlag, resetOnboardingFlag } from "@/lib/onboarding-flag";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async ({ location }) => {
+  beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
-    // Check onboarding
-    const { data: profile, error: profileError } = await supabase
+
+    const { data: dbProfile, error: profileError } = await supabase
       .from("profiles")
       .select("onboarded, display_name")
       .eq("id", data.user.id)
       .maybeSingle();
-    
+
     if (profileError) {
       console.error("Error fetching profile:", profileError);
-    } else if (!profile?.onboarded && !location.pathname.startsWith("/onboarding")) {
-      throw redirect({ to: "/onboarding" });
     }
-    
-    return { user: data.user, profile };
+
+    return { user: data.user, profile: dbProfile ?? null };
   },
   component: AuthLayout,
 });
@@ -31,10 +30,21 @@ function AuthLayout() {
   const { profile, user } = Route.useRouteContext();
   const loc = useLocation();
   const navigate = useNavigate();
-  const needsOnboarding = profile !== null && !profile.onboarded && !loc.pathname.startsWith("/onboarding");
 
-  // Safety net: primaLoad dovrebbe già aver lanciato redirect,
-  // ma se mai il dato `profile` cambia post-mount, navighiamo comunque.
+  // La logica onboarding è qui (client-side, dentro ssr:false)
+  // perché primaLoad gira anche in SSR.
+  // checkOnboardingFlag legge window.__gymbro_onboarded SENZA
+  // cancellarlo, così le doppie chiamate di Strict Mode vedono lo stesso valore.
+  const isFromOnboarding = checkOnboardingFlag();
+  const effectiveProfile = isFromOnboarding && profile
+    ? { ...profile, onboarded: true }
+    : profile;
+  const needsOnboarding = effectiveProfile !== null && !effectiveProfile.onboarded && !loc.pathname.startsWith("/onboarding");
+
+  useEffect(() => {
+    if (isFromOnboarding) resetOnboardingFlag();
+  }, [isFromOnboarding]);
+
   useEffect(() => {
     if (needsOnboarding) navigate({ to: "/onboarding" });
   }, [needsOnboarding, navigate]);

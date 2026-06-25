@@ -28,16 +28,29 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("errorComponent caught:", error);
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  let errorText = String(error);
+  try {
+    if (error instanceof Error) {
+      errorText = `${error.name}: ${error.message}`;
+    } else if (typeof error === 'object' && error !== null) {
+      errorText = JSON.stringify(error, (k, v) => (typeof v === 'function' ? undefined : v), 2);
+    }
+  } catch {}
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
-      <div className="max-w-sm text-center">
+      <div className="max-w-sm w-full text-center">
         <h1 className="text-xl font-semibold">Qualcosa è andato storto</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Riprova oppure torna alla home.</p>
+        <div className="mt-3 rounded-lg bg-destructive/10 p-3 text-left text-xs leading-relaxed text-destructive overflow-auto max-h-40">
+          <code>{errorText}</code>
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">Riprova oppure torna alla home.</p>
         <div className="mt-6 flex justify-center gap-2">
           <button
             onClick={() => { router.invalidate(); reset(); }}
@@ -98,6 +111,14 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => {
+    const onRejection = (e: PromiseRejectionEvent) => {
+      console.error("UNHANDLED REJECTION:", e.reason);
+    };
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => window.removeEventListener("unhandledrejection", onRejection);
+  }, []);
 
   useEffect(() => {
     let initial = true;

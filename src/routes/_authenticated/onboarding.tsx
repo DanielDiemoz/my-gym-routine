@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Camera } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import type { WeightUnit } from "@/hooks/useWeightUnit";
+import { markOnboardingComplete } from "@/lib/onboarding-flag";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
@@ -57,16 +58,9 @@ function Onboarding() {
         toast.error(upsertError.message);
         return;
       }
-      // Poll finché il DB non conferma onboarded=true
-      for (let i = 0; i < 10; i++) {
-        const { data: p } = await supabase
-          .from("profiles")
-          .select("onboarded")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (p?.onboarded) break;
-        await new Promise((r) => setTimeout(r, 300));
-      }
+      // Imposta flag in-modulo prima di navigare per comunicare
+      // a beforeLoad che l'onboarding è stato completato
+      markOnboardingComplete();
       await navigate({ to: "/" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Qualcosa è andato storto");

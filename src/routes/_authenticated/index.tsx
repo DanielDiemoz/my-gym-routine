@@ -205,6 +205,8 @@ function Dashboard() {
     },
   });
 
+  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
+
   // TASK 4 — Skeleton gate su tutte le query principali (incluso profileQ).
   if (
     weekQ.isLoading ||
@@ -218,7 +220,6 @@ function Dashboard() {
 
   const name = profileQ.data?.display_name || profile?.display_name || "Atleta";
   const stats = weekQ.data;
-  const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
 
   async function deleteSession(id: string) {
     const ok = await confirmDialog(
