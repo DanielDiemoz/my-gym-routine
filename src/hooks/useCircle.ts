@@ -176,6 +176,20 @@ export function useCircle(userId: string) {
     },
   });
 
+  // ── Mutation: rimuovi un membro (solo owner) ──────────────────────────────
+  const removeMemberMut = useMutation({
+    mutationFn: async ({ circleId, memberId }: { circleId: string; memberId: string }) => {
+      const { error } = await fromCircleMembers()
+        .delete()
+        .eq("circle_id", circleId)
+        .eq("user_id", memberId);
+      if (error) throw error;
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : "Errore durante la rimozione");
+    },
+  });
+
   return {
     /** Cerchie di cui l'utente è membro o owner */
     myCircles: circlesQ.data ?? [],
@@ -195,5 +209,9 @@ export function useCircle(userId: string) {
     /** Elimina una cerchia (solo owner) */
     deleteCircle: (circleId: string) => deleteMut.mutateAsync(circleId),
     isDeleting: deleteMut.isPending,
+    /** Rimuove un membro dalla cerchia (solo owner) */
+    removeMember: (circleId: string, memberId: string) =>
+      removeMemberMut.mutateAsync({ circleId, memberId }),
+    isRemovingMember: removeMemberMut.isPending,
   };
 }

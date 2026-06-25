@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ChevronLeft,
@@ -10,6 +10,7 @@ import {
   Trash2,
   ChevronDown,
   Trophy,
+  UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,7 +39,8 @@ function CircleDetailPage() {
   const navigate = useNavigate();
   const { display: fmtWeight } = useWeightUnit();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
-  const { leaveCircle, isLeaving, deleteCircle, isDeleting } = useCircle(user.id);
+  const qc = useQueryClient();
+  const { leaveCircle, isLeaving, deleteCircle, isDeleting, removeMember, isRemovingMember } = useCircle(user.id);
 
   // Single aggregate query: 1 roundtrip per dataset pesante.
   // RLS garantisce che l'utente possa vedere solo le cerchie di cui è membro.
@@ -346,9 +348,32 @@ function CircleDetailPage() {
                     <span className="truncate">{fmtWeight(s.weeklyVolume, { digits: 0 })} / sett.</span>
                   </div>
                 </div>
-                {s.weeklyVolume > 0 && (
-                  <Trophy className="h-4 w-4 shrink-0 text-muted-foreground/60" />
-                )}
+                <div className="flex items-center gap-1 shrink-0">
+                  {s.weeklyVolume > 0 && (
+                    <Trophy className="h-4 w-4 text-muted-foreground/60" />
+                  )}
+                  {isOwner && p.id !== circle.owner_id && (
+                    <button
+                      onClick={async () => {
+                        const ok = await confirmDialog(
+                          "Rimuovere questo membro?",
+                          `${p.display_name?.trim() || "Atleta"} non farà più parte della cerchia.`,
+                        );
+                        if (!ok) return;
+                        try {
+                          await removeMember(circle.id, p.id);
+                          qc.invalidateQueries({ queryKey: ["circle-detail", circleId] });
+                          toast.success("Membro rimosso.");
+                        } catch { /* toast gestito da hook */ }
+                      }}
+                      disabled={isRemovingMember}
+                      className="ml-1 rounded-full p-1 text-muted-foreground/50 hover:text-destructive disabled:opacity-60"
+                      aria-label="Rimuovi membro"
+                    >
+                      <UserX className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
