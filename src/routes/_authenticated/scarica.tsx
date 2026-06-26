@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { ChevronLeft, Smartphone, Apple, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, Smartphone, Apple, CheckCircle2, Download } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 
 export const Route = createFileRoute("/_authenticated/scarica")({
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_authenticated/scarica")({
 
 function DownloadPage() {
   const [isStandalone, setIsStandalone] = useState(false);
+  const apkUrl = "/apk/gymbro.apk";
 
   useEffect(() => {
     setIsStandalone(
@@ -59,6 +60,14 @@ function DownloadPage() {
           </div>
         </div>
         <PWAInstallButton />
+        <a
+          href={apkUrl}
+          download
+          className="mt-3 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
+        >
+          <Download className="h-4 w-4" />
+          Scarica APK (Android)
+        </a>
         <details className="group mt-3">
           <summary className="cursor-pointer text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">
             Installazione manuale

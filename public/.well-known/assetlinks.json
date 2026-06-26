@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.vercel.gym_bro_hazel_beta.twa",
+    "sha256_cert_fingerprints": ["77:74:C4:CB:A6:80:5B:FE:DB:D3:7A:65:09:BD:C4:92:94:E8:D7:C1:62:C5:E9:9C:7A:33:E2:8A:CA:81:A9:75"]
+  }
+}]
