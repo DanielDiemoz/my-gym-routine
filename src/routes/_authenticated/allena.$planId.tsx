@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { X, Check, Plus, Minus, RotateCcw, Search } from "lucide-react";
+import { X, Check, Plus, Minus, RotateCcw, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useLastSessionLog } from "@/hooks/useLastSessionLog";
 import { RestTimer } from "@/components/RestTimer";
@@ -116,7 +116,15 @@ function ActiveSession() {
     if (!planQ.data?.plan || orphanQ.isLoading || sessionId) return;
 
     const orphan = orphanQ.data;
-    if (orphan && !userDecision) return; // aspetta click utente
+    if (orphan && !userDecision) {
+      const last = JSON.parse(sessionStorage.getItem("gw_last") ?? "null");
+      if (last?.sessionId === orphan.id && last?.planId === planId) {
+        setOrphanIdAtDecision(orphan.id);
+        setUserDecision("resume");
+        return;
+      }
+      return; // aspetta click utente
+    }
 
     sessionCreated.current = true;
 
@@ -157,7 +165,10 @@ function ActiveSession() {
           }
         }
 
-        if (!cancelled && resolvedId) setSessionId(resolvedId);
+        if (!cancelled && resolvedId) {
+          setSessionId(resolvedId);
+          sessionStorage.setItem("gw_last", JSON.stringify({ sessionId: resolvedId, planId }));
+        }
       } catch (err) {
         if (cancelled) return;
         // Rollback del lock: l'utente può ricaricare per riprovare.
@@ -274,6 +285,7 @@ function ActiveSession() {
     );
     if (!ok) return;
     if (sessionId) await supabase.from("sessions").delete().eq("id", sessionId);
+    sessionStorage.removeItem("gw_last");
     navigate({ to: "/" });
   }
 
@@ -317,8 +329,21 @@ function ActiveSession() {
       completed_at: new Date().toISOString(),
       total_volume: totalVolume,
     }).eq("id", sessionId);
+    sessionStorage.removeItem("gw_last");
     toast.success("Allenamento salvato!");
     navigate({ to: "/" });
+  }
+
+  function moveExercise(dir: "up" | "down") {
+    const idx = currentIdx;
+    const targetIdx = dir === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= exercises.length) return;
+    setLocalExercises((prev) => {
+      const next = [...prev];
+      [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+      return next;
+    });
+    setCurrentIdx(targetIdx);
   }
 
   function replaceExercise(name: string, muscleGroup: string | null) {
@@ -417,6 +442,18 @@ function ActiveSession() {
     }));
   }
 
+  async function removeSet(idx: number) {
+    const ok = await confirmDialog(
+      "Rimuovere questa serie?",
+      "I dati inseriti per questa serie andranno persi.",
+    );
+    if (!ok) return;
+    setLogs((prev) => ({
+      ...prev,
+      [current.id]: prev[current.id].filter((_, i) => i !== idx),
+    }));
+  }
+
   return (
     <div className="min-h-screen bg-background pb-32">
       <div className="container-app pt-6">
@@ -452,6 +489,28 @@ function ActiveSession() {
           >
             <RotateCcw className="h-4 w-4" />
           </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => moveExercise("up")}
+              disabled={currentIdx === 0}
+              className="rounded-full border border-border p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
+              aria-label="Sposta su"
+              title="Sposta questo esercizio prima"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => moveExercise("down")}
+              disabled={currentIdx === exercises.length - 1}
+              className="rounded-full border border-border p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
+              aria-label="Sposta giù"
+              title="Sposta questo esercizio dopo"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           Target: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
@@ -459,16 +518,17 @@ function ActiveSession() {
         {current.notes && <p className="mt-2 rounded-xl bg-muted p-3 text-sm">{current.notes}</p>}
 
         <div className="mt-6 space-y-2">
-          <div className="grid grid-cols-[2.5rem_1fr_1fr_2.5rem] gap-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          <div className="grid grid-cols-[2.5rem_1fr_1fr_2.5rem_2rem] gap-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
             <div>Set</div>
             <div className="text-center">Rip.</div>
             <div className="text-center">Kg</div>
+            <div />
             <div />
           </div>
           {setsLog.map((s, i) => (
             <div
               key={i}
-              className={`grid grid-cols-[2.5rem_1fr_1fr_2.5rem] items-center gap-2 rounded-2xl border p-2 ${
+              className={`grid grid-cols-[2.5rem_1fr_1fr_2.5rem_2rem] items-center gap-2 rounded-2xl border p-2 ${
                 s.done ? "border-foreground bg-foreground/5" : "border-border bg-card"
               }`}
             >
@@ -486,6 +546,14 @@ function ActiveSession() {
                 }`}
               >
                 <Check className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => removeSet(i)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                aria-label="Rimuovi serie"
+                title="Rimuovi serie"
+              >
+                <X className="h-3.5 w-3.5" />
               </button>
             </div>
           ))}
@@ -522,7 +590,7 @@ function ActiveSession() {
       </div>
 
       {/* Footer */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border bg-background/95 backdrop-blur">
         <div className="container-app flex gap-2 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           {currentIdx > 0 && (
             <button

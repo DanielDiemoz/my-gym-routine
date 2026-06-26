@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, Plus, Trash2, GripVertical, Play, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Play, Pencil } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { ExerciseAutocomplete, type ExerciseLibraryEntry } from "@/components/ExerciseAutocomplete";
 import {
@@ -76,6 +76,21 @@ function PlanEditor() {
   const [planName, setPlanName] = useState("");
   useEffect(() => { if (planQ.data) setPlanName(planQ.data.name); }, [planQ.data]);
 
+  const hasActiveQ = useQuery({
+    queryKey: ["has-active-session", user.id, planId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sessions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("plan_id", planId)
+        .is("completed_at", null)
+        .maybeSingle();
+      return !!data;
+    },
+    staleTime: 0,
+  });
+
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Exercise | null>(null);
 
@@ -87,6 +102,22 @@ function PlanEditor() {
     const oldIdx = items.findIndex((x) => x.id === active.id);
     const newIdx = items.findIndex((x) => x.id === over.id);
     const next = arrayMove(items, oldIdx, newIdx).map((x, i) => ({ ...x, position: i }));
+    setItems(next);
+    await Promise.all(next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)));
+  }
+
+  async function moveExerciseUp(id: string) {
+    const idx = items.findIndex((x) => x.id === id);
+    if (idx <= 0) return;
+    const next = arrayMove(items, idx, idx - 1).map((x, i) => ({ ...x, position: i }));
+    setItems(next);
+    await Promise.all(next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)));
+  }
+
+  async function moveExerciseDown(id: string) {
+    const idx = items.findIndex((x) => x.id === id);
+    if (idx < 0 || idx >= items.length - 1) return;
+    const next = arrayMove(items, idx, idx + 1).map((x, i) => ({ ...x, position: i }));
     setItems(next);
     await Promise.all(next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)));
   }
@@ -149,15 +180,24 @@ function PlanEditor() {
           params={{ planId }}
           className="no-tap-highlight mb-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
         >
-          <Play className="h-4 w-4 fill-current" /> Inizia allenamento
+          <Play className="h-4 w-4 fill-current" /> {hasActiveQ.data ? "Continua" : "Inizia"} allenamento
         </Link>
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={items.map((x) => x.id)} strategy={verticalListSortingStrategy}>
           <div className="space-y-2">
-            {items.map((ex) => (
-              <SortableRow key={ex.id} ex={ex} onEdit={() => setEditing(ex)} onDelete={() => deleteExercise(ex.id)} />
+            {items.map((ex, idx) => (
+              <SortableRow
+                key={ex.id}
+                ex={ex}
+                onEdit={() => setEditing(ex)}
+                onDelete={() => deleteExercise(ex.id)}
+                onMoveUp={() => moveExerciseUp(ex.id)}
+                onMoveDown={() => moveExerciseDown(ex.id)}
+                isFirst={idx === 0}
+                isLast={idx === items.length - 1}
+              />
             ))}
           </div>
         </SortableContext>
@@ -185,7 +225,15 @@ function PlanEditor() {
   );
 }
 
-function SortableRow({ ex, onEdit, onDelete }: { ex: Exercise; onEdit: () => void; onDelete: () => void }) {
+function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLast }: {
+  ex: Exercise;
+  onEdit: () => void;
+  onDelete: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id });
   return (
     <div
@@ -202,6 +250,24 @@ function SortableRow({ ex, onEdit, onDelete }: { ex: Exercise; onEdit: () => voi
           {ex.sets}×{ex.reps} · {Number(ex.weight)} Kg{ex.muscle_group ? ` · ${ex.muscle_group}` : ""}
         </div>
       </button>
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={onMoveUp}
+          disabled={isFirst}
+          className="rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
+          aria-label="Sposta su"
+        >
+          <ChevronUp className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onMoveDown}
+          disabled={isLast}
+          className="rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
+          aria-label="Sposta giù"
+        >
+          <ChevronDown className="h-4 w-4" />
+        </button>
+      </div>
       <button onClick={onDelete} className="p-2 text-muted-foreground hover:text-destructive">
         <Trash2 className="h-4 w-4" />
       </button>

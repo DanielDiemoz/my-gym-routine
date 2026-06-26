@@ -53,11 +53,11 @@ function AuthLayout() {
     return null;
   }
 
-  const showNav = !loc.pathname.startsWith("/onboarding") && !loc.pathname.startsWith("/allena/");
+  const showNav = !loc.pathname.startsWith("/onboarding");
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <WeightUnitProvider userId={user.id}>
+      <WeightUnitProvider>
         <Outlet />
       </WeightUnitProvider>
       {showNav && <BottomNav pathname={loc.pathname} />}

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, ChevronRight, Dumbbell } from "lucide-react";
+import { Plus, ChevronRight, Dumbbell, Play } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
 
 export const Route = createFileRoute("/_authenticated/schede/")({
@@ -16,6 +16,22 @@ function Schede() {
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+
+  const activeQ = useQuery({
+    queryKey: ["active-session", user.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sessions")
+        .select("id, plan_id, plan_name")
+        .eq("user_id", user.id)
+        .is("completed_at", null)
+        .order("started_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 0,
+  });
 
   const plansQ = useQuery({
     queryKey: ["plans-all", user.id],
@@ -51,6 +67,25 @@ function Schede() {
 
   return (
     <div className="container-app pt-10">
+      {!!activeQ.data?.plan_id && (
+        <Link
+          to="/allena/$planId"
+          params={{ planId: activeQ.data.plan_id }}
+          className="no-tap-highlight mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 active:scale-[0.99]"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
+            <Dumbbell className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-bold text-foreground">{activeQ.data.plan_name}</div>
+            <div className="text-xs text-muted-foreground">Allenamento in corso</div>
+          </div>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+            <Play className="h-4 w-4 fill-current text-primary-foreground" />
+          </div>
+        </Link>
+      )}
+
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Le tue</p>
         <h1 className="mt-1 text-3xl font-black tracking-tight">Schede</h1>
