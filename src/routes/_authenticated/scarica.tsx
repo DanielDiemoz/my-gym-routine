@@ -10,15 +10,11 @@ export const Route = createFileRoute("/_authenticated/scarica")({
 
 function DownloadPage() {
   const [isStandalone, setIsStandalone] = useState(false);
-  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
     setIsStandalone(
       window.matchMedia("(display-mode: standalone)").matches ||
         ("standalone" in navigator && (navigator as Record<string, unknown>).standalone === true),
-    );
-    setCanInstall(
-      "serviceWorker" in navigator && "BeforeInstallPromptEvent" in window,
     );
   }, []);
 
@@ -63,13 +59,25 @@ function DownloadPage() {
           </div>
         </div>
         <PWAInstallButton />
-        {!canInstall && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Il tuo browser non supporta l'installazione automatica.
-            <br />
-            Prova con Chrome o Edge per installare l'app.
-          </p>
-        )}
+        <details className="group mt-3">
+          <summary className="cursor-pointer text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">
+            Installazione manuale
+          </summary>
+          <ol className="mt-3 space-y-3 text-sm">
+            <li className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">1</span>
+              <span>Apri il menu di Chrome <span className="text-muted-foreground">(⁝ tre punti)</span> in alto a destra</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">2</span>
+              <span>Tocca <strong>Aggiungi a Home</strong></span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">3</span>
+              <span>Tocca <strong>Aggiungi</strong> in basso a destra</span>
+            </li>
+          </ol>
+        </details>
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-5">

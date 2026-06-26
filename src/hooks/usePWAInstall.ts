@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+  prompt: () => void;
+  userChoice?: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 }
+
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
 /**
  * Hook per esporre l'installabilità PWA.
@@ -13,19 +15,20 @@ interface BeforeInstallPromptEvent extends Event {
  * Si resetta quando l'app è effettivamente installata (`appinstalled`).
  */
 export function usePWAInstall() {
-  const [canInstall, setCanInstall] = useState(false);
-  const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
+  const [canInstall, setCanInstall] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return deferredPrompt !== null;
+  });
 
   useEffect(() => {
     const onBeforeInstall = (e: Event) => {
-      // Evita il mini-infobar automatico di Chrome
       e.preventDefault();
-      deferredPrompt.current = e as BeforeInstallPromptEvent;
+      deferredPrompt = e as BeforeInstallPromptEvent;
       setCanInstall(true);
     };
 
     const onInstalled = () => {
-      deferredPrompt.current = null;
+      deferredPrompt = null;
       setCanInstall(false);
     };
 
@@ -39,15 +42,23 @@ export function usePWAInstall() {
   }, []);
 
   const install = useCallback(async (): Promise<void> => {
-    const prompt = deferredPrompt.current;
+    const prompt = deferredPrompt;
     if (!prompt) return;
-    await prompt.prompt();
-    const { outcome } = await prompt.userChoice;
-    if (outcome === "accepted") {
-      deferredPrompt.current = null;
-      setCanInstall(false);
+    try {
+      prompt.prompt();
+      if (prompt.userChoice) {
+        const { outcome } = await prompt.userChoice;
+        if (outcome === "accepted") {
+          deferredPrompt = null;
+          setCanInstall(false);
+        }
+      } else {
+        deferredPrompt = null;
+        setCanInstall(false);
+      }
+    } catch (e) {
+      console.error("PWA install failed", e);
     }
-    // Se l'utente dismissa, lasciamo il bottone disponibile per riprovare.
   }, []);
 
   return { canInstall, install };
