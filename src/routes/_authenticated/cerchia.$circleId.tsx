@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,20 +9,24 @@ import {
   LogOut,
   Trash2,
   ChevronDown,
+  ChevronRight,
   Trophy,
   UserX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
-import { formatDistanceToNow, format, startOfWeek, startOfDay, subDays } from "date-fns";
-import { it } from "date-fns/locale";
+import { format, startOfWeek, startOfDay, subDays } from "date-fns";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCircle, type Circle } from "@/hooks/useCircle";
+import { MemberWorkouts } from "@/components/MemberWorkouts";
 
 export const Route = createFileRoute("/_authenticated/cerchia/$circleId")({
   component: CircleDetailPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    user: search.user as string | undefined,
+  }),
 });
 
 /**
@@ -67,19 +71,17 @@ function CircleDetailPage() {
           circle,
           profiles: [],
           sessions: [],
-          feedLogs: [],
         };
       }
 
       // 3. Profili dei membri (display_name, avatar_url)
       const profRes = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url")
+        .select("id, display_name")
         .in("id", userIds);
       const profiles = (profRes.data ?? []) as {
         id: string;
         display_name: string | null;
-        avatar_url: string | null;
       }[];
 
       // 4. Sessioni degli ultimi 365 giorni per i membri.
@@ -99,32 +101,7 @@ function CircleDetailPage() {
         total_volume: number;
       }[];
 
-      // 5. Feed: ultime 20 sessioni ordinate completed_at DESC
-      const top20 = [...sessions]
-        .sort(
-          (a, b) =>
-            new Date(b.completed_at).getTime() -
-            new Date(a.completed_at).getTime(),
-        )
-        .slice(0, 20);
-      const topIds = top20.map((s) => s.id);
-      let feedLogs: {
-        id: string;
-        session_id: string;
-        exercise_name: string;
-        set_number: number;
-        reps: number;
-        weight: number;
-      }[] = [];
-      if (topIds.length > 0) {
-        const logsRes = await supabase
-          .from("session_logs")
-          .select("id, session_id, exercise_name, set_number, reps, weight")
-          .in("session_id", topIds);
-        feedLogs = (logsRes.data ?? []) as typeof feedLogs;
-      }
-
-      return { circle: circle as Circle, profiles, sessions, feedLogs };
+      return { circle: circle as Circle, profiles, sessions };
     },
     staleTime: 1000 * 30,
   });
@@ -136,6 +113,8 @@ function CircleDetailPage() {
       navigate({ to: "/cerchia" });
     }
   }, [detailQ.isError, detailQ.error, navigate]);
+
+  const { user: memberSearchId } = Route.useSearch();
 
   const isOwner = !!detailQ.data && detailQ.data.circle.owner_id === user.id;
 
@@ -200,25 +179,9 @@ function CircleDetailPage() {
     });
   }, [detailQ.data, memberStats]);
 
-  const feedSorted = useMemo(() => {
-    if (!detailQ.data) return [];
-    return [...detailQ.data.sessions]
-      .sort(
-        (a, b) =>
-          new Date(b.completed_at).getTime() -
-          new Date(a.completed_at).getTime(),
-      )
-      .slice(0, 20)
-      .map((s) => ({
-        session: s,
-        logs: detailQ.data!.feedLogs.filter((l) => l.session_id === s.id),
-        author: detailQ.data!.profiles.find((p) => p.id === s.user_id) ?? null,
-      }));
-  }, [detailQ.data]);
-
-  // Accordion: una sola card espansa alla volta (TASK 5).
-  // Lo stato è qui nel parent così tap su una nuova card chiude le altre.
-  const [openFeedId, setOpenFeedId] = useState<string | null>(null);
+  if (memberSearchId) {
+    return <MemberWorkouts circleId={circleId} userId={memberSearchId} />;
+  }
 
   if (detailQ.isLoading) {
     return <DetailSkeleton />;
@@ -313,11 +276,16 @@ function CircleDetailPage() {
             const s = memberStats.get(p.id) ?? { weeklyVolume: 0, streakDays: 0 };
             const isThisUser = p.id === user.id;
             return (
-              <div
+              <Link
                 key={p.id}
+                to="/cerchia/$circleId"
+                search={{ user: p.id }}
+                params={{ circleId }}
                 className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3"
               >
-                <Avatar name={p.display_name} url={p.avatar_url} />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">
+                  {(p.display_name ?? "?").trim().slice(0, 2).toUpperCase()}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 truncate text-sm font-semibold">
                     <span className="truncate">
@@ -345,7 +313,9 @@ function CircleDetailPage() {
                   )}
                   {isOwner && p.id !== circle.owner_id && (
                     <button
-                      onClick={async () => {
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         const ok = await confirmDialog(
                           "Rimuovere questo membro?",
                           `${p.display_name?.trim() || "Atleta"} non farà più parte della cerchia.`,
@@ -364,192 +334,15 @@ function CircleDetailPage() {
                       <UserX className="h-4 w-4" />
                     </button>
                   )}
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
       </section>
 
-      {/* Feed */}
-      <section className="mt-8">
-        <h2 className="mb-3 text-lg font-bold">Feed allenamenti</h2>
-        {feedSorted.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            Nessun allenamento recente in questa cerchia.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {feedSorted.map((item) => (
-              <FeedItem
-                key={item.session.id}
-                session={item.session}
-                authorName={item.author?.display_name ?? "Atleta"}
-                authorAvatar={item.author?.avatar_url ?? null}
-                logs={item.logs}
-                fmtWeight={fmtWeight}
-                isOpen={openFeedId === item.session.id}
-                onToggle={() =>
-                  setOpenFeedId((prev) =>
-                    prev === item.session.id ? null : item.session.id,
-                  )
-                }
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
       {ConfirmDialog}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Feed item (accordion — una sola card aperta alla volta tramite stato locale)
-// ─────────────────────────────────────────────────────────────────────────────
-function FeedItem({
-  session,
-  authorName,
-  authorAvatar,
-  logs,
-  fmtWeight,
-  isOpen,
-  onToggle,
-}: {
-  session: {
-    id: string;
-    plan_name: string | null;
-    completed_at: string;
-    total_volume: number;
-  };
-  authorName: string;
-  authorAvatar: string | null;
-  logs: { id: string; exercise_name: string; set_number: number; reps: number; weight: number }[];
-  fmtWeight: (kg: number | null | undefined, opts?: { digits?: number }) => string;
-  isOpen: boolean;
-  onToggle: () => void;
-}) {
-  const open = isOpen;
-
-  // Raggruppa log per esercizio. I set sono ordinati per `set_number`
-  // (NON per reps!) perché l'ordine di esecuzione è la cosa importante per
-  // l'utente: "Set 1" → "Set 2" → "Set 3", anche se le reps variano.
-  // Supabase restituisce i log per sessione ma NON garantisce l'ordine.
-  const grouped = useMemo(() => {
-    const map = new Map<
-      string,
-      { name: string; sets: { setNumber: number; reps: number; weight: number }[] }
-    >();
-    for (const l of logs) {
-      const key = l.exercise_name;
-      const entry = map.get(key) ?? { name: l.exercise_name, sets: [] };
-      entry.sets.push({
-        setNumber: l.set_number,
-        reps: l.reps,
-        weight: Number(l.weight),
-      });
-      map.set(key, entry);
-    }
-    for (const e of map.values()) {
-      e.sets.sort((a, b) => a.setNumber - b.setNumber);
-    }
-    return [...map.values()];
-  }, [logs]);
-
-  const when = formatDistanceToNow(new Date(session.completed_at), {
-    addSuffix: true,
-    locale: it,
-  });
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <button
-        onClick={onToggle}
-        className="no-tap-highlight flex w-full items-start gap-3 px-4 py-3 text-left active:scale-[0.99]"
-        aria-expanded={open}
-      >
-        <Avatar name={authorName} url={authorAvatar} size="sm" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="truncate text-sm font-semibold">{authorName}</div>
-            <div className="text-xs text-muted-foreground">{when}</div>
-          </div>
-          <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {session.plan_name ?? "Allenamento"} ·{" "}
-            {fmtWeight(Number(session.total_volume), { digits: 0 })} ·{" "}
-            {grouped.length} {grouped.length === 1 ? "esercizio" : "esercizi"}
-          </div>
-        </div>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open && (
-        <div className="space-y-3 border-t border-border bg-background/50 px-4 py-3">
-          {grouped.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground">Nessun dettaglio disponibile.</p>
-          ) : (
-            grouped.map((g) => (
-              <div key={g.name}>
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {g.name}
-                </div>
-                <div className="mt-1 space-y-1">
-                  {g.sets.map((s, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between rounded-lg bg-card px-3 py-1.5 text-xs"
-                    >
-                      <span className="font-semibold">Set {i + 1}</span>
-                      <span>
-                        {s.reps} × {fmtWeight(s.weight, { digits: 1 })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-          <div className="text-[10px] text-muted-foreground">
-            {format(new Date(session.completed_at), "EEEE d MMM, HH:mm", { locale: it })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers riusati
-// ─────────────────────────────────────────────────────────────────────────────
-function Avatar({
-  name,
-  url,
-  size = "md",
-}: {
-  name: string | null | undefined;
-  url: string | null | undefined;
-  size?: "sm" | "md";
-}) {
-  const initials = (name ?? "?").trim().slice(0, 2).toUpperCase();
-  const dim = size === "sm" ? "h-9 w-9 text-xs" : "h-11 w-11 text-sm";
-  if (url) {
-    return (
-      <img
-        src={url}
-        alt={name ?? "Avatar"}
-        className={`${dim} shrink-0 rounded-full object-cover`}
-      />
-    );
-  }
-  return (
-    <div
-      className={`${dim} shrink-0 flex items-center justify-center rounded-full bg-muted font-bold text-muted-foreground`}
-      aria-label={name ?? "Avatar"}
-    >
-      {initials}
     </div>
   );
 }
@@ -611,11 +404,6 @@ function DetailSkeleton() {
         <Skeleton className="h-16 rounded-2xl" />
       </div>
 
-      <div className="mt-8 space-y-2">
-        <Skeleton className="h-5 w-32" />
-        <Skeleton className="h-14 rounded-2xl" />
-        <Skeleton className="h-14 rounded-2xl" />
-      </div>
     </div>
   );
 }

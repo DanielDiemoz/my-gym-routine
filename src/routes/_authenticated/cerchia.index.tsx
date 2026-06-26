@@ -198,6 +198,7 @@ function CircleCard({ circle, selfId }: { circle: Circle; selfId: string }) {
     <Link
       to="/cerchia/$circleId"
       params={{ circleId: circle.id }}
+      search={{ user: undefined }}
       className="no-tap-highlight flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 active:scale-[0.99]"
     >
       <div className="flex items-center gap-3">
