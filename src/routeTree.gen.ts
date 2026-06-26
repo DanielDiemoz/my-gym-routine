@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AuthenticatedStoricoRouteImport } from './routes/_authenticated/storico'
+import { Route as AuthenticatedScaricaRouteImport } from './routes/_authenticated/scarica'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedSchedeIndexRouteImport } from './routes/_authenticated/schede.index'
 import { Route as AuthenticatedCerchiaIndexRouteImport } from './routes/_authenticated/cerchia.index'
@@ -44,6 +45,11 @@ const AuthResetRoute = AuthResetRouteImport.update({
 const AuthenticatedStoricoRoute = AuthenticatedStoricoRouteImport.update({
   id: '/storico',
   path: '/storico',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedScaricaRoute = AuthenticatedScaricaRouteImport.update({
+  id: '/scarica',
+  path: '/scarica',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/scarica': typeof AuthenticatedScaricaRoute
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
+  '/scarica': typeof AuthenticatedScaricaRoute
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/': typeof AuthenticatedIndexRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
+  '/_authenticated/scarica': typeof AuthenticatedScaricaRoute
   '/_authenticated/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/onboarding'
+    | '/scarica'
     | '/storico'
     | '/auth/reset'
     | '/admin/set-coach'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/onboarding'
+    | '/scarica'
     | '/storico'
     | '/auth/reset'
     | '/'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/onboarding'
+    | '/_authenticated/scarica'
     | '/_authenticated/storico'
     | '/auth/reset'
     | '/_authenticated/'
@@ -212,6 +224,13 @@ declare module '@tanstack/react-router' {
       path: '/storico'
       fullPath: '/storico'
       preLoaderRoute: typeof AuthenticatedStoricoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/scarica': {
+      id: '/_authenticated/scarica'
+      path: '/scarica'
+      fullPath: '/scarica'
+      preLoaderRoute: typeof AuthenticatedScaricaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -268,6 +287,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
+  AuthenticatedScaricaRoute: typeof AuthenticatedScaricaRoute
   AuthenticatedStoricoRoute: typeof AuthenticatedStoricoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminSetCoachRoute: typeof AuthenticatedAdminSetCoachRoute
@@ -280,6 +300,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
+  AuthenticatedScaricaRoute: AuthenticatedScaricaRoute,
   AuthenticatedStoricoRoute: AuthenticatedStoricoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminSetCoachRoute: AuthenticatedAdminSetCoachRoute,
