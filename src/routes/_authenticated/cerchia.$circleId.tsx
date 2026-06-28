@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   ChevronLeft,
@@ -43,7 +43,6 @@ function CircleDetailPage() {
   const navigate = useNavigate();
   const { display: fmtWeight } = useWeightUnit();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
-  const qc = useQueryClient();
   const { leaveCircle, isLeaving, deleteCircle, isDeleting, removeMember, isRemovingMember } = useCircle(user.id);
 
   // Single aggregate query: 1 roundtrip per dataset pesante.
@@ -56,7 +55,7 @@ function CircleDetailPage() {
         .rpc("get_circle_by_id", { p_circle_id: circleId });
       if (cErr) throw cErr;
       const circle = ((raw ?? [])[0] ?? null) as Circle | null;
-      if (!circle) throw new Error("Cerchia non trovata o non accessibile.");
+      if (!circle) throw new Error("Non hai più accesso a questa cerchia.");
 
       // 2. Membri (solo user_ids) — usa RPC SECURITY DEFINER che bypassa
       //    la policy circle_members_select limitata a user_id = auth.uid().
@@ -104,6 +103,7 @@ function CircleDetailPage() {
       return { circle: circle as Circle, profiles, sessions };
     },
     staleTime: 1000 * 30,
+    refetchInterval: 15_000,
   });
 
   // Redirect se la cerchia non esiste / non accessibile (RLS blocca se non membro).
@@ -323,8 +323,6 @@ function CircleDetailPage() {
                         if (!ok) return;
                         try {
                           await removeMember(circle.id, p.id);
-                          qc.invalidateQueries({ queryKey: ["circle-detail", circleId] });
-                          toast.success("Membro rimosso.");
                         } catch { /* toast gestito da hook */ }
                       }}
                       disabled={isRemovingMember}

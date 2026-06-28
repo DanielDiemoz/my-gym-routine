@@ -177,13 +177,20 @@ export function useCircle(userId: string) {
   });
 
   // ── Mutation: rimuovi un membro (solo owner) ──────────────────────────────
+  // Usa la RPC SECURITY DEFINER `remove_circle_member` che bypassa RLS,
+  // come tutte le altre operazioni sulle cerchie.
   const removeMemberMut = useMutation({
     mutationFn: async ({ circleId, memberId }: { circleId: string; memberId: string }) => {
-      const { error } = await fromCircleMembers()
-        .delete()
-        .eq("circle_id", circleId)
-        .eq("user_id", memberId);
+      const { error } = await supabase.rpc("remove_circle_member", {
+        p_circle_id: circleId,
+        p_member_id: memberId,
+      });
       if (error) throw error;
+    },
+    onSuccess: (_data, variables) => {
+      invalidateCircles();
+      qc.invalidateQueries({ queryKey: ["circle-detail", variables.circleId] });
+      toast.success("Membro rimosso.");
     },
     onError: (err: unknown) => {
       toast.error(err instanceof Error ? err.message : "Errore durante la rimozione");

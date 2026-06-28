@@ -17,7 +17,6 @@ import {
   TrendingDown,
   Dumbbell,
   ChevronRight,
-  LogOut,
   MoreVertical,
   Pencil,
   Trash2,
@@ -246,16 +245,6 @@ function Dashboard() {
         </div>
         <div className="flex items-center gap-2 pt-1">
           <PWAInstallButton />
-          <button
-            onClick={async () => {
-              await supabase.auth.signOut();
-              navigate({ to: "/auth" });
-            }}
-            className="rounded-full p-2 text-muted-foreground hover:text-foreground"
-            aria-label="Esci"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
         </div>
       </header>
 

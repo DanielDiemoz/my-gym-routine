@@ -14,7 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AuthenticatedStoricoRouteImport } from './routes/_authenticated/storico'
-import { Route as AuthenticatedScaricaRouteImport } from './routes/_authenticated/scarica'
+import { Route as AuthenticatedProfiloRouteImport } from './routes/_authenticated/profilo'
 import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedSchedeIndexRouteImport } from './routes/_authenticated/schede.index'
 import { Route as AuthenticatedCerchiaIndexRouteImport } from './routes/_authenticated/cerchia.index'
@@ -47,9 +47,9 @@ const AuthenticatedStoricoRoute = AuthenticatedStoricoRouteImport.update({
   path: '/storico',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedScaricaRoute = AuthenticatedScaricaRouteImport.update({
-  id: '/scarica',
-  path: '/scarica',
+const AuthenticatedProfiloRoute = AuthenticatedProfiloRouteImport.update({
+  id: '/profilo',
+  path: '/profilo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
@@ -98,7 +98,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/scarica': typeof AuthenticatedScaricaRoute
+  '/profilo': typeof AuthenticatedProfiloRoute
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
@@ -111,7 +111,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
-  '/scarica': typeof AuthenticatedScaricaRoute
+  '/profilo': typeof AuthenticatedProfiloRoute
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/': typeof AuthenticatedIndexRoute
@@ -127,7 +127,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
-  '/_authenticated/scarica': typeof AuthenticatedScaricaRoute
+  '/_authenticated/profilo': typeof AuthenticatedProfiloRoute
   '/_authenticated/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -144,7 +144,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/onboarding'
-    | '/scarica'
+    | '/profilo'
     | '/storico'
     | '/auth/reset'
     | '/admin/set-coach'
@@ -157,7 +157,7 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/onboarding'
-    | '/scarica'
+    | '/profilo'
     | '/storico'
     | '/auth/reset'
     | '/'
@@ -172,7 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/onboarding'
-    | '/_authenticated/scarica'
+    | '/_authenticated/profilo'
     | '/_authenticated/storico'
     | '/auth/reset'
     | '/_authenticated/'
@@ -226,11 +226,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStoricoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/scarica': {
-      id: '/_authenticated/scarica'
-      path: '/scarica'
-      fullPath: '/scarica'
-      preLoaderRoute: typeof AuthenticatedScaricaRouteImport
+    '/_authenticated/profilo': {
+      id: '/_authenticated/profilo'
+      path: '/profilo'
+      fullPath: '/profilo'
+      preLoaderRoute: typeof AuthenticatedProfiloRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/onboarding': {
@@ -287,7 +287,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
-  AuthenticatedScaricaRoute: typeof AuthenticatedScaricaRoute
+  AuthenticatedProfiloRoute: typeof AuthenticatedProfiloRoute
   AuthenticatedStoricoRoute: typeof AuthenticatedStoricoRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminSetCoachRoute: typeof AuthenticatedAdminSetCoachRoute
@@ -300,7 +300,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
-  AuthenticatedScaricaRoute: AuthenticatedScaricaRoute,
+  AuthenticatedProfiloRoute: AuthenticatedProfiloRoute,
   AuthenticatedStoricoRoute: AuthenticatedStoricoRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminSetCoachRoute: AuthenticatedAdminSetCoachRoute,

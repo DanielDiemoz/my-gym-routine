@@ -1,13 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { X, Check, Plus, Minus, RotateCcw, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useLastSessionLog } from "@/hooks/useLastSessionLog";
 import { RestTimer } from "@/components/RestTimer";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
+import { useWorkoutStash } from "@/lib/workout-context";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,13 @@ export const Route = createFileRoute("/_authenticated/allena/$planId")({
   component: ActiveSession,
 });
 
+const WORKOUT_STATE_KEY = "gw_workout_state";
+
+// Cache a livello di modulo: sopravvive a mount/unmount senza toccare storage.
+// Le navigazioni client-side (allena → cerchie → schede → allena) condividono
+// lo stesso modulo JS, quindi questa variabile persiste tra i mount.
+let _modCache: string | null = null;
+
 type Exercise = {
   id: string;
   name: string;
@@ -36,6 +44,36 @@ type Exercise = {
 type LoggedSet = { reps: number; weight: number; done: boolean };
 
 type OrphanSession = { id: string; started_at: string };
+
+type WorkoutState = {
+  sessionId: string;
+  planId?: string;
+  userId?: string;
+  logs: Record<string, LoggedSet[]>;
+  currentIdx: number;
+  localExercises: Exercise[];
+};
+
+function parseWorkoutState(value: string | null): WorkoutState | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as WorkoutState;
+  } catch {
+    return null;
+  }
+}
+
+function serializeWorkoutState(state: WorkoutState) {
+  return JSON.stringify(state);
+}
+
+function writeWorkoutState(data: string) {
+  _modCache = data;
+  if (typeof window === "undefined") return;
+  (window as any).__WORKOUT_STATE = data;
+  try { localStorage.setItem(WORKOUT_STATE_KEY, data); } catch {}
+  try { sessionStorage.setItem(WORKOUT_STATE_KEY, data); } catch {}
+}
 
 function ActiveSession() {
   const { planId } = Route.useParams();
@@ -94,6 +132,21 @@ function ActiveSession() {
   const [showReplace, setShowReplace] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { data: workCtx, setData: setWorkCtx } = useWorkoutStash();
+
+  const latestDraftRef = useRef<WorkoutState | null>(null);
+  const persistDraft = useCallback((state: WorkoutState | null) => {
+    if (!state?.sessionId) return;
+    const data = serializeWorkoutState(state);
+    writeWorkoutState(data);
+    setWorkCtx(data);
+  }, [setWorkCtx]);
+  const stageDraft = useCallback((state: WorkoutState | null) => {
+    if (!state?.sessionId) return;
+    latestDraftRef.current = state;
+    writeWorkoutState(serializeWorkoutState(state));
+  }, []);
+
   // Sincronizza localExercises dal piano al caricamento.
   useEffect(() => {
     if (planQ.data?.exercises && localExercises.length === 0) {
@@ -114,11 +167,18 @@ function ActiveSession() {
   useEffect(() => {
     if (sessionCreated.current) return;
     if (!planQ.data?.plan || orphanQ.isLoading || sessionId) return;
+    // Se orphanQ.data è null ma un background refetch è in corso (isFetching),
+    // aspettiamo che finisca prima di decidere. Su mount successivi (navigazione
+    // client-side) la cache di React Query può contenere null non aggiornato.
+    if (!orphanQ.data && orphanQ.isFetching) return;
 
     const orphan = orphanQ.data;
     if (orphan && !userDecision) {
-      const last = JSON.parse(sessionStorage.getItem("gw_last") ?? "null");
-      if (last?.sessionId === orphan.id && last?.planId === planId) {
+      const last = parseWorkoutState(sessionStorage.getItem("gw_last"));
+      const ctxData = parseWorkoutState(workCtx);
+      const match = (last?.sessionId === orphan.id && last?.planId === planId) ||
+                    ctxData?.sessionId === orphan.id;
+      if (match) {
         setOrphanIdAtDecision(orphan.id);
         setUserDecision("resume");
         return;
@@ -134,8 +194,11 @@ function ActiveSession() {
       try {
         let resolvedId: string | null = null;
 
-        if (orphan && userDecision === "resume" && orphanIdAtDecision) {
+        if (userDecision === "resume" && orphanIdAtDecision) {
           // Caso A: l'utente vuole riprendere l'orfana, riusiamo l'id snapshot.
+          // NOTA: NON usiamo `orphan` (orphanQ.data) perché un background refetch
+          // di React Query può renderlo null tra il render e l'esecuzione async.
+          // `orphanIdAtDecision` è lo snapshot stabile preso al momento della decisione.
           resolvedId = orphanIdAtDecision;
         } else if (planQ.data?.plan) {
           // Caso B/C: nessuna orfana OPPURE "Inizia nuovo". Insert SEMPRE PRIMA.
@@ -167,7 +230,14 @@ function ActiveSession() {
 
         if (!cancelled && resolvedId) {
           setSessionId(resolvedId);
-          sessionStorage.setItem("gw_last", JSON.stringify({ sessionId: resolvedId, planId }));
+          sessionStorage.setItem("gw_last", serializeWorkoutState({
+            sessionId: resolvedId,
+            planId,
+            userId: user.id,
+            logs: {},
+            currentIdx: 0,
+            localExercises: [],
+          }));
         }
       } catch (err) {
         if (cancelled) return;
@@ -184,11 +254,13 @@ function ActiveSession() {
     planQ.data,
     orphanQ.data,
     orphanQ.isLoading,
+    orphanQ.isFetching,
     userDecision,
     orphanIdAtDecision,
     sessionId,
     planId,
     user.id,
+    workCtx,
   ]);
 
   // Init logs dal piano (snapshot dei default di serie).
@@ -209,8 +281,119 @@ function ActiveSession() {
     });
   }, [planQ.data]);
 
+  // ── Ref lazy: cattura i dati da localStorage DURANTE IL RENDER ─────────
+  const stashedRef = useRef<WorkoutState | null>(null);
+  if (stashedRef.current === null && typeof window !== "undefined") {
+    stashedRef.current = parseWorkoutState(localStorage.getItem(WORKOUT_STATE_KEY));
+  }
+
+  // ── Restore ──────────────────────────────────────────────────────────
+  const restoredRef = useRef(false);
+  const skipNextPersistRef = useRef(false);
+  useEffect(() => {
+    if (!sessionId) return;
+    if (restoredRef.current) return;
+
+    const candidates = [
+      parseWorkoutState(workCtx),
+      parseWorkoutState(_modCache),
+      stashedRef.current,
+      typeof window !== "undefined" ? parseWorkoutState((window as any).__WORKOUT_STATE) : null,
+      typeof window !== "undefined" ? parseWorkoutState(localStorage.getItem(WORKOUT_STATE_KEY)) : null,
+      typeof window !== "undefined" ? parseWorkoutState(sessionStorage.getItem(WORKOUT_STATE_KEY)) : null,
+    ];
+    let state = candidates.find((candidate) =>
+      candidate?.sessionId === sessionId &&
+      (!candidate.planId || candidate.planId === planId) &&
+      (!candidate.userId || candidate.userId === user.id)
+    );
+
+    // Fallback: se la sessione è stata creata con un ID diverso (es. per race
+    // condition nel resume), ma workCtx ha dati validi per questo piano/utente,
+    // ripristina comunque i dati. Non forzare se l'utente ha scelto "start-new".
+    if (!state && userDecision !== "start-new") {
+      const ctxState = parseWorkoutState(workCtx);
+      if (ctxState && ctxState.planId === planId && ctxState.userId === user.id) {
+        state = ctxState;
+      }
+    }
+
+    if (state) {
+      latestDraftRef.current = {
+        sessionId,
+        planId,
+        userId: user.id,
+        logs: state.logs ?? {},
+        currentIdx: state.currentIdx ?? 0,
+        localExercises: state.localExercises ?? [],
+      };
+      skipNextPersistRef.current = true;
+      setCurrentIdx(state.currentIdx ?? 0);
+      if (state.localExercises?.length) setLocalExercises(state.localExercises);
+      if (state.logs) {
+        setLogs(() => {
+          const merged = { ...state.logs };
+          for (const ex of planQ.data?.exercises ?? []) {
+            if (!merged[ex.id]) {
+              merged[ex.id] = Array.from({ length: ex.sets }, () => ({
+                reps: ex.reps,
+                weight: Number(ex.weight),
+                done: false,
+              }));
+            }
+          }
+          return merged;
+        });
+      }
+    }
+
+    stashedRef.current = null;
+    restoredRef.current = true;
+  }, [sessionId, workCtx, planId, user.id, userDecision, planQ.data?.exercises]);
+
+  // ── Persistenza ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!sessionId || !restoredRef.current) return;
+    latestDraftRef.current = { sessionId, planId, userId: user.id, logs, currentIdx, localExercises };
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false;
+      return;
+    }
+    persistDraft(latestDraftRef.current);
+  }, [sessionId, planId, user.id, logs, currentIdx, localExercises, persistDraft]);
+
+  useEffect(() => {
+    const flushDraft = () => persistDraft(latestDraftRef.current);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") flushDraft();
+    };
+
+    window.addEventListener("pagehide", flushDraft);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      flushDraft();
+      window.removeEventListener("pagehide", flushDraft);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [persistDraft]);
+
   const exercises = localExercises.length > 0 ? localExercises : (planQ.data?.exercises ?? []);
   const current = exercises[currentIdx];
+
+  function buildDraft(patch: Partial<WorkoutState> = {}): WorkoutState | null {
+    if (!sessionId) return null;
+    return {
+      sessionId,
+      planId,
+      userId: user.id,
+      logs,
+      currentIdx,
+      localExercises,
+      ...patch,
+    };
+  }
 
   // TASK 1 — Query dell'ultima session_log per l'esercizio corrente.
   const lastLogQ = useLastSessionLog(current?.name);
@@ -286,6 +469,8 @@ function ActiveSession() {
     if (!ok) return;
     if (sessionId) await supabase.from("sessions").delete().eq("id", sessionId);
     sessionStorage.removeItem("gw_last");
+    localStorage.removeItem(WORKOUT_STATE_KEY);
+    sessionStorage.removeItem(WORKOUT_STATE_KEY);
     navigate({ to: "/" });
   }
 
@@ -330,6 +515,8 @@ function ActiveSession() {
       total_volume: totalVolume,
     }).eq("id", sessionId);
     sessionStorage.removeItem("gw_last");
+    localStorage.removeItem(WORKOUT_STATE_KEY);
+    sessionStorage.removeItem(WORKOUT_STATE_KEY);
     toast.success("Allenamento salvato!");
     navigate({ to: "/" });
   }
@@ -341,6 +528,7 @@ function ActiveSession() {
     setLocalExercises((prev) => {
       const next = [...prev];
       [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+      stageDraft(buildDraft({ localExercises: next, currentIdx: targetIdx }));
       return next;
     });
     setCurrentIdx(targetIdx);
@@ -359,6 +547,17 @@ function ActiveSession() {
     setLocalExercises((prev) => {
       const next = [...prev];
       next[currentIdx] = newExercise;
+      stageDraft(buildDraft({
+        localExercises: next,
+        logs: {
+          ...logs,
+          [newExercise.id]: Array.from({ length: newExercise.sets }, () => ({
+            reps: newExercise.reps,
+            weight: Number(newExercise.weight),
+            done: false,
+          })),
+        },
+      }));
       return next;
     });
     setLogs((prev) => ({
@@ -436,10 +635,14 @@ function ActiveSession() {
   const isLast = currentIdx === exercises.length - 1;
 
   function updateSet(idx: number, patch: Partial<LoggedSet>) {
-    setLogs((prev) => ({
-      ...prev,
-      [current.id]: prev[current.id].map((s, i) => (i === idx ? { ...s, ...patch } : s)),
-    }));
+    setLogs((prev) => {
+      const next = {
+        ...prev,
+        [current.id]: prev[current.id].map((s, i) => (i === idx ? { ...s, ...patch } : s)),
+      };
+      stageDraft(buildDraft({ logs: next }));
+      return next;
+    });
   }
 
   async function removeSet(idx: number) {
@@ -448,10 +651,14 @@ function ActiveSession() {
       "I dati inseriti per questa serie andranno persi.",
     );
     if (!ok) return;
-    setLogs((prev) => ({
-      ...prev,
-      [current.id]: prev[current.id].filter((_, i) => i !== idx),
-    }));
+    setLogs((prev) => {
+      const next = {
+        ...prev,
+        [current.id]: prev[current.id].filter((_, i) => i !== idx),
+      };
+      stageDraft(buildDraft({ logs: next }));
+      return next;
+    });
   }
 
   return (
@@ -558,15 +765,19 @@ function ActiveSession() {
             </div>
           ))}
           <button
-            onClick={() =>
-              setLogs((p) => ({
-                ...p,
-                [current.id]: [
-                  ...p[current.id],
-                  { reps: current.reps, weight: Number(current.weight), done: false },
-                ],
-              }))
-            }
+            onClick={() => {
+              setLogs((p) => {
+                const next = {
+                  ...p,
+                  [current.id]: [
+                    ...p[current.id],
+                    { reps: current.reps, weight: Number(current.weight), done: false },
+                  ],
+                };
+                stageDraft(buildDraft({ logs: next }));
+                return next;
+              });
+            }}
             className="w-full rounded-2xl border-2 border-dashed border-border py-3 text-xs font-semibold text-muted-foreground"
           >
             + Serie extra
@@ -594,7 +805,11 @@ function ActiveSession() {
         <div className="container-app flex gap-2 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
           {currentIdx > 0 && (
             <button
-              onClick={() => setCurrentIdx((i) => i - 1)}
+              onClick={() => {
+                const nextIdx = currentIdx - 1;
+                stageDraft(buildDraft({ currentIdx: nextIdx }));
+                setCurrentIdx(nextIdx);
+              }}
               className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
             >
               Indietro
@@ -603,7 +818,11 @@ function ActiveSession() {
           {!isLast ? (
             <>
               <button
-                onClick={() => setCurrentIdx((i) => i + 1)}
+                onClick={() => {
+                  const nextIdx = currentIdx + 1;
+                  stageDraft(buildDraft({ currentIdx: nextIdx }));
+                  setCurrentIdx(nextIdx);
+                }}
                 className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
               >
                 Prossimo esercizio

@@ -377,6 +377,7 @@ export type Database = {
         }[]
       }
       join_circle_by_code: { Args: { invite_code: string }; Returns: string }
+      remove_circle_member: { Args: { p_circle_id: string; p_member_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

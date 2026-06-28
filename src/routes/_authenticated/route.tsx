@@ -1,9 +1,10 @@
 import { createFileRoute, Outlet, redirect, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Dumbbell, History as HistoryIcon, Users, Download } from "lucide-react";
+import { Home, Dumbbell, History as HistoryIcon, Users, User } from "lucide-react";
 import { WeightUnitProvider } from "@/hooks/useWeightUnit";
 import { checkOnboardingFlag, resetOnboardingFlag } from "@/lib/onboarding-flag";
+import { WorkoutProvider } from "@/lib/workout-context";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -57,9 +58,11 @@ function AuthLayout() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <WeightUnitProvider>
-        <Outlet />
-      </WeightUnitProvider>
+      <WorkoutProvider>
+        <WeightUnitProvider>
+          <Outlet />
+        </WeightUnitProvider>
+      </WorkoutProvider>
       {showNav && <BottomNav pathname={loc.pathname} />}
     </div>
   );
@@ -71,7 +74,7 @@ function BottomNav({ pathname }: { pathname: string }) {
     { to: "/schede", icon: Dumbbell, label: "Schede" },
     { to: "/storico", icon: HistoryIcon, label: "Storico" },
     { to: "/cerchia", icon: Users, label: "Cerchia" },
-    { to: "/scarica", icon: Download, label: "Scarica" },
+    { to: "/profilo", icon: User, label: "Profilo" },
   ] as const;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
