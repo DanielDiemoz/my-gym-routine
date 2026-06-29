@@ -12,6 +12,7 @@ function Onboarding() {
   const { user, profile } = Route.useRouteContext();
   const navigate = useNavigate();
   const [name, setName] = useState(profile?.display_name ?? "");
+  const [weight, setWeight] = useState("");
   const [saving, setSaving] = useState(false);
 
   async function save() {
@@ -21,19 +22,19 @@ function Onboarding() {
     }
     setSaving(true);
     try {
+      const w = weight.trim() ? parseFloat(weight.trim()) : null;
       const { error: upsertError } = await supabase
         .from("profiles")
         .upsert({
           id: user.id,
           display_name: name.trim(),
           onboarded: true,
+          ...(w && w > 0 && w < 500 ? { weight_kg: w } : {}),
         });
       if (upsertError) {
         toast.error(upsertError.message);
         return;
       }
-      // Imposta flag in-modulo prima di navigare per comunicare
-      // a beforeLoad che l'onboarding è stato completato
       markOnboardingComplete();
       await navigate({ to: "/" });
     } catch (err) {
@@ -48,19 +49,34 @@ function Onboarding() {
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Benvenuto</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight">Configura il tuo profilo</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Solo un nome per iniziare.</p>
+        <p className="mt-2 text-sm text-muted-foreground">Nome e peso per stimare le calorie bruciate.</p>
       </div>
 
-      <div className="mt-10">
-        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Come ti chiami</label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-base outline-none transition focus:border-foreground"
-          placeholder="Il tuo nome"
-          autoFocus
-        />
+      <div className="mt-10 space-y-6">
+        <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Come ti chiami</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-base outline-none transition focus:border-foreground"
+            placeholder="Il tuo nome"
+            autoFocus
+          />
+        </div>
+        <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Peso corporeo (kg) — opzionale</label>
+          <input
+            type="number"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-base outline-none transition focus:border-foreground"
+            placeholder="70"
+            min={20}
+            max={500}
+            step={0.1}
+          />
+        </div>
       </div>
 
       <div className="mt-auto pt-12">

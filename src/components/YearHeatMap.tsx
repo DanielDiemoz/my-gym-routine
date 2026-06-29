@@ -6,17 +6,10 @@ export type SessionsByDay = Map<string, number>;
 
 interface Props {
   sessionsByDay: SessionsByDay;
-  /** Unita di misura corrente (per leggenda "Meno | Più"). Default: kg. */
-  unit?: "kg" | "lbs";
+  unit?: string;
 }
 
-/**
- * Heat-map annuale (ultimi 365 giorni) per GymBro.
- * - Usa `react-day-picker` v9 in modalità visualizzazione (mode="single" con onSelect no-op).
- * - Tre bucket (lowVolume / medVolume / highVolume) basati sul rapporto volume/max.
- * - Opacity 30% / 60% / 100% via modifiersStyles.
- */
-export function YearHeatMap({ sessionsByDay, unit = "kg" }: Props) {
+export function YearHeatMap({ sessionsByDay, unit = "kcal" }: Props) {
   const max = sessionsByDay.size > 0 ? Math.max(...sessionsByDay.values()) : 0;
 
   const low: Date[] = [];

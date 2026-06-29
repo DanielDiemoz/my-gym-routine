@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated")({
 
     const { data: dbProfile, error: profileError } = await supabase
       .from("profiles")
-      .select("onboarded, display_name")
+      .select("onboarded, display_name, weight_kg")
       .eq("id", data.user.id)
       .maybeSingle();
 

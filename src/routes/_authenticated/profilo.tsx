@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, User, Mail, Plus, LogOut, Smartphone, Apple, CheckCircle2, Download } from "lucide-react";
+import { ChevronLeft, User, Mail, Plus, LogOut, Smartphone, Apple, CheckCircle2, Download, Scale } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { toast } from "sonner";
 
@@ -16,6 +16,9 @@ function ProfilePage() {
   const [newEmail, setNewEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [editingWeight, setEditingWeight] = useState(false);
+  const [weightInput, setWeightInput] = useState("");
+  const [savingWeight, setSavingWeight] = useState(false);
   const name = profile?.display_name || "Atleta";
   const apkUrl = "/apk/gymbro.apk";
 
@@ -104,6 +107,75 @@ function ProfilePage() {
             Aggiungi una email
           </button>
         )}
+
+        <div className="mt-4 pt-4 border-t border-border">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Scale className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-semibold">Peso corporeo</span>
+            </div>
+            {editingWeight ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  className="w-20 rounded-full border border-border bg-muted px-3 py-1.5 text-sm outline-none focus:border-foreground"
+                  placeholder="70"
+                  min={20}
+                  max={500}
+                  step={0.1}
+                  autoFocus
+                />
+                <button
+                  onClick={async () => {
+                    const w = weightInput.trim() ? parseFloat(weightInput.trim()) : null;
+                    if (w !== null && (w <= 0 || w >= 500)) {
+                      toast.error("Inserisci un peso valido (1-500 kg)");
+                      return;
+                    }
+                    setSavingWeight(true);
+                    const { error } = await supabase
+                      .from("profiles")
+                      .update({ weight_kg: w })
+                      .eq("id", user.id);
+                    setSavingWeight(false);
+                    if (error) {
+                      toast.error(error.message);
+                      return;
+                    }
+                    toast.success("Peso aggiornato");
+                    setEditingWeight(false);
+                  }}
+                  disabled={savingWeight}
+                  className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+                >
+                  {savingWeight ? "…" : "Salva"}
+                </button>
+                <button
+                  onClick={() => { setEditingWeight(false); setWeightInput(""); }}
+                  className="text-xs text-muted-foreground font-semibold"
+                >
+                  Annulla
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setWeightInput(profile?.weight_kg ? String(profile.weight_kg) : "");
+                  setEditingWeight(true);
+                }}
+                className="flex items-center gap-1 text-sm font-semibold text-foreground"
+              >
+                {profile?.weight_kg ? `${profile.weight_kg} kg` : "Imposta"}
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Usato per stimare le calorie bruciate durante gli allenamenti.
+          </p>
+        </div>
 
         <div className="mt-6 pt-4 border-t border-border">
           <button

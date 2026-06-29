@@ -21,6 +21,11 @@ import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCircle, type Circle } from "@/hooks/useCircle";
 import { MemberWorkouts } from "@/components/MemberWorkouts";
+import {
+  estimateCalories,
+  formatCalories,
+  getWeightOrDefault,
+} from "@/lib/calories";
 
 export const Route = createFileRoute("/_authenticated/cerchia/$circleId")({
   component: CircleDetailPage,
@@ -76,11 +81,12 @@ function CircleDetailPage() {
       // 3. Profili dei membri (display_name, avatar_url)
       const profRes = await supabase
         .from("profiles")
-        .select("id, display_name")
+        .select("id, display_name, weight_kg")
         .in("id", userIds);
       const profiles = (profRes.data ?? []) as {
         id: string;
         display_name: string | null;
+        weight_kg: number | null;
       }[];
 
       // 4. Sessioni degli ultimi 365 giorni per i membri.
@@ -88,7 +94,7 @@ function CircleDetailPage() {
       const sinceIso = subDays(new Date(), 365).toISOString();
       const sessRes = await supabase
         .from("sessions")
-        .select("id, user_id, plan_name, completed_at, total_volume")
+        .select("id, user_id, plan_name, started_at, completed_at, total_volume")
         .in("user_id", userIds)
         .not("completed_at", "is", null)
         .gte("completed_at", sinceIso);
@@ -96,6 +102,7 @@ function CircleDetailPage() {
         id: string;
         user_id: string;
         plan_name: string | null;
+        started_at: string;
         completed_at: string;
         total_volume: number;
       }[];
@@ -118,36 +125,36 @@ function CircleDetailPage() {
 
   const isOwner = !!detailQ.data && detailQ.data.circle.owner_id === user.id;
 
-  // Aggregazione stats per membro (volume settimana + streak).
+  // Aggregazione stats per membro (calorie settimana + volume + streak).
   const memberStats = useMemo(() => {
-    if (!detailQ.data) return new Map<string, { weeklyVolume: number; streakDays: number }>();
+    if (!detailQ.data) return new Map<string, { weeklyVolume: number; weeklyCalories: number; streakDays: number }>();
     const { profiles, sessions } = detailQ.data;
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const stats = new Map<string, { weeklyVolume: number; streakDays: number }>();
+    const weightMap = new Map(profiles.map((p) => [p.id, getWeightOrDefault(p.weight_kg)]));
+    const stats = new Map<string, { weeklyVolume: number; weeklyCalories: number; streakDays: number }>();
 
-    // Mappa user_id → set di date (yyyymmdd) in cui ha completato un workout.
     const datesByUser = new Map<string, Set<string>>();
     for (const s of sessions) {
       const d = new Date(s.completed_at);
-      // Weekly volume
       if (d >= weekStart) {
-        const stat = stats.get(s.user_id) ?? { weeklyVolume: 0, streakDays: 0 };
+        const stat = stats.get(s.user_id) ?? { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 };
         stat.weeklyVolume += Number(s.total_volume || 0);
+        const durMs = new Date(s.completed_at).getTime() - new Date(s.started_at).getTime();
+        if (durMs > 0) {
+          const w = weightMap.get(s.user_id) ?? 70;
+          stat.weeklyCalories += estimateCalories(w, Math.round(durMs / 60000));
+        }
         stats.set(s.user_id, stat);
       }
-      // Per streak: salvo solo la chiave giorno (no orario).
       const key = format(d, "yyyy-MM-dd");
       const set = datesByUser.get(s.user_id) ?? new Set<string>();
       set.add(key);
       datesByUser.set(s.user_id, set);
     }
 
-    // Calcolo streak: cammino all'indietro da oggi (se oggi fatta) o da ieri
-    // (se oggi no). Mi fermo al primo giorno senza workout.
     const today = startOfDay(new Date());
     for (const [userId, daySet] of datesByUser) {
       let cursor = today;
-      // Se oggi non ha sessioni, parto da ieri (streak "conservato").
       if (!daySet.has(format(cursor, "yyyy-MM-dd"))) {
         cursor = subDays(cursor, 1);
       }
@@ -156,14 +163,13 @@ function CircleDetailPage() {
         streak += 1;
         cursor = subDays(cursor, 1);
       }
-      const stat = stats.get(userId) ?? { weeklyVolume: 0, streakDays: 0 };
+      const stat = stats.get(userId) ?? { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 };
       stat.streakDays = streak;
       stats.set(userId, stat);
     }
 
-    // Includo i membri senza stats (default 0).
     for (const p of profiles) {
-      if (!stats.has(p.id)) stats.set(p.id, { weeklyVolume: 0, streakDays: 0 });
+      if (!stats.has(p.id)) stats.set(p.id, { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 });
     }
 
     return stats;
@@ -173,9 +179,9 @@ function CircleDetailPage() {
     if (!detailQ.data) return [];
     const { profiles } = detailQ.data;
     return [...profiles].sort((a, b) => {
-      const sa = memberStats.get(a.id) ?? { weeklyVolume: 0, streakDays: 0 };
-      const sb = memberStats.get(b.id) ?? { weeklyVolume: 0, streakDays: 0 };
-      return sb.weeklyVolume - sa.weeklyVolume;
+      const sa = memberStats.get(a.id) ?? { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 };
+      const sb = memberStats.get(b.id) ?? { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 };
+      return sb.weeklyCalories - sa.weeklyCalories;
     });
   }, [detailQ.data, memberStats]);
 
@@ -273,7 +279,7 @@ function CircleDetailPage() {
         <h2 className="mb-3 text-lg font-bold">Membri</h2>
         <div className="space-y-2">
           {sortedMembers.map((p) => {
-            const s = memberStats.get(p.id) ?? { weeklyVolume: 0, streakDays: 0 };
+            const s = memberStats.get(p.id) ?? { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 };
             const isThisUser = p.id === user.id;
             return (
               <Link
@@ -304,11 +310,11 @@ function CircleDetailPage() {
                   </div>
                   <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                     <span>🔥 {s.streakDays}</span>
-                    <span className="truncate">{fmtWeight(s.weeklyVolume, { digits: 0 })} / sett.</span>
+                    <span>{formatCalories(s.weeklyCalories)} / sett.</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {s.weeklyVolume > 0 && (
+                  {s.weeklyCalories > 0 && (
                     <Trophy className="h-4 w-4 text-muted-foreground/60" />
                   )}
                   {isOwner && p.id !== circle.owner_id && (

@@ -8,6 +8,11 @@ import { format, formatDistanceToNow, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  estimateCalories,
+  formatCalories,
+  getWeightOrDefault,
+} from "@/lib/calories";
 
 export function MemberWorkouts({
   circleId,
@@ -24,14 +29,14 @@ export function MemberWorkouts({
     queryFn: async () => {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("display_name")
+        .select("display_name, weight_kg")
         .eq("id", userId)
         .maybeSingle();
 
       const sinceIso = subDays(new Date(), 365).toISOString();
       const { data: sessions } = await supabase
         .from("sessions")
-        .select("id, plan_name, completed_at, total_volume")
+        .select("id, plan_name, started_at, completed_at, total_volume")
         .eq("user_id", userId)
         .not("completed_at", "is", null)
         .gte("completed_at", sinceIso)
@@ -54,7 +59,7 @@ export function MemberWorkouts({
       }
 
       return {
-        profile: profile as { display_name: string | null } | null,
+        profile: profile as { display_name: string | null; weight_kg: number | null } | null,
         sessions: sessions ?? [],
         logs,
       };
@@ -70,10 +75,15 @@ export function MemberWorkouts({
 
   const sessionsWithLogs = useMemo(() => {
     if (!q.data) return [];
-    return q.data.sessions.map((s) => ({
-      session: s,
-      logs: q.data!.logs.filter((l) => l.session_id === s.id),
-    }));
+    const weight = getWeightOrDefault(q.data.profile?.weight_kg);
+    return q.data.sessions.map((s) => {
+      const durMs = new Date(s.completed_at).getTime() - new Date(s.started_at).getTime();
+      const calories = durMs > 0 ? estimateCalories(weight, Math.round(durMs / 60000)) : 0;
+      return {
+        session: { ...s, calories },
+        logs: q.data!.logs.filter((l) => l.session_id === s.id),
+      };
+    });
   }, [q.data]);
 
   if (q.isLoading) {
@@ -155,7 +165,7 @@ function WorkoutCard({
   isOpen,
   onToggle,
 }: {
-  session: { id: string; plan_name: string | null; completed_at: string; total_volume: number };
+  session: { id: string; plan_name: string | null; completed_at: string; total_volume: number; calories: number };
   logs: { exercise_name: string; set_number: number; reps: number; weight: number }[];
   fmtWeight: (kg: number | null | undefined, opts?: { digits?: number }) => string;
   isOpen: boolean;
@@ -199,7 +209,7 @@ function WorkoutCard({
             <div className="shrink-0 text-xs text-muted-foreground">{when}</div>
           </div>
           <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {fmtWeight(Number(session.total_volume), { digits: 0 })} ·{" "}
+            {formatCalories(session.calories)} ·{" "}
             {grouped.length} {grouped.length === 1 ? "esercizio" : "esercizi"}
           </div>
         </div>

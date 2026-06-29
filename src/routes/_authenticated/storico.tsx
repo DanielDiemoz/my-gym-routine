@@ -19,6 +19,11 @@ import { useWeightUnit } from "@/hooks/useWeightUnit";
 import type { WeeklyVolumeBar } from "@/components/VolumeChart";
 import type { SessionsByDay } from "@/components/YearHeatMap";
 import { StoricoSkeleton } from "@/components/skeletons/StoricoSkeleton";
+import {
+  estimateCalories,
+  formatCalories,
+  getWeightOrDefault,
+} from "@/lib/calories";
 
 // Lazy-load dei componenti chart per split del bundle iniziale.
 // recharts + react-day-picker (con foglio di stile) sono pesanti e non servono
@@ -99,31 +104,51 @@ function Storico() {
     },
   });
 
+  // Peso utente per stima calorie
+  const weightQ = useQuery({
+    queryKey: ["profile-weight", user.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("weight_kg")
+        .eq("id", user.id)
+        .maybeSingle();
+      return getWeightOrDefault(data?.weight_kg);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   // TASK 1 + TASK 2 — sessioni degli ultimi 365 giorni.
-  // Servono sia per il grafico settimanale (ultime 13 settimane) sia per la heat-map.
   const yearQ = useQuery({
     queryKey: ["year-sessions", user.id],
     queryFn: async () => {
       const since = subDays(new Date(), 365);
       const { data, error } = await supabase
         .from("sessions")
-        .select("id, completed_at, total_volume")
+        .select("id, started_at, completed_at, total_volume")
         .eq("user_id", user.id)
         .not("completed_at", "is", null)
         .gte("completed_at", since.toISOString())
         .order("completed_at", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Pick<Session, "id" | "completed_at" | "total_volume">[];
+      return (data ?? []) as Pick<Session, "id" | "started_at" | "completed_at" | "total_volume">[];
     },
   });
 
-  // Aggrega per settimana (ultime 13 settimane, lunedì → domenica).
+  function calcCalories(s: { started_at: string; completed_at: string | null }, weight: number) {
+    if (!s.completed_at) return 0;
+    const durMs = new Date(s.completed_at).getTime() - new Date(s.started_at).getTime();
+    if (durMs <= 0) return 0;
+    return estimateCalories(weight, Math.round(durMs / 60000));
+  }
+
   const { display, unit, isLoading: unitLoading } = useWeightUnit();
+  const userWeight = weightQ.data ?? 70;
 
   const chartData: WeeklyVolumeBar[] = useMemo(() => {
     if (!yearQ.data) return [];
     const sessions = yearQ.data.filter(
-      (s): s is { id: string; completed_at: string; total_volume: number } =>
+      (s): s is { id: string; started_at: string; completed_at: string; total_volume: number } =>
         !!s.completed_at,
     );
     const today = new Date();
@@ -131,35 +156,39 @@ function Storico() {
     for (let i = 12; i >= 0; i--) {
       const ws = startOfWeek(subWeeks(today, i), { weekStartsOn: 1 });
       const we = endOfWeek(subWeeks(today, i), { weekStartsOn: 1 });
-      const volume = sessions
-        .filter((s) => {
-          const d = new Date(s.completed_at);
-          return d >= ws && d <= we;
-        })
-        .reduce((sum, s) => sum + Number(s.total_volume || 0), 0);
+      const weekSessions = sessions.filter((s) => {
+        const d = new Date(s.completed_at);
+        return d >= ws && d <= we;
+      });
+      const volume = weekSessions.reduce((sum, s) => sum + Number(s.total_volume || 0), 0);
+      const calories = weekSessions.reduce((sum, s) => sum + calcCalories(s, userWeight), 0);
       buckets.push({
         week: format(ws, "d MMM", { locale: it }),
         range: `${format(ws, "d MMM", { locale: it })} – ${format(we, "d MMM", { locale: it })}`,
         volume,
+        calories,
       });
     }
     return buckets;
-  }, [yearQ.data]);
+  }, [yearQ.data, userWeight]);
 
-  // Aggrega per giorno per la heat-map (yyyy-MM-dd -> volume totale in kg).
+  // Aggrega per giorno per la heat-map (yyyy-MM-dd -> calorie totali).
   const sessionsByDay: SessionsByDay = useMemo(() => {
     const map = new Map<string, number>();
     if (!yearQ.data) return map;
     for (const s of yearQ.data) {
       if (!s.completed_at) continue;
       const key = format(new Date(s.completed_at), "yyyy-MM-dd");
-      map.set(key, (map.get(key) ?? 0) + Number(s.total_volume || 0));
+      const existing = map.get(key) ?? 0;
+      const durMs = new Date(s.completed_at).getTime() - new Date(s.started_at).getTime();
+      const cals = durMs > 0 ? estimateCalories(userWeight, Math.round(durMs / 60000)) : 0;
+      map.set(key, existing + cals);
     }
     return map;
-  }, [yearQ.data]);
+  }, [yearQ.data, userWeight]);
 
   // TASK 4 — skeleton gate su TUTTE le query principali.
-  if (q.isLoading || yearQ.isLoading) {
+  if (q.isLoading || yearQ.isLoading || weightQ.isLoading) {
     return <StoricoSkeleton />;
   }
 
@@ -207,7 +236,12 @@ function Storico() {
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             {q.data?.length ?? 0} allenamenti ·{" "}
-            {unitLoading ? "…" : display(totalVolume)}
+            {formatCalories(
+              (q.data ?? []).reduce((s, x) => {
+                const durMs = new Date(x.completed_at ?? x.started_at).getTime() - new Date(x.started_at).getTime();
+                return s + (durMs > 0 ? estimateCalories(userWeight, Math.round(durMs / 60000)) : 0);
+              }, 0),
+            )}
           </div>
         </div>
         <button
@@ -220,12 +254,12 @@ function Storico() {
         </button>
       </div>
 
-      {/* TASK 1 — grafico volume settimanale (ultimi 3 mesi). */}
+      {/* TASK 1 — grafico calorie settimanali (ultimi 3 mesi). */}
       <section className="mb-6 rounded-2xl border border-border bg-card p-4">
-        <h2 className="mb-3 text-sm font-bold">Volume per settimana</h2>
+        <h2 className="mb-3 text-sm font-bold">Calorie per settimana</h2>
         <ChartErrorBoundary>
           <Suspense fallback={<Skeleton className="h-48 w-full rounded-xl" />}>
-            <VolumeChart data={chartData} formatter={(kg) => display(kg)} />
+            <VolumeChart data={chartData} />
           </Suspense>
         </ChartErrorBoundary>
       </section>
@@ -241,7 +275,7 @@ function Storico() {
           }
         >
           <Suspense fallback={<Skeleton className="h-32 w-full rounded-xl" />}>
-            <YearHeatMap sessionsByDay={sessionsByDay} unit={unit} />
+            <YearHeatMap sessionsByDay={sessionsByDay} unit="kcal" />
           </Suspense>
         </ChartErrorBoundary>
       </section>
@@ -260,8 +294,13 @@ function Storico() {
                 {format(new Date(s.started_at), "EEEE d MMM, HH:mm", { locale: it })}
               </div>
             </div>
-            <div className="text-right text-base font-black">
-              {display(Number(s.total_volume), { digits: 0 })}
+            <div className="text-right">
+              <div className="text-base font-black">
+                {formatCalories(calcCalories(s, userWeight))}
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {display(Number(s.total_volume), { digits: 0 })}
+              </div>
             </div>
           </div>
         ))}
