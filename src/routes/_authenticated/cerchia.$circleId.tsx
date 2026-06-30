@@ -24,6 +24,7 @@ import { MemberWorkouts } from "@/components/MemberWorkouts";
 import {
   estimateCalories,
   formatCalories,
+  formatVolume,
   getWeightOrDefault,
 } from "@/lib/calories";
 
@@ -308,9 +309,11 @@ function CircleDetailPage() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                     <span>🔥 {s.streakDays}</span>
-                    <span>{formatCalories(s.weeklyCalories)} / sett.</span>
+                    <span>{formatCalories(s.weeklyCalories)}</span>
+                    <span className="text-muted-foreground/40">·</span>
+                    <span>{formatVolume(s.weeklyVolume)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">

@@ -40,7 +40,7 @@ function Schede() {
         .from("plans")
         .select("id, name, exercises(count)")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },

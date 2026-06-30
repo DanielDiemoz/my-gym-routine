@@ -10,6 +10,10 @@ export function formatCalories(cal: number): string {
   return `${cal.toLocaleString("it-IT")} kcal`;
 }
 
+export function formatVolume(vol: number): string {
+  return `${Math.round(vol).toLocaleString("it-IT")} kg`;
+}
+
 export function getWeightOrDefault(profileWeight: number | null | undefined): number {
   return profileWeight ?? DEFAULT_WEIGHT_KG;
 }
