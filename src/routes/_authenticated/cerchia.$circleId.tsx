@@ -182,7 +182,7 @@ function CircleDetailPage() {
     return [...profiles].sort((a, b) => {
       const sa = memberStats.get(a.id) ?? { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 };
       const sb = memberStats.get(b.id) ?? { weeklyVolume: 0, weeklyCalories: 0, streakDays: 0 };
-      return sb.weeklyCalories - sa.weeklyCalories;
+      return sb.weeklyVolume - sa.weeklyVolume;
     });
   }, [detailQ.data, memberStats]);
 
