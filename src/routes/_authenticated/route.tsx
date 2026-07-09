@@ -70,7 +70,7 @@ function AuthLayout() {
 
 function BottomNav({ pathname }: { pathname: string }) {
   const items = [
-    { to: "/", icon: Home, label: "Oggi" },
+    { to: "/", icon: Home, label: "Home" },
     { to: "/schede", icon: Dumbbell, label: "Schede" },
     { to: "/storico", icon: HistoryIcon, label: "Storico" },
     { to: "/cerchia", icon: Users, label: "Cerchia" },
