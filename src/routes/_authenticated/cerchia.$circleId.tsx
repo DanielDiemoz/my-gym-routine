@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Trophy,
   UserX,
+  MoreHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +22,7 @@ import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCircle, type Circle } from "@/hooks/useCircle";
 import { MemberWorkouts } from "@/components/MemberWorkouts";
+import { CircleChat, ChatBubbleButton } from "@/components/CircleChat";
 import {
   estimateCalories,
   formatCalories,
@@ -49,7 +51,7 @@ function CircleDetailPage() {
   const navigate = useNavigate();
   const { display: fmtWeight } = useWeightUnit();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
-  const { leaveCircle, isLeaving, deleteCircle, isDeleting, removeMember, isRemovingMember } = useCircle(user.id);
+  const { leaveCircle, isLeaving, deleteCircle, isDeleting, removeMember, isRemovingMember, updateNickname, isUpdatingNickname } = useCircle(user.id);
 
   // Single aggregate query: 1 roundtrip per dataset pesante.
   // RLS garantisce che l'utente possa vedere solo le cerchie di cui è membro.
@@ -63,21 +65,30 @@ function CircleDetailPage() {
       const circle = ((raw ?? [])[0] ?? null) as Circle | null;
       if (!circle) throw new Error("Non hai più accesso a questa cerchia.");
 
-      // 2. Membri (solo user_ids) — usa RPC SECURITY DEFINER che bypassa
-      //    la policy circle_members_select limitata a user_id = auth.uid().
-      const { data: rawIds, error: mErr } = await supabase.rpc(
+      // 2. Membri — usa RPC SECURITY DEFINER che bypassa RLS.
+      //    Restituisce user_id + nickname (se impostato dall'owner).
+      const { data: rawMembers, error: mErr } = await supabase.rpc(
         "get_circle_members",
         { p_circle_id: circleId },
       );
       if (mErr) throw mErr;
-      const userIds = (rawIds ?? []) as string[];
-      if (userIds.length === 0) {
+      const members = (rawMembers ?? []) as {
+        user_id: string;
+        nickname: string | null;
+      }[];
+      if (members.length === 0) {
         return {
           circle,
           profiles: [],
           sessions: [],
+          nicknameMap: new Map<string, string | null>(),
         };
       }
+
+      const userIds = members.map((m) => m.user_id);
+      const nicknameMap = new Map<string, string | null>(
+        members.map((m) => [m.user_id, m.nickname]),
+      );
 
       // 3. Profili dei membri (display_name, avatar_url)
       const profRes = await supabase
@@ -108,7 +119,7 @@ function CircleDetailPage() {
         total_volume: number;
       }[];
 
-      return { circle: circle as Circle, profiles, sessions };
+      return { circle: circle as Circle, profiles, sessions, nicknameMap };
     },
     staleTime: 1000 * 30,
     refetchInterval: 15_000,
@@ -125,6 +136,23 @@ function CircleDetailPage() {
   const { user: memberSearchId } = Route.useSearch();
 
   const isOwner = !!detailQ.data && detailQ.data.circle.owner_id === user.id;
+
+  // Nickname editing state
+  const [editTarget, setEditTarget] = useState<{
+    userId: string;
+    currentNickname: string;
+  } | null>(null);
+
+  const nicknameMap = detailQ.data?.nicknameMap;
+
+  // Mostra nickname se presente, altrimenti display_name
+  function resolveName(profileId: string, displayName: string | null): string {
+    return nicknameMap?.get(profileId) || displayName?.trim() || "Atleta";
+  }
+
+  function resolveInitials(profileId: string, displayName: string | null): string {
+    return (nicknameMap?.get(profileId) || displayName || "?").trim().slice(0, 2).toUpperCase();
+  }
 
   // Aggregazione stats per membro (calorie settimana + volume + streak).
   const memberStats = useMemo(() => {
@@ -209,7 +237,12 @@ function CircleDetailPage() {
         >
           <ChevronLeft className="h-5 w-5" /> Cerchie
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <CircleChat
+            circleId={circle.id}
+            circleName={circle.name}
+            userId={user.id}
+          />
           {isOwner ? (
             <button
               onClick={async () => {
@@ -291,12 +324,12 @@ function CircleDetailPage() {
                 className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3"
               >
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">
-                  {(p.display_name ?? "?").trim().slice(0, 2).toUpperCase()}
+                  {resolveInitials(p.id, p.display_name)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 truncate text-sm font-semibold">
                     <span className="truncate">
-                      {p.display_name?.trim() || "Atleta"}
+                      {resolveName(p.id, p.display_name)}
                     </span>
                     {isThisUser && (
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -321,25 +354,41 @@ function CircleDetailPage() {
                     <Trophy className="h-4 w-4 text-muted-foreground/60" />
                   )}
                   {isOwner && p.id !== circle.owner_id && (
-                    <button
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const ok = await confirmDialog(
-                          "Rimuovere questo membro?",
-                          `${p.display_name?.trim() || "Atleta"} non farà più parte della cerchia.`,
-                        );
-                        if (!ok) return;
-                        try {
-                          await removeMember(circle.id, p.id);
-                        } catch { /* toast gestito da hook */ }
-                      }}
-                      disabled={isRemovingMember}
-                      className="ml-1 rounded-full p-1 text-muted-foreground/50 hover:text-destructive disabled:opacity-60"
-                      aria-label="Rimuovi membro"
-                    >
-                      <UserX className="h-4 w-4" />
-                    </button>
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setEditTarget({
+                            userId: p.id,
+                            currentNickname: nicknameMap?.get(p.id) || "",
+                          });
+                        }}
+                        className="rounded-full p-1 text-muted-foreground/50 hover:text-foreground"
+                        aria-label="Modifica nome"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const ok = await confirmDialog(
+                            "Rimuovere questo membro?",
+                            `${resolveName(p.id, p.display_name)} non farà più parte della cerchia.`,
+                          );
+                          if (!ok) return;
+                          try {
+                            await removeMember(circle.id, p.id);
+                          } catch { /* toast gestito da hook */ }
+                        }}
+                        disabled={isRemovingMember}
+                        className="rounded-full p-1 text-muted-foreground/50 hover:text-destructive disabled:opacity-60"
+                        aria-label="Rimuovi membro"
+                      >
+                        <UserX className="h-4 w-4" />
+                      </button>
+                    </>
                   )}
                   <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
                 </div>
@@ -350,6 +399,20 @@ function CircleDetailPage() {
       </section>
 
       {ConfirmDialog}
+
+      {editTarget && (
+        <NicknameModal
+          circleId={circle.id}
+          userId={editTarget.userId}
+          initial={editTarget.currentNickname}
+          isSaving={isUpdatingNickname}
+          onSave={async (nickname) => {
+            await updateNickname(circle.id, editTarget.userId, nickname);
+            setEditTarget(null);
+          }}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
     </div>
   );
 }
@@ -411,6 +474,76 @@ function DetailSkeleton() {
         <Skeleton className="h-16 rounded-2xl" />
       </div>
 
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Nickname edit modal
+// ─────────────────────────────────────────────────────────────────────────────
+function NicknameModal({
+  circleId,
+  userId,
+  initial,
+  isSaving,
+  onSave,
+  onClose,
+}: {
+  circleId: string;
+  userId: string;
+  initial: string;
+  isSaving: boolean;
+  onSave: (nickname: string) => Promise<void>;
+  onClose: () => void;
+}) {
+  const [value, setValue] = useState(initial);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-t-3xl bg-background p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:rounded-3xl"
+      >
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border sm:hidden" />
+        <h3 className="text-xl font-bold">Modifica nome</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Il nickname sarà visibile a tutti i membri della cerchia.
+        </p>
+
+        <input
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !isSaving) onSave(value);
+          }}
+          placeholder="Nickname"
+          maxLength={30}
+          className="mt-5 w-full rounded-2xl border border-border bg-card px-4 py-3 text-base outline-none focus:border-foreground"
+        />
+        <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
+          max 30 caratteri · lascia vuoto per usare il nome originale
+        </p>
+
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={() => onClose()}
+            className="no-tap-highlight flex-1 rounded-full border border-border bg-card py-3.5 text-sm font-bold uppercase tracking-wide active:scale-[0.98]"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={() => onSave(value)}
+            disabled={isSaving}
+            className="no-tap-highlight flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+          >
+            {isSaving ? "..." : "Salva"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

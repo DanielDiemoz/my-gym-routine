@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Users, Copy, Plus, Hash, LogIn, Check } from "lucide-react";
+import { Users, Copy, Plus, Hash, LogIn, Check, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
@@ -172,11 +172,19 @@ function CirclesList({
   selfId: string;
   onJoin: () => void;
 }) {
+  const { useAllUnreadCounts } = useCircle(selfId);
+  const { data: unreadCounts } = useAllUnreadCounts();
+
   return (
     <>
       <div className="space-y-2">
         {circles.map((c) => (
-          <CircleCard key={c.id} circle={c} selfId={selfId} />
+          <CircleCard
+            key={c.id}
+            circle={c}
+            selfId={selfId}
+            unreadCount={unreadCounts?.[c.id] ?? 0}
+          />
         ))}
       </div>
 
@@ -192,7 +200,15 @@ function CirclesList({
   );
 }
 
-function CircleCard({ circle, selfId }: { circle: Circle; selfId: string }) {
+function CircleCard({
+  circle,
+  selfId,
+  unreadCount,
+}: {
+  circle: Circle;
+  selfId: string;
+  unreadCount: number;
+}) {
   const isOwner = circle.owner_id === selfId;
   return (
     <Link
@@ -202,11 +218,21 @@ function CircleCard({ circle, selfId }: { circle: Circle; selfId: string }) {
       className="no-tap-highlight flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 active:scale-[0.99]"
     >
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
           <Users className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-none text-destructive-foreground">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </div>
         <div>
-          <div className="font-semibold">{circle.name}</div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">{circle.name}</span>
+            {unreadCount > 0 && (
+              <MessageCircle className="h-3 w-3 text-destructive" />
+            )}
+          </div>
           <div className="text-xs text-muted-foreground">
             {circle.member_count ?? 1}{" "}
             {circle.member_count === 1 ? "membro" : "membri"}

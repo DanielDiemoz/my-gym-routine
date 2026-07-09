@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, User, Mail, Plus, LogOut, Smartphone, Apple, CheckCircle2, Download, Scale } from "lucide-react";
+import { ChevronLeft, ChevronDown, User, Mail, Plus, LogOut, Smartphone, Apple, CheckCircle2, Download, Scale } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ function ProfilePage() {
   const [editingWeight, setEditingWeight] = useState(false);
   const [weightInput, setWeightInput] = useState("");
   const [savingWeight, setSavingWeight] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const name = profile?.display_name || "Atleta";
   const apkUrl = "/apk/gymbro.apk";
 
@@ -207,75 +208,87 @@ function ProfilePage() {
           </div>
         )}
 
-        <section className="mb-4 rounded-2xl border border-border bg-card p-5">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              <Smartphone className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-semibold">Android / Windows</h3>
-              <p className="text-xs text-muted-foreground">Chrome, Edge, Samsung Internet</p>
-            </div>
-          </div>
-          <PWAInstallButton />
-          <a
-            href={apkUrl}
-            download
-            className="mt-3 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
-          >
-            <Download className="h-4 w-4" />
-            Scarica APK (Android)
-          </a>
-          <details className="group mt-3">
-            <summary className="cursor-pointer text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">
-              Installazione manuale
-            </summary>
-            <ol className="mt-3 space-y-3 text-sm">
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">1</span>
-                <span>Apri il menu di Chrome <span className="text-muted-foreground">(⁝ tre punti)</span> in alto a destra</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">2</span>
-                <span>Tocca <strong>Aggiungi a Home</strong></span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">3</span>
-                <span>Tocca <strong>Aggiungi</strong> in basso a destra</span>
-              </li>
-            </ol>
-          </details>
-        </section>
+        <button
+          onClick={() => setShowInstructions((prev) => !prev)}
+          className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
+        >
+          <ChevronDown className={`h-4 w-4 transition-transform ${showInstructions ? "rotate-180" : ""}`} />
+          {showInstructions ? "Nascondi istruzioni" : "Istruzioni installazione"}
+        </button>
 
-        <section className="rounded-2xl border border-border bg-card p-5">
-          <div className="mb-3 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              <Apple className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-semibold">iPhone / iPad</h3>
-              <p className="text-xs text-muted-foreground">Safari</p>
-            </div>
+        {showInstructions && (
+          <div className="mt-3 space-y-3">
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                  <Smartphone className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Android / Windows</h3>
+                  <p className="text-xs text-muted-foreground">Chrome, Edge, Samsung Internet</p>
+                </div>
+              </div>
+              <PWAInstallButton />
+              <a
+                href={apkUrl}
+                download
+                className="mt-3 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
+              >
+                <Download className="h-4 w-4" />
+                Scarica APK (Android)
+              </a>
+              <details className="group mt-3">
+                <summary className="cursor-pointer text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">
+                  Installazione manuale
+                </summary>
+                <ol className="mt-3 space-y-3 text-sm">
+                  <li className="flex gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">1</span>
+                    <span>Apri il menu di Chrome <span className="text-muted-foreground">(⁝ tre punti)</span> in alto a destra</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">2</span>
+                    <span>Tocca <strong>Aggiungi a Home</strong></span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">3</span>
+                    <span>Tocca <strong>Aggiungi</strong> in basso a destra</span>
+                  </li>
+                </ol>
+              </details>
+            </section>
+
+            <section className="rounded-2xl border border-border bg-card p-5">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                  <Apple className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">iPhone / iPad</h3>
+                  <p className="text-xs text-muted-foreground">Safari</p>
+                </div>
+              </div>
+              <ol className="space-y-3 text-sm">
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">1</span>
+                  <span>Apri Safari (non Chrome o altri browser)</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">2</span>
+                  <span>Tocca il bottone <strong>Condividi</strong> <span className="text-muted-foreground">(rettangolo con freccia)</span> in basso</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">3</span>
+                  <span>Scorri e tocca <strong>Aggiungi a Home</strong></span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">4</span>
+                  <span>Tocca <strong>Aggiungi</strong> in alto a destra</span>
+                </li>
+              </ol>
+            </section>
           </div>
-          <ol className="space-y-3 text-sm">
-            <li className="flex gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">1</span>
-              <span>Apri Safari (non Chrome o altri browser)</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">2</span>
-              <span>Tocca il bottone <strong>Condividi</strong> <span className="text-muted-foreground">(rettangolo con freccia)</span> in basso</span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">3</span>
-              <span>Scorri e tocca <strong>Aggiungi a Home</strong></span>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">4</span>
-              <span>Tocca <strong>Aggiungi</strong> in alto a destra</span>
-            </li>
-          </ol>
-        </section>
+        )}
       </div>
     </div>
   );

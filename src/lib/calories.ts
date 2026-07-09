@@ -1,8 +1,10 @@
 const MET_WEIGHTLIFTING = 5.0;
 const DEFAULT_WEIGHT_KG = 70;
+const MAX_WORKOUT_DURATION_MIN = 180;
 
-export function estimateCalories(weightKg: number, durationMinutes: number): number {
-  const hours = durationMinutes / 60;
+export function estimateCalories(weightKg: number, durationMinutes: number, maxDurationMinutes = MAX_WORKOUT_DURATION_MIN): number {
+  const cappedMinutes = Math.min(durationMinutes, maxDurationMinutes);
+  const hours = cappedMinutes / 60;
   return Math.round(MET_WEIGHTLIFTING * weightKg * hours);
 }
 

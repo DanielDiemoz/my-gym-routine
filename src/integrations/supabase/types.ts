@@ -39,23 +39,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      circle_messages: {
+        Row: {
+          circle_id: string
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_messages_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circle_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circle_members: {
         Row: {
           circle_id: string
           id: string
           joined_at: string | null
+          last_read_at: string
+          nickname: string | null
           user_id: string
         }
         Insert: {
           circle_id: string
           id?: string
           joined_at?: string | null
+          last_read_at?: string
+          nickname?: string | null
           user_id: string
         }
         Update: {
           circle_id?: string
           id?: string
           joined_at?: string | null
+          last_read_at?: string
+          nickname?: string | null
           user_id?: string
         }
         Relationships: [
@@ -369,7 +414,13 @@ export type Database = {
           owner_id: string
         }[]
       }
-      get_circle_members: { Args: { p_circle_id: string }; Returns: string[] }
+      get_circle_members: {
+        Args: { p_circle_id: string }
+        Returns: {
+          user_id: string
+          nickname: string | null
+        }[]
+      }
       get_my_circle_ids: { Args: never; Returns: string[] }
       get_my_circles: {
         Args: never
@@ -383,7 +434,40 @@ export type Database = {
         }[]
       }
       join_circle_by_code: { Args: { invite_code: string }; Returns: string }
+      get_circle_messages: {
+        Args: { p_circle_id: string }
+        Returns: {
+          id: string
+          circle_id: string
+          user_id: string
+          content: string
+          created_at: string
+          display_name: string | null
+          avatar_url: string | null
+        }[]
+      }
+      get_unread_count: {
+        Args: { p_circle_id: string }
+        Returns: number
+      }
+      mark_circle_read: { Args: { p_circle_id: string }; Returns: undefined }
       remove_circle_member: { Args: { p_circle_id: string; p_member_id: string }; Returns: undefined }
+      send_circle_message: {
+        Args: { p_circle_id: string; p_content: string }
+        Returns: {
+          id: string
+          circle_id: string
+          user_id: string
+          content: string
+          created_at: string
+          display_name: string | null
+          avatar_url: string | null
+        }[]
+      }
+      update_circle_member_nickname: {
+        Args: { p_circle_id: string; p_member_id: string; p_nickname: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
