@@ -342,11 +342,11 @@ function CircleDetailPage() {
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>🔥 {s.streakDays}</span>
-                    <span>{formatCalories(s.weeklyCalories)}</span>
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground flex-nowrap">
+                    <span className="whitespace-nowrap">🔥 {s.streakDays}</span>
+                    <span className="whitespace-nowrap">{formatCalories(s.weeklyCalories)}</span>
                     <span className="text-muted-foreground/40">·</span>
-                    <span>{formatVolume(s.weeklyVolume)}</span>
+                    <span className="whitespace-nowrap">{formatVolume(s.weeklyVolume)}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
