@@ -53,7 +53,8 @@ CREATE TABLE public.sessions (
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   total_volume NUMERIC DEFAULT 0 NOT NULL,
   started_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  completed_at TIMESTAMP WITH TIME ZONE
+  completed_at TIMESTAMP WITH TIME ZONE,
+  workout_state JSONB
 );
 
 ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;

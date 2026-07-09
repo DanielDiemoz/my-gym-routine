@@ -98,7 +98,7 @@ function Schede() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && createPlan()}
-            placeholder="Es. Push A, Full Body..."
+            placeholder="Inserisci il nome della scheda…"
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus:border-foreground"
           />
           <div className="mt-3 flex gap-2">

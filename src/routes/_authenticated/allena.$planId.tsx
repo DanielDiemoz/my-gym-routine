@@ -19,17 +19,44 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import type { Json } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/allena/$planId")({
   component: ActiveSession,
 });
 
-const WORKOUT_STATE_KEY = "gw_workout_state";
+// ── Persistenza modulo (indipendente da React) ──────────────────────────
+// Salviamo lo stato in un closure module-level + localStorage.
+// In questo modo la persistenza NON dipende dal ciclo di vita di React
+// (effetti, useCallback, ecc.) e funziona anche su chiusura tab improvvisa.
+const WS_KEY = "gw_ws";
+let _cached: string | null = null;
 
-// Cache a livello di modulo: sopravvive a mount/unmount senza toccare storage.
-// Le navigazioni client-side (allena → cerchie → schede → allena) condividono
-// lo stesso modulo JS, quindi questa variabile persiste tra i mount.
-let _modCache: string | null = null;
+function persist(stateStr: string) {
+  _cached = stateStr;
+  try { localStorage.setItem(WS_KEY, stateStr); } catch {}
+}
+
+function restore(): string | null {
+  if (_cached) return _cached;
+  try {
+    const raw = localStorage.getItem(WS_KEY);
+    if (raw) _cached = raw;
+    return raw;
+  } catch { return null; }
+}
+
+function clearPersisted() {
+  _cached = null;
+  try { localStorage.removeItem(WS_KEY); } catch {}
+}
+
+// Sempre attivo: prima di chiudere la pagina, salva l'ultimo stato.
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", () => {
+    if (_cached) try { localStorage.setItem(WS_KEY, _cached); } catch {}
+  });
+}
 
 type Exercise = {
   id: string;
@@ -43,7 +70,7 @@ type Exercise = {
 
 type LoggedSet = { reps: number; weight: number; done: boolean };
 
-type OrphanSession = { id: string; started_at: string };
+type OrphanSession = { id: string; started_at: string; workout_state: Json | null };
 
 type WorkoutState = {
   sessionId: string;
@@ -53,27 +80,6 @@ type WorkoutState = {
   currentIdx: number;
   localExercises: Exercise[];
 };
-
-function parseWorkoutState(value: string | null): WorkoutState | null {
-  if (!value) return null;
-  try {
-    return JSON.parse(value) as WorkoutState;
-  } catch {
-    return null;
-  }
-}
-
-function serializeWorkoutState(state: WorkoutState) {
-  return JSON.stringify(state);
-}
-
-function writeWorkoutState(data: string) {
-  _modCache = data;
-  if (typeof window === "undefined") return;
-  (window as any).__WORKOUT_STATE = data;
-  try { localStorage.setItem(WORKOUT_STATE_KEY, data); } catch {}
-  try { sessionStorage.setItem(WORKOUT_STATE_KEY, data); } catch {}
-}
 
 function ActiveSession() {
   const { planId } = Route.useParams();
@@ -105,7 +111,7 @@ function ActiveSession() {
     queryFn: async (): Promise<OrphanSession | null> => {
       const { data, error } = await supabase
         .from("sessions")
-        .select("id, started_at")
+        .select("id, started_at, workout_state")
         .eq("plan_id", planId)
         .eq("user_id", user.id)
         .is("completed_at", null)
@@ -137,14 +143,26 @@ function ActiveSession() {
   const latestDraftRef = useRef<WorkoutState | null>(null);
   const persistDraft = useCallback((state: WorkoutState | null) => {
     if (!state?.sessionId) return;
-    const data = serializeWorkoutState(state);
-    writeWorkoutState(data);
-    setWorkCtx(data);
+    console.log("[PERSIST] saving to LS", state.sessionId, "logs:", Object.keys(state.logs ?? {}).length, "exercises");
+    persist(JSON.stringify(state));
+    setWorkCtx(JSON.stringify(state));
   }, [setWorkCtx]);
   const stageDraft = useCallback((state: WorkoutState | null) => {
     if (!state?.sessionId) return;
     latestDraftRef.current = state;
-    writeWorkoutState(serializeWorkoutState(state));
+    console.log("[PERSIST] stageDraft saving to LS", state.sessionId, "logs:", Object.keys(state.logs ?? {}).length, "exercises");
+    persist(JSON.stringify(state));
+  }, []);
+
+  // ── Persistenza su DB (workout_state JSONB) ─────────────────────────
+  const dbTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveWorkoutStateToDb = useCallback(async (state: WorkoutState | null) => {
+    if (!state?.sessionId) return;
+    const { error } = await supabase
+      .from("sessions")
+      .update({ workout_state: state })
+      .eq("id", state.sessionId);
+    if (error) console.warn("DB workout_state save failed:", error.message);
   }, []);
 
   // Sincronizza localExercises dal piano al caricamento.
@@ -174,8 +192,8 @@ function ActiveSession() {
 
     const orphan = orphanQ.data;
     if (orphan && !userDecision) {
-      const last = parseWorkoutState(sessionStorage.getItem("gw_last"));
-      const ctxData = parseWorkoutState(workCtx);
+      const last = JSON.parse(sessionStorage.getItem("gw_last") ?? "null") as WorkoutState | null;
+      const ctxData = JSON.parse(workCtx ?? "null") as WorkoutState | null;
       const match = (last?.sessionId === orphan.id && last?.planId === planId) ||
                     ctxData?.sessionId === orphan.id;
       if (match) {
@@ -190,6 +208,7 @@ function ActiveSession() {
 
     let cancelled = false;
 
+    console.log("[SESSION] resolve decision:", userDecision, "orphanId:", orphanIdAtDecision);
     (async () => {
       try {
         let resolvedId: string | null = null;
@@ -229,8 +248,9 @@ function ActiveSession() {
         }
 
         if (!cancelled && resolvedId) {
+          console.log("[SESSION] setting sessionId:", resolvedId);
           setSessionId(resolvedId);
-          sessionStorage.setItem("gw_last", serializeWorkoutState({
+          sessionStorage.setItem("gw_last", JSON.stringify({
             sessionId: resolvedId,
             planId,
             userId: user.id,
@@ -281,75 +301,61 @@ function ActiveSession() {
     });
   }, [planQ.data]);
 
-  // ── Ref lazy: cattura i dati da localStorage DURANTE IL RENDER ─────────
-  const stashedRef = useRef<WorkoutState | null>(null);
-  if (stashedRef.current === null && typeof window !== "undefined") {
-    stashedRef.current = parseWorkoutState(localStorage.getItem(WORKOUT_STATE_KEY));
-  }
-
   // ── Restore ──────────────────────────────────────────────────────────
   const restoredRef = useRef(false);
   const skipNextPersistRef = useRef(false);
   useEffect(() => {
-    if (!sessionId) return;
-    if (restoredRef.current) return;
+    if (!sessionId) { console.log("[RESTORE] no sessionId yet"); return; }
+    if (restoredRef.current) { console.log("[RESTORE] already restored"); return; }
 
-    const candidates = [
-      parseWorkoutState(workCtx),
-      parseWorkoutState(_modCache),
-      stashedRef.current,
-      typeof window !== "undefined" ? parseWorkoutState((window as any).__WORKOUT_STATE) : null,
-      typeof window !== "undefined" ? parseWorkoutState(localStorage.getItem(WORKOUT_STATE_KEY)) : null,
-      typeof window !== "undefined" ? parseWorkoutState(sessionStorage.getItem(WORKOUT_STATE_KEY)) : null,
-    ];
-    let state = candidates.find((candidate) =>
-      candidate?.sessionId === sessionId &&
-      (!candidate.planId || candidate.planId === planId) &&
-      (!candidate.userId || candidate.userId === user.id)
-    );
+    if (orphanQ.isLoading) { console.log("[RESTORE] waiting for orphanQ"); return; }
+    if (!orphanQ.data && orphanQ.isFetching) { console.log("[RESTORE] waiting for orphanQ"); return; }
 
-    // Fallback: se la sessione è stata creata con un ID diverso (es. per race
-    // condition nel resume), ma workCtx ha dati validi per questo piano/utente,
-    // ripristina comunque i dati. Non forzare se l'utente ha scelto "start-new".
-    if (!state && userDecision !== "start-new") {
-      const ctxState = parseWorkoutState(workCtx);
-      if (ctxState && ctxState.planId === planId && ctxState.userId === user.id) {
-        state = ctxState;
-      }
-    }
-
-    if (state) {
-      latestDraftRef.current = {
-        sessionId,
-        planId,
-        userId: user.id,
-        logs: state.logs ?? {},
-        currentIdx: state.currentIdx ?? 0,
-        localExercises: state.localExercises ?? [],
-      };
-      skipNextPersistRef.current = true;
-      setCurrentIdx(state.currentIdx ?? 0);
-      if (state.localExercises?.length) setLocalExercises(state.localExercises);
-      if (state.logs) {
-        setLogs(() => {
-          const merged = { ...state.logs };
-          for (const ex of planQ.data?.exercises ?? []) {
-            if (!merged[ex.id]) {
-              merged[ex.id] = Array.from({ length: ex.sets }, () => ({
-                reps: ex.reps,
-                weight: Number(ex.weight),
-                done: false,
-              }));
-            }
-          }
-          return merged;
-        });
-      }
-    }
-
-    stashedRef.current = null;
     restoredRef.current = true;
-  }, [sessionId, workCtx, planId, user.id, userDecision, planQ.data?.exercises]);
+    skipNextPersistRef.current = true;
+
+    console.log("[RESTORE] attempting restore for sessionId:", sessionId, "planId:", planId, "userId:", user.id);
+    let saved: WorkoutState | null = null;
+    try {
+      const raw = restore();
+      if (raw) saved = JSON.parse(raw) as WorkoutState;
+    } catch {}
+
+    console.log("[RESTORE] localStorage found:", !!saved, "sessionId:", saved?.sessionId);
+    if (!saved) { console.log("[RESTORE] no valid state to restore"); return; }
+    console.log("[RESTORE] sessionId match:", saved.sessionId === sessionId);
+    if (saved.sessionId !== sessionId) { console.log("[RESTORE] no valid state to restore"); return; }
+    console.log("[RESTORE] planId match:", saved.planId === planId);
+    if (saved.planId !== planId) { console.log("[RESTORE] no valid state to restore"); return; }
+    console.log("[RESTORE] userId match:", saved.userId === user.id);
+    if (saved.userId !== user.id) { console.log("[RESTORE] no valid state to restore"); return; }
+
+    console.log("[RESTORE] restoring with", Object.keys(saved?.logs ?? {}).length, "exercises");
+    latestDraftRef.current = {
+      sessionId, planId, userId: user.id,
+      logs: saved.logs ?? {},
+      currentIdx: saved.currentIdx ?? 0,
+      localExercises: saved.localExercises ?? [],
+    };
+    _cached = JSON.stringify(latestDraftRef.current);
+    setCurrentIdx(saved.currentIdx ?? 0);
+    if (saved.localExercises?.length) setLocalExercises(saved.localExercises);
+    if (saved.logs) {
+      setLogs(() => {
+        const merged = { ...saved.logs };
+        for (const ex of planQ.data?.exercises ?? []) {
+          if (!merged[ex.id]) {
+            merged[ex.id] = Array.from({ length: ex.sets }, () => ({
+              reps: ex.reps,
+              weight: Number(ex.weight),
+              done: false,
+            }));
+          }
+        }
+        return merged;
+      });
+    }
+  }, [sessionId, orphanQ.data, orphanQ.isLoading, orphanQ.isFetching, planId, user.id, planQ.data?.exercises]);
 
   // ── Persistenza ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -363,21 +369,39 @@ function ActiveSession() {
   }, [sessionId, planId, user.id, logs, currentIdx, localExercises, persistDraft]);
 
   useEffect(() => {
-    const flushDraft = () => persistDraft(latestDraftRef.current);
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") flushDraft();
+    const flushDraft = () => { console.log("[FLUSH] flushing draft on close"); persistDraft(latestDraftRef.current); };
+    const flushDb = () => {
+      if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
+      saveWorkoutStateToDb(latestDraftRef.current);
     };
 
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") { flushDraft(); flushDb(); }
+    };
+    const onBeforeUnload = () => { flushDraft(); flushDb(); };
+
     window.addEventListener("pagehide", flushDraft);
+    window.addEventListener("pagehide", flushDb);
+    window.addEventListener("beforeunload", onBeforeUnload);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       flushDraft();
       window.removeEventListener("pagehide", flushDraft);
+      window.removeEventListener("pagehide", flushDb);
+      window.removeEventListener("beforeunload", onBeforeUnload);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [persistDraft]);
+  }, [persistDraft, saveWorkoutStateToDb]);
+
+  // ── Persistenza su DB (debounce) ──────────────────────────────────────
+  useEffect(() => {
+    if (!sessionId || !restoredRef.current) return;
+    const state: WorkoutState = { sessionId, planId, userId: user.id, logs, currentIdx, localExercises };
+    if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
+    dbTimerRef.current = setTimeout(() => saveWorkoutStateToDb(state), 2000);
+    return () => { if (dbTimerRef.current) clearTimeout(dbTimerRef.current); };
+  }, [sessionId, planId, user.id, logs, currentIdx, localExercises, saveWorkoutStateToDb]);
 
   const exercises = localExercises.length > 0 ? localExercises : (planQ.data?.exercises ?? []);
   const current = exercises[currentIdx];
@@ -467,10 +491,11 @@ function ActiveSession() {
       "I dati non saranno salvati.",
     );
     if (!ok) return;
+    if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
     if (sessionId) await supabase.from("sessions").delete().eq("id", sessionId);
     sessionStorage.removeItem("gw_last");
-    localStorage.removeItem(WORKOUT_STATE_KEY);
-    sessionStorage.removeItem(WORKOUT_STATE_KEY);
+    console.log("[CLEANUP] removing LS key");
+    clearPersisted();
     navigate({ to: "/" });
   }
 
@@ -513,10 +538,11 @@ function ActiveSession() {
     await supabase.from("sessions").update({
       completed_at: new Date().toISOString(),
       total_volume: totalVolume,
+      workout_state: null,
     }).eq("id", sessionId);
     sessionStorage.removeItem("gw_last");
-    localStorage.removeItem(WORKOUT_STATE_KEY);
-    sessionStorage.removeItem(WORKOUT_STATE_KEY);
+    console.log("[CLEANUP] removing LS key");
+    clearPersisted();
     toast.success("Allenamento salvato!");
     navigate({ to: "/" });
   }
@@ -864,7 +890,7 @@ function ActiveSession() {
               Cerca un esercizio dalla libreria per sostituire "{current.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="relative mb-3 mt-1">
+          <div className="relative mb-1 mt-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
@@ -875,13 +901,25 @@ function ActiveSession() {
               autoFocus
             />
           </div>
+          <p className="mb-3 text-[10px] uppercase tracking-widest text-muted-foreground">
+            Non è obbligatorio scegliere dalla lista
+          </p>
           <div className="space-y-1">
             {searchQuery.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">Inizia a digitare per cercare</p>
             ) : searchQ.isLoading ? (
               <p className="py-8 text-center text-sm text-muted-foreground">Ricerca…</p>
             ) : searchResults.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Nessun esercizio trovato</p>
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">Nessun esercizio trovato</p>
+                <button
+                  type="button"
+                  onClick={() => replaceExercise(searchQuery, null)}
+                  className="mt-3 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground"
+                >
+                  Usa "{searchQuery}"
+                </button>
+              </div>
             ) : (
               searchResults.map((ex) => (
                 <button

@@ -304,6 +304,7 @@ export type Database = {
           started_at: string
           total_volume: number
           user_id: string
+          workout_state: Json | null
         }
         Insert: {
           completed_at?: string | null
@@ -313,6 +314,7 @@ export type Database = {
           started_at?: string
           total_volume?: number
           user_id: string
+          workout_state?: Json | null
         }
         Update: {
           completed_at?: string | null
@@ -322,6 +324,7 @@ export type Database = {
           started_at?: string
           total_volume?: number
           user_id?: string
+          workout_state?: Json | null
         }
         Relationships: [
           {
