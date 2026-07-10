@@ -210,7 +210,6 @@ function EmailForm({
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
-        // Se l'email non è già confermata, fai sloggare e chiedi conferma
         if (!data.user?.email_confirmed_at) {
           if (data.session) await supabase.auth.signOut();
           toast.success("Account creato. Controlla la tua email per confermare.");

@@ -174,7 +174,7 @@ function NewPasswordForm({ onDone }: { onDone: () => void }) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="no-tap-highlight mt-4 flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+        className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
       >
         {isSubmitting ? "..." : "Aggiorna password"}
       </button>
@@ -207,9 +207,7 @@ function Field({
         {...registration}
         className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-base outline-none transition focus:border-foreground"
       />
-      {error && (
-        <p className="mt-1.5 text-xs font-semibold text-destructive">{error}</p>
-      )}
+      {error && <p className="mt-1.5 text-xs font-semibold text-destructive">{error}</p>}
     </div>
   );
 }

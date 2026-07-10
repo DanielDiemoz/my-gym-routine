@@ -31,10 +31,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
     const value = email.trim();
     if (!value) return;
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({
-      email: value,
-      options: { emailRedirectTo: window.location.origin },
-    });
+    const { error } = await supabase.auth.updateUser({ email: value });
     setSaving(false);
     if (error) {
       toast.error(error.message);
