@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -121,7 +120,6 @@ function AuthPage() {
             )}
           </button>
         )}
-
       </div>
     </div>
   );
