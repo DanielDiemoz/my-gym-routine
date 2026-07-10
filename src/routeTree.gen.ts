@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AuthenticatedStoricoRouteImport } from './routes/_authenticated/storico'
 import { Route as AuthenticatedProfiloRouteImport } from './routes/_authenticated/profilo'
@@ -36,6 +37,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthResetRoute = AuthResetRouteImport.update({
   id: '/reset',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/profilo': typeof AuthenticatedProfiloRoute
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
   '/cerchia/$circleId': typeof AuthenticatedCerchiaCircleIdRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/profilo': typeof AuthenticatedProfiloRoute
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/_authenticated/profilo': typeof AuthenticatedProfiloRoute
   '/_authenticated/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
+  '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/_authenticated/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/profilo'
     | '/storico'
     | '/auth/reset'
+    | '/auth/verify'
     | '/admin/set-coach'
     | '/allena/$planId'
     | '/cerchia/$circleId'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/profilo'
     | '/storico'
     | '/auth/reset'
+    | '/auth/verify'
     | '/'
     | '/admin/set-coach'
     | '/allena/$planId'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profilo'
     | '/_authenticated/storico'
     | '/auth/reset'
+    | '/auth/verify'
     | '/_authenticated/'
     | '/_authenticated/admin/set-coach'
     | '/_authenticated/allena/$planId'
@@ -211,6 +223,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/auth/reset': {
       id: '/auth/reset'
@@ -316,10 +335,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface AuthRouteChildren {
   AuthResetRoute: typeof AuthResetRoute
+  AuthVerifyRoute: typeof AuthVerifyRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthResetRoute: AuthResetRoute,
+  AuthVerifyRoute: AuthVerifyRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)

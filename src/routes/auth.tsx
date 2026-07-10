@@ -192,6 +192,7 @@ function EmailForm({
   onSuccess: () => void;
   onForgot: () => void;
 }) {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -210,9 +211,12 @@ function EmailForm({
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
+        // Se l'email non è già confermata, vai alla schermata di inserimento
+        // codice (OTP) invece di chiedere di controllare la mail.
         if (!data.user?.email_confirmed_at) {
           if (data.session) await supabase.auth.signOut();
-          toast.success("Account creato. Controlla la tua email per confermare.");
+          toast.success("Codice di conferma inviato alla tua email.");
+          navigate({ to: "/auth/verify", search: { email: values.email } });
           return;
         }
       } else {
@@ -267,50 +271,25 @@ function EmailForm({
 
 // ── Forgot password ─────────────────────────────────────────────────────────
 function ForgotForm({ onBack }: { onBack: () => void }) {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<ForgotForm>({
     resolver: zodResolver(forgotSchema),
     defaultValues: { email: "" },
   });
 
-  const [sent, setSent] = useState(false);
-
   async function onSubmit(values: ForgotForm) {
     try {
-      const redirectTo = `${window.location.origin}/auth/reset`;
-      const { error } = await supabase.auth.resetPasswordForEmail(values.email, { redirectTo });
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email);
       if (error) throw error;
-      setSent(true);
-      reset();
-      toast.success("Controlla la tua email per il link di reset.");
+      toast.success("Codice di reset inviato alla tua email.");
+      navigate({ to: "/auth/reset", search: { email: values.email } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore");
     }
-  }
-
-  if (sent) {
-    return (
-      <div className="space-y-4 rounded-2xl border border-border bg-card p-6 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          ✓
-        </div>
-        <p className="text-sm font-semibold">Email inviata</p>
-        <p className="text-xs text-muted-foreground">
-          Se l'indirizzo è registrato, riceverai un link per reimpostare la password.
-        </p>
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary"
-        >
-          <ArrowLeft className="h-4 w-4" /> Torna al login
-        </button>
-      </div>
-    );
   }
 
   return (
@@ -324,7 +303,7 @@ function ForgotForm({ onBack }: { onBack: () => void }) {
         error={errors.email?.message}
       />
 
-      <SubmitButton loading={isSubmitting}>Invia link di reset</SubmitButton>
+      <SubmitButton loading={isSubmitting}>Invia codice di reset</SubmitButton>
 
       <button
         type="button"

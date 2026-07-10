@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, CheckCircle2 } from "lucide-react";
+import { Mail } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { isLegacyEmail } from "@/lib/legacy-email";
 
 export function EmailMigrationGate({ user }: { user: { id: string; email?: string | null } }) {
@@ -10,6 +11,8 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   // Una volta confermata l'email reale, l'evento USER_UPDATED aggiorna il
   // loader e l'app si sblocca. Se l'utente torna dopo aver confermato da
@@ -27,7 +30,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  async function handleSubmit() {
+  async function handleSubmitEmail() {
     const value = email.trim();
     if (!value) return;
     setSaving(true);
@@ -38,12 +41,35 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
       return;
     }
     setSent(true);
-    toast.success("Link di conferma inviato alla tua email.");
+    toast.success("Codice di conferma inviato alla tua email.");
   }
 
-  async function handleReload() {
-    await supabase.auth.getUser();
+  async function handleVerify() {
+    const value = email.trim();
+    if (code.length < 6) return;
+    setVerifying(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: value,
+      token: code,
+      type: "email_change",
+    });
+    setVerifying(false);
+    if (error) {
+      toast.error("Codice non valido o scaduto.");
+      return;
+    }
+    toast.success("Email confermata!");
     navigate({ to: "/" }).catch(() => {});
+  }
+
+  async function handleResend() {
+    const value = email.trim();
+    const { error } = await supabase.auth.resend({ type: "email_change", email: value });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Codice inviato di nuovo.");
   }
 
   return (
@@ -82,33 +108,59 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
 
               <button
                 type="button"
-                onClick={handleSubmit}
+                onClick={handleSubmitEmail}
                 disabled={saving || !email.trim()}
                 className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
               >
-                {saving ? "Invio…" : "Invia link di conferma"}
+                {saving ? "Invio…" : "Invia codice"}
               </button>
             </div>
           </>
         ) : (
-          <div className="space-y-4 rounded-2xl border border-border bg-card p-6 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <CheckCircle2 className="h-6 w-6" />
-            </div>
-            <p className="text-sm font-semibold">Controlla la tua email</p>
-            <p className="text-xs text-muted-foreground">
-              Abbiamo inviato un link di conferma a{" "}
-              <span className="font-semibold text-foreground">{email.trim()}</span>. Aprilo per
-              attivare l'account. Finché non confermi non puoi usare l'app.
+          <>
+            <h1 className="text-2xl font-bold">Inserisci il codice</h1>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Abbiamo inviato un codice di conferma a{" "}
+              <span className="font-semibold text-foreground">{email.trim()}</span>. Inseriscilo per
+              attivare l'account.
             </p>
-            <button
-              type="button"
-              onClick={handleReload}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary"
-            >
-              Ho già confermato? Ricarica
-            </button>
-          </div>
+
+            <div className="mt-8 space-y-6">
+              <div className="flex justify-center">
+                <InputOTP
+                  maxLength={6}
+                  value={code}
+                  onChange={(v) => setCode(v.replace(/\D/g, ""))}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleVerify}
+                disabled={verifying || code.length < 6}
+                className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+              >
+                {verifying ? "Verifica…" : "Conferma"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResend}
+                className="block w-full text-center text-xs font-semibold text-muted-foreground"
+              >
+                Non hai ricevuto il codice? Inviane un altro
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
