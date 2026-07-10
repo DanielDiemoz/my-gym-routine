@@ -1,9 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, ChevronDown, User, Mail, Plus, LogOut, Smartphone, Apple, CheckCircle2, Download, Scale } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronDown,
+  User,
+  Mail,
+  Plus,
+  LogOut,
+  Smartphone,
+  Apple,
+  CheckCircle2,
+  Download,
+  Scale,
+} from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { toast } from "sonner";
+import { isLegacyEmail } from "@/lib/legacy-email";
 
 export const Route = createFileRoute("/_authenticated/profilo")({
   component: ProfilePage,
@@ -76,7 +89,7 @@ function ProfilePage() {
           </div>
         </div>
 
-        {user.email ? null : addingEmail ? (
+        {user.email && !isLegacyEmail(user.email) ? null : addingEmail ? (
           <div className="flex items-center gap-2">
             <input
               type="email"
@@ -93,7 +106,10 @@ function ProfilePage() {
               {saving ? "Salvataggio…" : "Salva"}
             </button>
             <button
-              onClick={() => { setAddingEmail(false); setNewEmail(""); }}
+              onClick={() => {
+                setAddingEmail(false);
+                setNewEmail("");
+              }}
               className="text-sm text-muted-foreground font-semibold"
             >
               Annulla
@@ -154,7 +170,10 @@ function ProfilePage() {
                   {savingWeight ? "…" : "Salva"}
                 </button>
                 <button
-                  onClick={() => { setEditingWeight(false); setWeightInput(""); }}
+                  onClick={() => {
+                    setEditingWeight(false);
+                    setWeightInput("");
+                  }}
                   className="text-xs text-muted-foreground font-semibold"
                 >
                   Annulla
@@ -212,7 +231,9 @@ function ProfilePage() {
           onClick={() => setShowInstructions((prev) => !prev)}
           className="flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
         >
-          <ChevronDown className={`h-4 w-4 transition-transform ${showInstructions ? "rotate-180" : ""}`} />
+          <ChevronDown
+            className={`h-4 w-4 transition-transform ${showInstructions ? "rotate-180" : ""}`}
+          />
           {showInstructions ? "Nascondi istruzioni" : "Istruzioni installazione"}
         </button>
 
@@ -243,16 +264,29 @@ function ProfilePage() {
                 </summary>
                 <ol className="mt-3 space-y-3 text-sm">
                   <li className="flex gap-3">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">1</span>
-                    <span>Apri il menu di Chrome <span className="text-muted-foreground">(⁝ tre punti)</span> in alto a destra</span>
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                      1
+                    </span>
+                    <span>
+                      Apri il menu di Chrome{" "}
+                      <span className="text-muted-foreground">(⁝ tre punti)</span> in alto a destra
+                    </span>
                   </li>
                   <li className="flex gap-3">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">2</span>
-                    <span>Tocca <strong>Aggiungi a Home</strong></span>
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                      2
+                    </span>
+                    <span>
+                      Tocca <strong>Aggiungi a Home</strong>
+                    </span>
                   </li>
                   <li className="flex gap-3">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">3</span>
-                    <span>Tocca <strong>Aggiungi</strong> in basso a destra</span>
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                      3
+                    </span>
+                    <span>
+                      Tocca <strong>Aggiungi</strong> in basso a destra
+                    </span>
                   </li>
                 </ol>
               </details>
@@ -270,20 +304,35 @@ function ProfilePage() {
               </div>
               <ol className="space-y-3 text-sm">
                 <li className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">1</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                    1
+                  </span>
                   <span>Apri Safari (non Chrome o altri browser)</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">2</span>
-                  <span>Tocca il bottone <strong>Condividi</strong> <span className="text-muted-foreground">(rettangolo con freccia)</span> in basso</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                    2
+                  </span>
+                  <span>
+                    Tocca il bottone <strong>Condividi</strong>{" "}
+                    <span className="text-muted-foreground">(rettangolo con freccia)</span> in basso
+                  </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">3</span>
-                  <span>Scorri e tocca <strong>Aggiungi a Home</strong></span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                    3
+                  </span>
+                  <span>
+                    Scorri e tocca <strong>Aggiungi a Home</strong>
+                  </span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">4</span>
-                  <span>Tocca <strong>Aggiungi</strong> in alto a destra</span>
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                    4
+                  </span>
+                  <span>
+                    Tocca <strong>Aggiungi</strong> in alto a destra
+                  </span>
                 </li>
               </ol>
             </section>

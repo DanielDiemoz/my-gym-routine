@@ -1,10 +1,19 @@
-import { createFileRoute, Outlet, redirect, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  redirect,
+  Link,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Home, Dumbbell, History as HistoryIcon, Users, User } from "lucide-react";
 import { WeightUnitProvider } from "@/hooks/useWeightUnit";
 import { checkOnboardingFlag, resetOnboardingFlag } from "@/lib/onboarding-flag";
 import { WorkoutProvider } from "@/lib/workout-context";
+import { EmailMigrationGate } from "@/components/EmailMigrationGate";
+import { isLegacyEmail } from "@/lib/legacy-email";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -37,10 +46,11 @@ function AuthLayout() {
   // checkOnboardingFlag legge window.__gymbro_onboarded SENZA
   // cancellarlo, così le doppie chiamate di Strict Mode vedono lo stesso valore.
   const isFromOnboarding = checkOnboardingFlag();
-  const effectiveProfile = isFromOnboarding && profile
-    ? { ...profile, onboarded: true }
-    : profile;
-  const needsOnboarding = effectiveProfile !== null && !effectiveProfile.onboarded && !loc.pathname.startsWith("/onboarding");
+  const effectiveProfile = isFromOnboarding && profile ? { ...profile, onboarded: true } : profile;
+  const needsOnboarding =
+    effectiveProfile !== null &&
+    !effectiveProfile.onboarded &&
+    !loc.pathname.startsWith("/onboarding");
 
   useEffect(() => {
     if (isFromOnboarding) resetOnboardingFlag();
@@ -49,6 +59,12 @@ function AuthLayout() {
   useEffect(() => {
     if (needsOnboarding) navigate({ to: "/onboarding" });
   }, [needsOnboarding, navigate]);
+
+  // Gli account legacy (solo username, email @gymbro.local) non possono usare
+  // l'app finché non collegano un'email reale per il recupero password.
+  if (isLegacyEmail(user.email)) {
+    return <EmailMigrationGate user={user} />;
+  }
 
   if (needsOnboarding) {
     return null;

@@ -23,7 +23,6 @@ const usernameLoginSchema = z.object({
   username: z.string().trim().min(2, "Minimo 2 caratteri"),
   password: z.string().min(6, "Minimo 6 caratteri"),
 });
-const usernameSignupSchema = usernameLoginSchema; // same shape
 const emailSchema = z.object({
   email: z.string().trim().email("Email non valida"),
   password: z.string().min(6, "Minimo 6 caratteri"),
@@ -68,22 +67,14 @@ function AuthPage() {
           </p>
         </div>
 
-        <Tabs
-          value={tab}
-          onValueChange={(v) => setTab(v as AuthTab)}
-          className="w-full"
-        >
+        <Tabs value={tab} onValueChange={(v) => setTab(v as AuthTab)} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="email">Email</TabsTrigger>
             <TabsTrigger value="username">Username (legacy)</TabsTrigger>
           </TabsList>
 
           <TabsContent value="username" className="mt-6">
-            <UsernameForm
-              mode={mode}
-              setMode={setMode}
-              onSuccess={onLoginSuccess}
-            />
+            <UsernameForm onSuccess={onLoginSuccess} />
           </TabsContent>
 
           <TabsContent value="email" className="mt-6">
@@ -103,46 +94,41 @@ function AuthPage() {
         {!forgot && (
           <button
             type="button"
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
+            onClick={() => {
+              if (tab === "username") {
+                setTab("email");
+                setMode("signup");
+              } else {
+                setMode(mode === "login" ? "signup" : "login");
+              }
+            }}
             className="no-tap-highlight mt-6 text-center text-sm text-muted-foreground"
           >
-            {mode === "login" ? (
+            {tab === "username" ? (
+              <>
+                Non hai un account?{" "}
+                <span className="font-semibold text-foreground">Registrati con email</span>
+              </>
+            ) : mode === "login" ? (
               <>
                 Non hai un account?{" "}
                 <span className="font-semibold text-foreground">Registrati</span>
               </>
             ) : (
               <>
-                Hai già un account?{" "}
-                <span className="font-semibold text-foreground">Accedi</span>
+                Hai già un account? <span className="font-semibold text-foreground">Accedi</span>
               </>
             )}
           </button>
         )}
 
-        <div className="mt-8 text-center">
-          <Link
-            to="/"
-            className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-          >
-            Continua senza account
-          </Link>
-        </div>
       </div>
     </div>
   );
 }
 
 // ── Username (legacy @gymbro.local) ────────────────────────────────────────
-function UsernameForm({
-  mode,
-  setMode,
-  onSuccess,
-}: {
-  mode: AuthMode;
-  setMode: (m: AuthMode) => void;
-  onSuccess: () => void;
-}) {
+function UsernameForm({ onSuccess }: { onSuccess: () => void }) {
   const {
     register,
     handleSubmit,
@@ -155,27 +141,11 @@ function UsernameForm({
   async function onSubmit(values: UserLoginForm) {
     try {
       const virtualEmail = `${values.username.trim().toLowerCase()}@gymbro.local`;
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email: virtualEmail,
-          password: values.password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        // Se l'email non è già confermata, fai sloggare e chiedi conferma
-        if (!data.user?.email_confirmed_at) {
-          if (data.session) await supabase.auth.signOut();
-          toast.success("Account creato. Controlla la tua email per confermare.");
-          return;
-        }
-        toast.success("Account creato. Benvenuto!");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: virtualEmail,
-          password: values.password,
-        });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({
+        email: virtualEmail,
+        password: values.password,
+      });
+      if (error) throw error;
       onSuccess();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Errore";
@@ -186,7 +156,8 @@ function UsernameForm({
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <p className="rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-        Modalità legacy: solo per account creati prima della migrazione email.
+        Modalità legacy: solo per account creati prima della migrazione email. Per creare un nuovo
+        account usa il tab Email.
       </p>
 
       <FormField
@@ -200,23 +171,13 @@ function UsernameForm({
       <FormField
         label="Password"
         type="password"
-        autoComplete={mode === "login" ? "current-password" : "new-password"}
+        autoComplete="current-password"
         placeholder="••••••••"
         registration={register("password")}
         error={errors.password?.message}
       />
 
-      <SubmitButton loading={isSubmitting}>
-        {mode === "login" ? "Accedi" : "Crea account"}
-      </SubmitButton>
-
-      <button
-        type="button"
-        onClick={() => setMode(mode === "login" ? "signup" : "login")}
-        className="no-tap-highlight mt-2 w-full text-center text-xs text-muted-foreground"
-      >
-        {mode === "login" ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
-      </button>
+      <SubmitButton loading={isSubmitting}>Accedi</SubmitButton>
     </form>
   );
 }
@@ -324,10 +285,7 @@ function ForgotForm({ onBack }: { onBack: () => void }) {
   async function onSubmit(values: ForgotForm) {
     try {
       const redirectTo = `${window.location.origin}/auth/reset`;
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        values.email,
-        { redirectTo },
-      );
+      const { error } = await supabase.auth.resetPasswordForEmail(values.email, { redirectTo });
       if (error) throw error;
       setSent(true);
       reset();
@@ -411,20 +369,12 @@ function FormField({
         {...registration}
         className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-base outline-none transition focus:border-foreground"
       />
-      {error && (
-        <p className="mt-1.5 text-xs font-semibold text-destructive">{error}</p>
-      )}
+      {error && <p className="mt-1.5 text-xs font-semibold text-destructive">{error}</p>}
     </div>
   );
 }
 
-function SubmitButton({
-  loading,
-  children,
-}: {
-  loading: boolean;
-  children: React.ReactNode;
-}) {
+function SubmitButton({ loading, children }: { loading: boolean; children: React.ReactNode }) {
   return (
     <button
       type="submit"
