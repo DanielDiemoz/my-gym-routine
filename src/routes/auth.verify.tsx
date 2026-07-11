@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, ArrowLeft } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { OTP_LENGTH } from "@/lib/otp";
 
 export const Route = createFileRoute("/auth/verify")({
   ssr: false,
@@ -25,7 +26,7 @@ function VerifyPage() {
   const [verifying, setVerifying] = useState(false);
 
   async function handleVerify() {
-    if (code.length < 6) return;
+    if (code.length < OTP_LENGTH) return;
     setVerifying(true);
     const { error } = await supabase.auth.verifyOtp({
       email,
@@ -70,18 +71,15 @@ function VerifyPage() {
         <div className="mt-8 space-y-6">
           <div className="flex justify-center">
             <InputOTP
-              maxLength={6}
+              maxLength={OTP_LENGTH}
               value={code}
               onChange={(v) => setCode(v.replace(/\D/g, ""))}
               autoFocus
             >
               <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
+                {Array.from({ length: OTP_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
               </InputOTPGroup>
             </InputOTP>
           </div>
@@ -89,7 +87,7 @@ function VerifyPage() {
           <button
             type="button"
             onClick={handleVerify}
-            disabled={verifying || code.length < 6}
+            disabled={verifying || code.length < OTP_LENGTH}
             className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
           >
             {verifying ? "Verifica…" : "Conferma"}

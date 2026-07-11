@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { isLegacyEmail } from "@/lib/legacy-email";
+import { OTP_LENGTH } from "@/lib/otp";
 
 export function EmailMigrationGate({ user }: { user: { id: string; email?: string | null } }) {
   const navigate = useNavigate();
@@ -46,7 +47,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
 
   async function handleVerify() {
     const value = email.trim();
-    if (code.length < 6) return;
+    if (code.length < OTP_LENGTH) return;
     setVerifying(true);
     const { error } = await supabase.auth.verifyOtp({
       email: value,
@@ -128,17 +129,14 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
             <div className="mt-8 space-y-6">
               <div className="flex justify-center">
                 <InputOTP
-                  maxLength={6}
+                  maxLength={OTP_LENGTH}
                   value={code}
                   onChange={(v) => setCode(v.replace(/\D/g, ""))}
                 >
                   <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
+                    {Array.from({ length: OTP_LENGTH }, (_, i) => (
+                      <InputOTPSlot key={i} index={i} />
+                    ))}
                   </InputOTPGroup>
                 </InputOTP>
               </div>
@@ -146,7 +144,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
               <button
                 type="button"
                 onClick={handleVerify}
-                disabled={verifying || code.length < 6}
+                disabled={verifying || code.length < OTP_LENGTH}
                 className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
               >
                 {verifying ? "Verifica…" : "Conferma"}

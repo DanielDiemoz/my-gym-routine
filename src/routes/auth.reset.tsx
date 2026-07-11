@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { OTP_LENGTH } from "@/lib/otp";
 
 export const Route = createFileRoute("/auth/reset")({
   ssr: false,
@@ -45,8 +46,8 @@ function AuthResetPage() {
   });
 
   async function onSubmit(values: ResetForm) {
-    if (code.length < 6) {
-      toast.error("Inserisci il codice di 6 cifre.");
+    if (code.length < OTP_LENGTH) {
+      toast.error(`Inserisci il codice di ${OTP_LENGTH} cifre.`);
       return;
     }
     setVerifying(true);
@@ -126,18 +127,15 @@ function AuthResetPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="flex justify-center">
             <InputOTP
-              maxLength={6}
+              maxLength={OTP_LENGTH}
               value={code}
               onChange={(v) => setCode(v.replace(/\D/g, ""))}
               autoFocus
             >
               <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
+                {Array.from({ length: OTP_LENGTH }, (_, i) => (
+                  <InputOTPSlot key={i} index={i} />
+                ))}
               </InputOTPGroup>
             </InputOTP>
           </div>
