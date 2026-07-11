@@ -1,1 +1,6 @@
 project_id = "ugwczapozmnpzunejhus"
+
+[auth.email]
+# Lunghezza del codice OTP inviato via email.
+# Deve essere allineata a OTP_LENGTH in src/lib/otp.ts.
+otp_length = 6
