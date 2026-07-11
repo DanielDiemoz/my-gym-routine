@@ -387,7 +387,7 @@ export type Database = {
     }
     Functions: {
       cleanup_orphaned_sessions: { Args: never; Returns: undefined }
-      create_circle_as_coach: {
+      create_circle: {
         Args: { circle_name: string }
         Returns: {
           code: string

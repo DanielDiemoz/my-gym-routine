@@ -4,9 +4,9 @@
  *
  * Espone:
  *   - myCircles     : cerchie di cui l'utente è membro (o owner)
- *   - isCoach       : true se profiles.role === 'coach'
  *   - joinCircle    : entra in una cerchia tramite codice
- *   - createCircle  : crea nuova cerchia (solo coach)
+ *   - createCircle  : crea nuova cerchia (chiunque può crearla; il creatore
+ *                     diventa owner e ottiene i privilegi di gestione)
  *   - leaveCircle   : esci da una cerchia
  *   - deleteCircle  : elimina una cerchia (solo owner)
  *   - chat functions: messages, sendMessage, unreadCount, markAsRead
@@ -52,7 +52,6 @@ const fromCircleMembers = () => supabase.from("circle_members");
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 const CIRCLES_KEY = (userId: string) => ["circles", userId] as const;
-const ROLE_KEY    = (userId: string) => ["profile-role", userId] as const;
 
 // ── Hook principale ───────────────────────────────────────────────────────────
 export function useCircle(userId: string) {
@@ -75,24 +74,6 @@ export function useCircle(userId: string) {
       return (data ?? []) as Circle[];
     },
     staleTime: 1000 * 30, // 30 secondi
-  });
-
-  // ── Query: ruolo utente ────────────────────────────────────────────────────
-  // `role` non è ancora nel Database type finché non si rigenera types.ts.
-  const roleQ = useQuery({
-    queryKey: ROLE_KEY(userId),
-    queryFn: async (): Promise<"user" | "coach"> => {
-      const { data } = await supabase
-        .from("profiles")
-        // Selezioniamo direttamente `role` per non trasferire tutti gli altri
-        // campi del profilo via RLS quando ci serve solo il flag coach.
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
-      const raw = data?.role;
-      return raw === "coach" ? "coach" : "user";
-    },
-    staleTime: 1000 * 60 * 5,
   });
 
   const invalidateCircles = () =>
@@ -126,20 +107,20 @@ export function useCircle(userId: string) {
     },
   });
 
-  // ── Mutation: crea una cerchia (solo coach) ───────────────────────────────
-  // Usa la RPC SECURITY DEFINER `create_circle_as_coach` che esegue tutto
-  // atomicamente lato DB:
-  //   - valida il ruolo coach (bypassando l'overhead della subquery in RLS);
+  // ── Mutation: crea una cerchia ─────────────────────────────────────────────
+  // Usa la RPC SECURITY DEFINER `create_circle` che esegue tutto atomicamente
+  // lato DB ed è aperta a qualsiasi utente autenticato:
   //   - genera un codice univoco (controllo collisioni NON soggetto a RLS,
   //     quindi non può "perdere" cerchie altrui come faceva la query client);
-  //   - INSERT cerchia + INSERT membro con rollback automatico in caso di errore.
+  //   - INSERT cerchia con owner_id = auth.uid() + INSERT membro con rollback
+  //     automatico in caso di errore; il creatore diventa owner e ottiene i
+  //     privilegi di gestione (elimina, rimuovi membri, modifica nickname).
   // Il client deve solo passare il nome: niente più corse RLS o rollback manuali.
   const createMut = useMutation({
     mutationFn: async (name: string): Promise<Circle> => {
-      const { data: newCircle, error } = await supabase.rpc(
-        "create_circle_as_coach",
-        { circle_name: name },
-      );
+      const { data: newCircle, error } = await supabase.rpc("create_circle", {
+        circle_name: name,
+      });
       if (error) {
         throw new Error(error.message || "Errore durante la creazione");
       }
@@ -339,13 +320,10 @@ export function useCircle(userId: string) {
     /** Cerchie di cui l'utente è membro o owner */
     myCircles: circlesQ.data ?? [],
     isLoadingCircles: circlesQ.isLoading,
-    /** true se l'utente ha ruolo coach */
-    isCoach: roleQ.data === "coach",
-    isLoadingRole: roleQ.isLoading,
     /** Entra in una cerchia tramite codice di 6 caratteri */
     joinCircle: (code: string) => joinMut.mutateAsync(code),
     isJoining: joinMut.isPending,
-    /** Crea una nuova cerchia (solo coach). Restituisce la cerchia creata. */
+    /** Crea una nuova cerchia (chiunque). Restituisce la cerchia creata. */
     createCircle: (name: string) => createMut.mutateAsync(name),
     isCreating: createMut.isPending,
     /** Esci da una cerchia */

@@ -22,8 +22,6 @@ function CerchiePage() {
   const {
     myCircles,
     isLoadingCircles,
-    isCoach,
-    isLoadingRole,
     joinCircle,
     isJoining,
     createCircle,
@@ -32,23 +30,37 @@ function CerchiePage() {
 
   const [joinOpen, setJoinOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  // Menu azioni (solo quando l'utente è già in ≥1 cerchia): sceglie tra
+  // "Entra" e "Crea".
+  const [menuOpen, setMenuOpen] = useState(false);
   // TASK 4 — Dopo creazione il bottom-sheet mostra una card con il codice
   // generato. Lo stato serve a renderizzare il success card invece del form.
   const [lastCreated, setLastCreated] = useState<Circle | null>(null);
 
-  const loading = isLoadingCircles || isLoadingRole;
+  const loading = isLoadingCircles;
 
   if (loading) {
     return <CerchieSkeleton />;
   }
 
   const hasCircles = myCircles.length > 0;
-  const anySheetOpen = joinOpen || createOpen;
+  const anySheetOpen = joinOpen || createOpen || menuOpen;
 
   function closeSheet() {
     setJoinOpen(false);
     setCreateOpen(false);
+    setMenuOpen(false);
     setLastCreated(null);
+  }
+
+  function openJoin() {
+    setMenuOpen(false);
+    setJoinOpen(true);
+  }
+
+  function openCreate() {
+    setMenuOpen(false);
+    setCreateOpen(true);
   }
 
   return (
@@ -62,19 +74,37 @@ function CerchiePage() {
 
       {!hasCircles ? (
         <EmptyState
-          isCoach={isCoach}
           onJoin={() => setJoinOpen(true)}
           onCreate={() => setCreateOpen(true)}
         />
-      ) : (
+       ) : (
         <CirclesList
           circles={myCircles}
           selfId={user.id}
-          onJoin={() => setJoinOpen(true)}
+          onMenu={() => setMenuOpen(true)}
         />
       )}
 
-      {anySheetOpen && (
+      {menuOpen && (
+        <CerchieModal sheet="menu" onClose={closeSheet}>
+          <div className="space-y-2">
+            <button
+              onClick={openJoin}
+              className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card py-4 text-sm font-bold uppercase tracking-wide text-foreground active:scale-[0.98]"
+            >
+              <LogIn className="h-4 w-4" /> Entra con un codice
+            </button>
+            <button
+              onClick={openCreate}
+              className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+            >
+              <Plus className="h-4 w-4" /> Crea cerchia
+            </button>
+          </div>
+        </CerchieModal>
+      )}
+
+      {anySheetOpen && !menuOpen && (
         <CerchieModal
           sheet={joinOpen ? "join" : "create"}
           onClose={closeSheet}
@@ -94,7 +124,6 @@ function CerchiePage() {
           )}
           {createOpen && !lastCreated && (
             <CreateForm
-              isCoach={isCoach}
               loading={isCreating}
               onSubmit={async (name) => {
                 try {
@@ -122,11 +151,9 @@ function CerchiePage() {
 // Empty state (TASK 4: nessuna cerchia)
 // ─────────────────────────────────────────────────────────────────────────────
 function EmptyState({
-  isCoach,
   onJoin,
   onCreate,
 }: {
-  isCoach: boolean;
   onJoin: () => void;
   onCreate: () => void;
 }) {
@@ -137,24 +164,22 @@ function EmptyState({
       </div>
       <p className="mt-6 text-base font-semibold">Non sei ancora in nessuna cerchia</p>
       <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-        Entra con un codice di invito o, se sei un coach, creane una nuova.
+        Entra con un codice di invito o creane una nuova.
       </p>
 
       <div className="mt-10 w-full max-w-xs space-y-3">
         <button
           onClick={onJoin}
-          className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+          className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card py-4 text-sm font-bold uppercase tracking-wide text-foreground active:scale-[0.98]"
         >
           <LogIn className="h-4 w-4" /> Entra con un codice
         </button>
-        {isCoach && (
-          <button
-            onClick={onCreate}
-            className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card py-4 text-sm font-bold uppercase tracking-wide text-foreground active:scale-[0.98]"
-          >
-            <Plus className="h-4 w-4" /> Crea cerchia
-          </button>
-        )}
+        <button
+          onClick={onCreate}
+          className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+        >
+          <Plus className="h-4 w-4" /> Crea cerchia
+        </button>
       </div>
     </div>
   );
@@ -166,11 +191,11 @@ function EmptyState({
 function CirclesList({
   circles,
   selfId,
-  onJoin,
+  onMenu,
 }: {
   circles: Circle[];
   selfId: string;
-  onJoin: () => void;
+  onMenu: () => void;
 }) {
   const { useAllUnreadCounts } = useCircle(selfId);
   const { data: unreadCounts } = useAllUnreadCounts();
@@ -188,10 +213,11 @@ function CirclesList({
         ))}
       </div>
 
-      {/* FAB — TASK 4: bottone '+' fisso in basso per entrare in altre cerchie. */}
+      {/* FAB — TASK 4: bottone '+' fisso in basso per entrare in altre cerchie
+          o crearne di nuove (anche se si è già in una cerchia). */}
       <button
-        onClick={onJoin}
-        aria-label="Entra in un'altra cerchia"
+        onClick={onMenu}
+        aria-label="Aggiungi una cerchia"
         className="no-tap-highlight fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition active:scale-95"
       >
         <Plus className="h-6 w-6" />
@@ -284,7 +310,7 @@ function CerchieModal({
   onClose,
   children,
 }: {
-  sheet: "join" | "create";
+  sheet: "join" | "create" | "menu";
   onClose: () => void;
   children: React.ReactNode;
 }) {
@@ -292,7 +318,13 @@ function CerchieModal({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={sheet === "join" ? "Entra in cerchia" : "Crea cerchia"}
+      aria-label={
+        sheet === "join"
+          ? "Entra in cerchia"
+          : sheet === "create"
+            ? "Crea cerchia"
+            : "Aggiungi cerchia"
+      }
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={onClose}
     >
@@ -362,23 +394,13 @@ function JoinForm({
 }
 
 function CreateForm({
-  isCoach,
   loading,
   onSubmit,
 }: {
-  isCoach: boolean;
   loading: boolean;
   onSubmit: (name: string) => Promise<void>;
 }) {
   const [name, setName] = useState("");
-  if (!isCoach) {
-    return (
-      <p className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
-        Solo i coach possono creare una cerchia. Chiedi a un coach di invitarti
-        con un codice, oppure contatta gli admin per essere promosso.
-      </p>
-    );
-  }
   async function handleSubmit() {
     if (!name.trim()) return;
     await onSubmit(name);

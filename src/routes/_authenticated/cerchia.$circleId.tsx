@@ -327,7 +327,7 @@ function CircleDetailPage() {
                     )}
                     {p.id === circle.owner_id && (
                       <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
-                        Coach
+                        Owner
                       </span>
                     )}
                   </div>
