@@ -92,86 +92,88 @@ function AuthResetPage() {
 
   if (done) {
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <div className="container-app flex flex-1 flex-col justify-center py-16">
-          <div className="rounded-2xl border border-border bg-card p-6 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
-            <p className="mt-4 text-sm font-semibold">Password aggiornata</p>
-            <p className="mt-1 text-xs text-muted-foreground">Verrai reindirizzato al login…</p>
-          </div>
-        </div>
+      <div className="w-full max-w-md mx-auto rounded-2xl border border-border bg-card p-6 text-center animate-in fade-in duration-300">
+        <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
+        <p className="mt-4 text-sm font-semibold">Password aggiornata</p>
+        <p className="mt-1 text-xs text-muted-foreground">Verrai reindirizzato al login…</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <div className="container-app flex flex-1 flex-col justify-center py-16">
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/auth" })}
-          className="mb-8 inline-flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-4 w-4" /> Login
-        </button>
+    <div className="w-full max-w-md mx-auto space-y-8 animate-in fade-in duration-500">
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/auth" })}
+        className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+      >
+        <ArrowLeft className="h-4 w-4" /> Login
+      </button>
 
-        <div className="mb-8">
-          <div className="text-4xl font-black tracking-tighter">Reset password</div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Inserisci il codice ricevuto a{" "}
-            <span className="font-semibold text-foreground">{email}</span> e scegli una nuova
-            password.
-          </p>
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-extrabold tracking-tight">Reset password</h1>
+        <p className="text-sm text-muted-foreground">
+          Inserisci il codice ricevuto a{" "}
+          <span className="font-semibold text-foreground break-all">{email}</span> e scegli una nuova
+          password.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="flex justify-center">
+          <InputOTP
+            maxLength={OTP_LENGTH}
+            value={code}
+            onChange={(v) => setCode(v.replace(/\D/g, ""))}
+            autoFocus
+          >
+            <InputOTPGroup className="gap-1.5">
+              {Array.from({ length: OTP_LENGTH }, (_, i) => (
+                <InputOTPSlot
+                  key={i}
+                  index={i}
+                  className="h-12 w-9 rounded-xl border border-border text-base font-bold shadow-sm focus-within:ring-2 focus-within:ring-primary focus-within:border-primary"
+                />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="flex justify-center">
-            <InputOTP
-              maxLength={OTP_LENGTH}
-              value={code}
-              onChange={(v) => setCode(v.replace(/\D/g, ""))}
-              autoFocus
-            >
-              <InputOTPGroup>
-                {Array.from({ length: OTP_LENGTH }, (_, i) => (
-                  <InputOTPSlot key={i} index={i} />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
-          </div>
+        <Field
+          label="Nuova password"
+          type="password"
+          registration={register("password")}
+          error={errors.password?.message}
+          autoComplete="new-password"
+        />
+        <Field
+          label="Conferma password"
+          type="password"
+          registration={register("confirm")}
+          error={errors.confirm?.message}
+          autoComplete="new-password"
+        />
 
-          <Field
-            label="Nuova password"
-            type="password"
-            registration={register("password")}
-            error={errors.password?.message}
-            autoComplete="new-password"
-          />
-          <Field
-            label="Conferma password"
-            type="password"
-            registration={register("confirm")}
-            error={errors.confirm?.message}
-            autoComplete="new-password"
-          />
+        <button
+          type="submit"
+          disabled={isSubmitting || verifying}
+          className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+        >
+          {isSubmitting || verifying ? (
+            <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+          ) : (
+            "Aggiorna password"
+          )}
+        </button>
 
-          <button
-            type="submit"
-            disabled={isSubmitting || verifying}
-            className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
-          >
-            {isSubmitting || verifying ? "…" : "Aggiorna password"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleResend}
-            className="block w-full text-center text-xs font-semibold text-muted-foreground"
-          >
-            Non hai ricevuto il codice? Inviane un altro
-          </button>
-        </form>
-      </div>
+        <button
+          type="button"
+          onClick={handleResend}
+          className="block w-full text-center text-xs font-semibold text-muted-foreground hover:text-foreground transition underline underline-offset-2"
+        >
+          Non hai ricevuto il codice? Inviane un altro
+        </button>
+      </form>
     </div>
   );
 }

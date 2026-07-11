@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthIndexRouteImport } from './routes/auth.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
@@ -32,6 +33,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/verify': typeof AuthVerifyRoute
+  '/auth/': typeof AuthIndexRoute
   '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
   '/cerchia/$circleId': typeof AuthenticatedCerchiaCircleIdRoute
@@ -116,13 +123,13 @@ export interface FileRoutesByFullPath {
   '/schede/': typeof AuthenticatedSchedeIndexRoute
 }
 export interface FileRoutesByTo {
-  '/auth': typeof AuthRouteWithChildren
   '/onboarding': typeof AuthenticatedOnboardingRoute
   '/profilo': typeof AuthenticatedProfiloRoute
   '/storico': typeof AuthenticatedStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/': typeof AuthenticatedIndexRoute
+  '/auth': typeof AuthIndexRoute
   '/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
   '/cerchia/$circleId': typeof AuthenticatedCerchiaCircleIdRoute
@@ -140,6 +147,7 @@ export interface FileRoutesById {
   '/auth/reset': typeof AuthResetRoute
   '/auth/verify': typeof AuthVerifyRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/auth/': typeof AuthIndexRoute
   '/_authenticated/admin/set-coach': typeof AuthenticatedAdminSetCoachRoute
   '/_authenticated/allena/$planId': typeof AuthenticatedAllenaPlanIdRoute
   '/_authenticated/cerchia/$circleId': typeof AuthenticatedCerchiaCircleIdRoute
@@ -157,6 +165,7 @@ export interface FileRouteTypes {
     | '/storico'
     | '/auth/reset'
     | '/auth/verify'
+    | '/auth/'
     | '/admin/set-coach'
     | '/allena/$planId'
     | '/cerchia/$circleId'
@@ -165,13 +174,13 @@ export interface FileRouteTypes {
     | '/schede/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/auth'
     | '/onboarding'
     | '/profilo'
     | '/storico'
     | '/auth/reset'
     | '/auth/verify'
     | '/'
+    | '/auth'
     | '/admin/set-coach'
     | '/allena/$planId'
     | '/cerchia/$circleId'
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/auth/reset'
     | '/auth/verify'
     | '/_authenticated/'
+    | '/auth/'
     | '/_authenticated/admin/set-coach'
     | '/_authenticated/allena/$planId'
     | '/_authenticated/cerchia/$circleId'
@@ -216,6 +226,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/_authenticated/': {
       id: '/_authenticated/'
@@ -336,11 +353,13 @@ const AuthenticatedRouteRouteWithChildren =
 interface AuthRouteChildren {
   AuthResetRoute: typeof AuthResetRoute
   AuthVerifyRoute: typeof AuthVerifyRoute
+  AuthIndexRoute: typeof AuthIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthResetRoute: AuthResetRoute,
   AuthVerifyRoute: AuthVerifyRoute,
+  AuthIndexRoute: AuthIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
