@@ -6,7 +6,12 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
+
+function getEmailVerificationUrl(email: string) {
+  const url = new URL("/auth/verify", window.location.origin);
+  url.searchParams.set("email", email);
+  return url.toString();
+}
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -204,24 +209,32 @@ function EmailForm({
 
   async function onSubmit(values: EmailForm) {
     try {
+      const email = values.email.trim().toLowerCase();
       if (mode === "signup") {
+        const emailRedirectTo = getEmailVerificationUrl(email);
         const { data, error } = await supabase.auth.signUp({
-          email: values.email,
+          email,
           password: values.password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo },
         });
         if (error) throw error;
-        // Se l'email non è già confermata, vai alla schermata di inserimento
-        // codice (OTP) invece di chiedere di controllare la mail.
-        if (!data.user?.email_confirmed_at) {
-          if (data.session) await supabase.auth.signOut();
+
+        if (data.session) {
+          onSuccess();
+          return;
+        }
+
+        // Con conferma email attiva Supabase non crea una sessione subito.
+        // Porta sempre l'utente alla schermata codice, anche nei casi in cui
+        // l'account esiste già ma non è ancora stato confermato.
+        if (!data.session) {
           toast.success("Codice di conferma inviato alla tua email.");
-          navigate({ to: "/auth/verify", search: { email: values.email } });
+          navigate({ to: "/auth/verify", search: { email } });
           return;
         }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email: values.email,
+          email,
           password: values.password,
         });
         if (error) throw error;
@@ -229,6 +242,12 @@ function EmailForm({
       onSuccess();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Errore";
+      if (mode === "signup" && msg.toLowerCase().includes("already registered")) {
+        const email = values.email.trim().toLowerCase();
+        toast.info("Account già registrato. Se non è confermato, inserisci il codice email.");
+        navigate({ to: "/auth/verify", search: { email } });
+        return;
+      }
       toast.error(msg.includes("Invalid login") ? "Email o password errati" : msg);
     }
   }
