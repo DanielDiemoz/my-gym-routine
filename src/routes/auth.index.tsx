@@ -5,8 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Lock, ShieldAlert, ArrowRight, UserPlus, LogIn, AlertCircle } from "lucide-react";
+import { Mail, Lock, ArrowRight, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 function getEmailVerificationUrl(email: string) {
   const url = new URL("/auth/verify", window.location.origin);
@@ -20,11 +19,6 @@ export const Route = createFileRoute("/auth/")({
 });
 
 // ── Schemas ────────────────────────────────────────────────────────────────
-const usernameLoginSchema = z.object({
-  username: z.string().trim().min(2, "Minimo 2 caratteri"),
-  password: z.string().min(6, "Minimo 6 caratteri"),
-});
-
 const loginSchema = z.object({
   email: z.string().trim().email("Inserisci un'email valida"),
   password: z.string().min(1, "Password richiesta"),
@@ -49,27 +43,24 @@ const forgotSchema = z.object({
   email: z.string().trim().email("Inserisci un'email valida"),
 });
 
-type UsernameLoginForm = z.infer<typeof usernameLoginSchema>;
 type LoginForm = z.infer<typeof loginSchema>;
 type SignupForm = z.infer<typeof signupSchema>;
 type ForgotForm = z.infer<typeof forgotSchema>;
 
-type AuthTab = "username" | "email";
 type AuthMode = "login" | "signup";
 
 function AuthIndexPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<AuthTab>("email");
   const [mode, setMode] = useState<AuthMode>("login");
   const [forgot, setForgot] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resendingUnverified, setResendingUnverified] = useState(false);
 
-  // Reset states when changing tab or mode
+  // Reset states when changing mode
   useEffect(() => {
     setForgot(false);
     setUnverifiedEmail(null);
-  }, [tab, mode]);
+  }, [mode]);
 
   function onLoginSuccess() {
     navigate({ to: "/" });
@@ -146,59 +137,28 @@ function AuthIndexPage() {
         </div>
       )}
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as AuthTab)} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
-          <TabsTrigger value="email" className="rounded-xl py-2.5 transition-all text-sm font-semibold">
-            Email
-          </TabsTrigger>
-          <TabsTrigger value="username" className="rounded-xl py-2.5 transition-all text-sm font-semibold">
-            Username (legacy)
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="username" className="mt-6 space-y-4">
-          <UsernameForm onSuccess={onLoginSuccess} />
-        </TabsContent>
-
-        <TabsContent value="email" className="mt-6 space-y-4">
-          {forgot ? (
-            <ForgotForm onBack={() => setForgot(false)} />
-          ) : mode === "login" ? (
-            <LoginForm
-              onSuccess={onLoginSuccess}
-              onForgot={() => setForgot(true)}
-              onUnverified={(email) => setUnverifiedEmail(email)}
-            />
-          ) : (
-            <SignupForm
-              onSuccess={() => setMode("login")}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+      <div className="mt-6 space-y-4">
+        {forgot ? (
+          <ForgotForm onBack={() => setForgot(false)} />
+        ) : mode === "login" ? (
+          <LoginForm
+            onSuccess={onLoginSuccess}
+            onForgot={() => setForgot(true)}
+            onUnverified={(email) => setUnverifiedEmail(email)}
+          />
+        ) : (
+          <SignupForm onSuccess={() => setMode("login")} />
+        )}
+      </div>
 
       {!forgot && (
         <div className="text-center">
           <button
             type="button"
-            onClick={() => {
-              if (tab === "username") {
-                setTab("email");
-                setMode("signup");
-              } else {
-                setMode(mode === "login" ? "signup" : "login");
-              }
-            }}
+            onClick={() => setMode(mode === "login" ? "signup" : "login")}
             className="no-tap-highlight text-sm text-muted-foreground hover:text-foreground transition font-medium"
           >
-            {tab === "username" ? (
-              <>
-                Non hai un account?{" "}
-                <span className="font-semibold text-primary underline underline-offset-4">
-                  Registrati con email
-                </span>
-              </>
-            ) : mode === "login" ? (
+            {mode === "login" ? (
               <>
                 Non hai un account?{" "}
                 <span className="font-semibold text-primary underline underline-offset-4">
@@ -220,67 +180,6 @@ function AuthIndexPage() {
   );
 }
 
-// ── Legacy Username Form ────────────────────────────────────────────────────
-function UsernameForm({ onSuccess }: { onSuccess: () => void }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<UsernameLoginForm>({
-    resolver: zodResolver(usernameLoginSchema),
-    defaultValues: { username: "", password: "" },
-  });
-
-  async function onSubmit(values: UsernameLoginForm) {
-    try {
-      const virtualEmail = `${values.username.trim().toLowerCase()}@gymbro.local`;
-      const { error } = await supabase.auth.signInWithPassword({
-        email: virtualEmail,
-        password: values.password,
-      });
-      if (error) throw error;
-      toast.success("Accesso eseguito!");
-      onSuccess();
-    } catch (err) {
-      console.error(err);
-      const msg = err instanceof Error ? err.message : "";
-      toast.error(msg.includes("Invalid login") ? "Username o password errati" : "Errore durante l'accesso.");
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="rounded-2xl bg-muted/40 border border-border px-4 py-3 text-xs text-muted-foreground space-y-1">
-        <p className="font-semibold text-foreground">Modalità legacy</p>
-        <p>Solo per account creati prima della migrazione email. Per creare un nuovo account usa il tab Email.</p>
-      </div>
-
-      <FormField
-        label="Username"
-        type="text"
-        id="legacy-username"
-        autoComplete="username"
-        placeholder="Il tuo username"
-        registration={register("username")}
-        error={errors.username?.message}
-        icon={<UserPlus className="h-5 w-5 text-muted-foreground" />}
-      />
-      <FormField
-        label="Password"
-        type="password"
-        id="legacy-password"
-        autoComplete="current-password"
-        placeholder="••••••••"
-        registration={register("password")}
-        error={errors.password?.message}
-        icon={<Lock className="h-5 w-5 text-muted-foreground" />}
-      />
-
-      <SubmitButton loading={isSubmitting}>Accedi</SubmitButton>
-    </form>
-  );
-}
-
 // ── Email Login Form ────────────────────────────────────────────────────────
 interface LoginFormProps {
   onSuccess: () => void;
@@ -289,6 +188,7 @@ interface LoginFormProps {
 }
 
 function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -349,13 +249,14 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
       />
       <FormField
         label="Password"
-        type="password"
+        type={showPassword ? "text" : "password"}
         id="login-password"
         autoComplete="current-password"
         placeholder="••••••••"
         registration={register("password")}
         error={errors.password?.message}
         icon={<Lock className="h-5 w-5 text-muted-foreground" />}
+        trailing={<PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
       />
 
       <div className="flex justify-end">
@@ -380,6 +281,7 @@ interface SignupFormProps {
 
 function SignupForm({ onSuccess }: SignupFormProps) {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -452,13 +354,14 @@ function SignupForm({ onSuccess }: SignupFormProps) {
       />
       <FormField
         label="Password"
-        type="password"
+        type={showPassword ? "text" : "password"}
         id="signup-password"
         autoComplete="new-password"
         placeholder="••••••••"
         registration={register("password")}
         error={errors.password?.message}
         icon={<Lock className="h-5 w-5 text-muted-foreground" />}
+        trailing={<PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
       />
 
       {/* Real-time password feedback */}
@@ -484,13 +387,14 @@ function SignupForm({ onSuccess }: SignupFormProps) {
 
       <FormField
         label="Conferma Password"
-        type="password"
+        type={showPassword ? "text" : "password"}
         id="signup-confirm-password"
         autoComplete="new-password"
         placeholder="••••••••"
         registration={register("confirmPassword")}
         error={errors.confirmPassword?.message}
         icon={<Lock className="h-5 w-5 text-muted-foreground" />}
+        trailing={<PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
       />
 
       <SubmitButton loading={isSubmitting}>Registrati</SubmitButton>
@@ -558,6 +462,7 @@ interface FormFieldProps {
   registration: any;
   error?: string;
   icon?: React.ReactNode;
+  trailing?: React.ReactNode;
 }
 
 function FormField({
@@ -569,6 +474,7 @@ function FormField({
   registration,
   error,
   icon,
+  trailing,
 }: FormFieldProps) {
   return (
     <div className="space-y-2">
@@ -584,12 +490,28 @@ function FormField({
           placeholder={placeholder}
           {...registration}
           className={`w-full rounded-2xl border bg-card py-4 text-base outline-none transition duration-200 focus:border-foreground focus:ring-1 focus:ring-foreground ${
-            icon ? "pl-12 pr-4" : "px-4"
-          } ${error ? "border-destructive/50 focus:border-destructive focus:ring-destructive" : "border-border"}`}
+            icon ? "pl-12" : "pl-4"
+          } ${trailing ? "pr-12" : "pr-4"} ${
+            error ? "border-destructive/50 focus:border-destructive focus:ring-destructive" : "border-border"
+          }`}
         />
+        {trailing && <div className="absolute right-4">{trailing}</div>}
       </div>
       {error && <p className="text-xs font-semibold text-destructive animate-in fade-in duration-200">{error}</p>}
     </div>
+  );
+}
+
+function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={show ? "Nascondi password" : "Mostra password"}
+      className="no-tap-highlight text-muted-foreground hover:text-foreground transition"
+    >
+      {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+    </button>
   );
 }
 
