@@ -12,21 +12,20 @@ export const Route = createFileRoute("/_authenticated/cerchia/")({
 
 /**
  * Pagina "Cerchie" — TASK 4.
- * - Se l'utente non è in nessuna cerchia: empty state con CTA "Entra con codice"
- *   e (se coach) "Crea cerchia", entrambe aprono un bottom-sheet modale.
- * - Se l'utente è già in ≥1 cerchia: lista card + FAB "+" fluttuante per entrare
- *   in altre cerchie. Tap sulla card → /cerchia/$circleId.
+ * - Chiunque (utente autenticato) può creare una cerchia e diventa owner,
+ *   oppure entrare in altre cerchie con un codice di invito.
+ * - Se l'utente non è in nessuna cerchia: empty state con i due CTA
+ *   "Entra con codice" e "Crea cerchia".
+ * - Se l'utente è già in ≥1 cerchia: lista card + una riga di azioni sempre
+ *   visibile ("Crea cerchia" / "Entra con codice") + FAB "+" fluttuante.
+ *   Entrare/creare un'altra cerchia NON rimuove l'utente da quelle esistenti
+ *   (circle_members ha UNIQUE(circle_id, user_id): ogni appartenenza è una
+ *   riga separata). Tap sulla card → /cerchia/$circleId.
  */
 function CerchiePage() {
   const { user } = Route.useRouteContext();
-  const {
-    myCircles,
-    isLoadingCircles,
-    joinCircle,
-    isJoining,
-    createCircle,
-    isCreating,
-  } = useCircle(user.id);
+  const { myCircles, isLoadingCircles, joinCircle, isJoining, createCircle, isCreating } =
+    useCircle(user.id);
 
   const [joinOpen, setJoinOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -73,14 +72,13 @@ function CerchiePage() {
       </header>
 
       {!hasCircles ? (
-        <EmptyState
-          onJoin={() => setJoinOpen(true)}
-          onCreate={() => setCreateOpen(true)}
-        />
-       ) : (
+        <EmptyState onJoin={() => setJoinOpen(true)} onCreate={() => setCreateOpen(true)} />
+      ) : (
         <CirclesList
           circles={myCircles}
           selfId={user.id}
+          onJoin={openJoin}
+          onCreate={openCreate}
           onMenu={() => setMenuOpen(true)}
         />
       )}
@@ -105,10 +103,7 @@ function CerchiePage() {
       )}
 
       {anySheetOpen && !menuOpen && (
-        <CerchieModal
-          sheet={joinOpen ? "join" : "create"}
-          onClose={closeSheet}
-        >
+        <CerchieModal sheet={joinOpen ? "join" : "create"} onClose={closeSheet}>
           {joinOpen && (
             <JoinForm
               loading={isJoining}
@@ -136,10 +131,7 @@ function CerchiePage() {
             />
           )}
           {createOpen && lastCreated && (
-            <CreatedCircleCard
-              circle={lastCreated}
-              onDone={closeSheet}
-            />
+            <CreatedCircleCard circle={lastCreated} onDone={closeSheet} />
           )}
         </CerchieModal>
       )}
@@ -150,13 +142,7 @@ function CerchiePage() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Empty state (TASK 4: nessuna cerchia)
 // ─────────────────────────────────────────────────────────────────────────────
-function EmptyState({
-  onJoin,
-  onCreate,
-}: {
-  onJoin: () => void;
-  onCreate: () => void;
-}) {
+function EmptyState({ onJoin, onCreate }: { onJoin: () => void; onCreate: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
@@ -191,10 +177,14 @@ function EmptyState({
 function CirclesList({
   circles,
   selfId,
+  onJoin,
+  onCreate,
   onMenu,
 }: {
   circles: Circle[];
   selfId: string;
+  onJoin: () => void;
+  onCreate: () => void;
   onMenu: () => void;
 }) {
   const { useAllUnreadCounts } = useCircle(selfId);
@@ -202,6 +192,24 @@ function CirclesList({
 
   return (
     <>
+      {/* Riga azioni sempre visibile: creare una nuova cerchia o entrare in
+          un'altra non rimuove l'utente da quelle in cui è già (multi-membership
+          gestita da UNIQUE(circle_id, user_id) in circle_members). */}
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <button
+          onClick={onCreate}
+          className="no-tap-highlight flex items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+        >
+          <Plus className="h-4 w-4" /> Crea cerchia
+        </button>
+        <button
+          onClick={onJoin}
+          className="no-tap-highlight flex items-center justify-center gap-2 rounded-full border border-border bg-card py-3.5 text-sm font-bold uppercase tracking-wide text-foreground active:scale-[0.98]"
+        >
+          <LogIn className="h-4 w-4" /> Entra con codice
+        </button>
+      </div>
+
       <div className="space-y-2">
         {circles.map((c) => (
           <CircleCard
@@ -255,13 +263,10 @@ function CircleCard({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-semibold">{circle.name}</span>
-            {unreadCount > 0 && (
-              <MessageCircle className="h-3 w-3 text-destructive" />
-            )}
+            {unreadCount > 0 && <MessageCircle className="h-3 w-3 text-destructive" />}
           </div>
           <div className="text-xs text-muted-foreground">
-            {circle.member_count ?? 1}{" "}
-            {circle.member_count === 1 ? "membro" : "membri"}
+            {circle.member_count ?? 1} {circle.member_count === 1 ? "membro" : "membri"}
           </div>
         </div>
       </div>
@@ -353,7 +358,10 @@ function JoinForm({
   // Forza uppercase + max 6 caratteri. Lo facciamo nel componente invece di
   // affidarsi solo a maxLength così evitiamo caratteri speciali / spazi.
   function handleChange(v: string) {
-    const cleaned = v.replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 6);
+    const cleaned = v
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase()
+      .slice(0, 6);
     setCode(cleaned);
   }
   async function handleSubmit() {
@@ -432,13 +440,7 @@ function CreateForm({
   );
 }
 
-function CreatedCircleCard({
-  circle,
-  onDone,
-}: {
-  circle: Circle;
-  onDone: () => void;
-}) {
+function CreatedCircleCard({ circle, onDone }: { circle: Circle; onDone: () => void }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
@@ -447,9 +449,7 @@ function CreatedCircleCard({
         </div>
         <div>
           <p className="text-base font-bold">Cerchia creata</p>
-          <p className="text-xs text-muted-foreground">
-            {circle.name}
-          </p>
+          <p className="text-xs text-muted-foreground">{circle.name}</p>
         </div>
       </div>
 
@@ -457,9 +457,7 @@ function CreatedCircleCard({
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Codice invito
         </p>
-        <code className="mt-2 block text-3xl font-black tracking-[0.3em]">
-          {circle.code}
-        </code>
+        <code className="mt-2 block text-3xl font-black tracking-[0.3em]">{circle.code}</code>
         <p className="mt-2 text-xs text-muted-foreground">
           Condividi questo codice per invitare nuovi compagni.
         </p>
@@ -478,13 +476,7 @@ function CreatedCircleCard({
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
