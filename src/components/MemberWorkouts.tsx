@@ -8,19 +8,8 @@ import { format, formatDistanceToNow, subDays } from "date-fns";
 import { it } from "date-fns/locale";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  estimateCalories,
-  formatCalories,
-  getWeightOrDefault,
-} from "@/lib/calories";
 
-export function MemberWorkouts({
-  circleId,
-  userId,
-}: {
-  circleId: string;
-  userId: string;
-}) {
+export function MemberWorkouts({ circleId, userId }: { circleId: string; userId: string }) {
   const { display: fmtWeight } = useWeightUnit();
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -29,7 +18,7 @@ export function MemberWorkouts({
     queryFn: async () => {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("display_name, weight_kg")
+        .select("display_name")
         .eq("id", userId)
         .maybeSingle();
 
@@ -59,7 +48,7 @@ export function MemberWorkouts({
       }
 
       return {
-        profile: profile as { display_name: string | null; weight_kg: number | null } | null,
+        profile: profile as { display_name: string | null } | null,
         sessions: sessions ?? [],
         logs,
       };
@@ -75,12 +64,9 @@ export function MemberWorkouts({
 
   const sessionsWithLogs = useMemo(() => {
     if (!q.data) return [];
-    const weight = getWeightOrDefault(q.data.profile?.weight_kg);
     return q.data.sessions.map((s) => {
-      const durMs = new Date(s.completed_at).getTime() - new Date(s.started_at).getTime();
-      const calories = durMs > 0 ? estimateCalories(weight, Math.round(durMs / 60000)) : 0;
       return {
-        session: { ...s, calories },
+        session: { ...s },
         logs: q.data!.logs.filter((l) => l.session_id === s.id),
       };
     });
@@ -145,9 +131,7 @@ export function MemberWorkouts({
                 fmtWeight={fmtWeight}
                 isOpen={openId === item.session.id}
                 onToggle={() =>
-                  setOpenId((prev) =>
-                    prev === item.session.id ? null : item.session.id,
-                  )
+                  setOpenId((prev) => (prev === item.session.id ? null : item.session.id))
                 }
               />
             ))}
@@ -165,7 +149,7 @@ function WorkoutCard({
   isOpen,
   onToggle,
 }: {
-  session: { id: string; plan_name: string | null; completed_at: string; total_volume: number; calories: number };
+  session: { id: string; plan_name: string | null; completed_at: string; total_volume: number };
   logs: { exercise_name: string; set_number: number; reps: number; weight: number }[];
   fmtWeight: (kg: number | null | undefined, opts?: { digits?: number }) => string;
   isOpen: boolean;
@@ -209,7 +193,6 @@ function WorkoutCard({
             <div className="shrink-0 text-xs text-muted-foreground">{when}</div>
           </div>
           <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {formatCalories(session.calories)} ·{" "}
             {grouped.length} {grouped.length === 1 ? "esercizio" : "esercizi"}
           </div>
         </div>
@@ -221,7 +204,9 @@ function WorkoutCard({
       {isOpen && (
         <div className="space-y-3 border-t border-border bg-background/50 px-4 py-3">
           {grouped.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground">Nessun dettaglio disponibile.</p>
+            <p className="text-center text-xs text-muted-foreground">
+              Nessun dettaglio disponibile.
+            </p>
           ) : (
             grouped.map((g) => (
               <div key={g.name}>

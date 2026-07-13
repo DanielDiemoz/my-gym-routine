@@ -266,7 +266,6 @@ export type Database = {
           onboarded: boolean | null
           role: string | null
           updated_at: string
-          weight_kg: number | null
           weekly_goal: number | null
           weight_unit: string
         }
@@ -278,7 +277,6 @@ export type Database = {
           onboarded?: boolean | null
           role?: string | null
           updated_at?: string
-          weight_kg?: number | null
           weekly_goal?: number | null
           weight_unit?: string
         }
@@ -290,7 +288,6 @@ export type Database = {
           onboarded?: boolean | null
           role?: string | null
           updated_at?: string
-          weight_kg?: number | null
           weekly_goal?: number | null
           weight_unit?: string
         }

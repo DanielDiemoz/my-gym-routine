@@ -33,11 +33,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import {
-  estimateCalories,
-  formatCalories,
-  getWeightOrDefault,
-} from "@/lib/calories";
 
 export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
@@ -70,10 +65,10 @@ function Dashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, weight_kg")
+        .select("display_name, avatar_url")
         .eq("id", user.id)
         .maybeSingle();
-      return data as { display_name: string | null; avatar_url: string | null; weight_kg: number | null } | null;
+      return data as { display_name: string | null; avatar_url: string | null } | null;
     },
   });
 
@@ -91,13 +86,6 @@ function Dashboard() {
     },
   });
 
-  function calcCalories(s: { started_at: string; completed_at: string | null }, weight: number) {
-    if (!s.completed_at) return 0;
-    const durMs = new Date(s.completed_at).getTime() - new Date(s.started_at).getTime();
-    if (durMs <= 0) return 0;
-    return estimateCalories(weight, Math.round(durMs / 60000));
-  }
-
   const weekQ = useQuery({
     queryKey: ["week-stats", user.id],
     queryFn: async () => {
@@ -106,13 +94,6 @@ function Dashboard() {
       const thisEnd = endOfWeek(now, { weekStartsOn: 1 });
       const lastStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
       const lastEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
-
-      const profileData = qc.getQueryData<{
-        display_name: string | null;
-        avatar_url: string | null;
-        weight_kg: number | null;
-      }>(["profile", user.id]);
-      const weight = getWeightOrDefault(profileData?.weight_kg);
 
       const { data: sessions } = await supabase
         .from("sessions")
@@ -126,15 +107,11 @@ function Dashboard() {
       const sessionsArr = (sessions ?? []) as SessionRow[];
       const thisSessions = sessionsArr.filter((s) => new Date(s.started_at) >= thisStart);
       const lastSessions = sessionsArr.filter(
-        (s) =>
-          new Date(s.started_at) >= lastStart && new Date(s.started_at) <= lastEnd,
+        (s) => new Date(s.started_at) >= lastStart && new Date(s.started_at) <= lastEnd,
       );
 
       const thisVolume = thisSessions.reduce((s, x) => s + Number(x.total_volume), 0);
       const lastVolume = lastSessions.reduce((s, x) => s + Number(x.total_volume), 0);
-
-      const thisCalories = thisSessions.reduce((s, x) => s + calcCalories(x, weight), 0);
-      const lastCalories = lastSessions.reduce((s, x) => s + calcCalories(x, weight), 0);
 
       const sessionIds = thisSessions.map((s) => s.id);
       let logs: LogRow[] = [];
@@ -159,31 +136,17 @@ function Dashboard() {
         trained: thisSessions.some((s) => isSameDay(new Date(s.started_at), d)),
       }));
 
-      const caloriesChange =
-        lastCalories > 0
-          ? ((thisCalories - lastCalories) / lastCalories) * 100
-          : thisCalories > 0
-            ? 100
-            : 0;
-
       const volumeChange =
-        lastVolume > 0
-          ? ((thisVolume - lastVolume) / lastVolume) * 100
-          : thisVolume > 0
-            ? 100
-            : 0;
+        lastVolume > 0 ? ((thisVolume - lastVolume) / lastVolume) * 100 : thisVolume > 0 ? 100 : 0;
 
       const recent = thisSessions.slice(0, 3).map((s) => ({
         ...s,
-        calories: calcCalories(s, weight),
       }));
 
       return {
         workouts: thisSessions.length,
         volume: thisVolume,
-        calories: thisCalories,
         topMuscle,
-        caloriesChange,
         volumeChange,
         days: trainedDays,
         recent,
@@ -275,9 +238,7 @@ function Dashboard() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {format(new Date(), "EEEE d MMM", { locale: it })}
           </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight">
-            Ciao, {name.split(" ")[0]}
-          </h1>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">Ciao, {name.split(" ")[0]}</h1>
         </div>
         <div className="flex items-center gap-2 pt-1">
           <PWAInstallButton />
@@ -290,9 +251,7 @@ function Dashboard() {
           Questa settimana
         </p>
         <div className="mt-2 flex items-end justify-between">
-          <div className="text-6xl font-black tracking-tighter">
-            {stats?.workouts ?? 0}
-          </div>
+          <div className="text-6xl font-black tracking-tighter">{stats?.workouts ?? 0}</div>
         </div>
 
         <div className="mt-6 grid grid-cols-7 gap-1.5">
@@ -314,11 +273,6 @@ function Dashboard() {
       {/* Stats */}
       <section className="mt-4 grid grid-cols-2 gap-3">
         <StatCard
-          label="Calorie stimate"
-          value={formatCalories(stats?.calories ?? 0)}
-          trend={stats?.caloriesChange ?? 0}
-        />
-        <StatCard
           label="Top muscolo"
           value={stats?.topMuscle ?? "—"}
           subtitle={fmtWeight(stats?.volume ?? 0)}
@@ -328,10 +282,12 @@ function Dashboard() {
 
       {/* TASK 3 — Streak card */}
       <StreakCard
-        sessions={(streakQ.data ?? []) as Array<{
-          completed_at: string | null;
-          total_volume: number;
-        }>}
+        sessions={
+          (streakQ.data ?? []) as Array<{
+            completed_at: string | null;
+            total_volume: number;
+          }>
+        }
         weeklyGoal={goalQ.data ?? 3}
         weeklyCount={stats?.workouts ?? 0}
         onChangeGoal={(n) => setGoal.mutate(n)}
@@ -394,8 +350,9 @@ function Dashboard() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
-                    <div className="text-sm font-bold">{formatCalories((s as { calories: number }).calories)}</div>
-                    <div className="text-[10px] text-muted-foreground">{fmtWeight(Number(s.total_volume), { digits: 0 })}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {fmtWeight(Number(s.total_volume), { digits: 0 })}
+                    </div>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -459,20 +416,14 @@ function StatCard({
         {icon && <div className="text-muted-foreground">{icon}</div>}
       </div>
       <div className="mt-2 text-2xl font-black tracking-tight truncate">{value}</div>
-      {subtitle && (
-        <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>
-      )}
+      {subtitle && <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>}
       {trend !== undefined && (
         <div
           className={`mt-1 flex items-center gap-1 text-xs font-semibold ${
             trend >= 0 ? "text-[oklch(0.55_0.16_145)]" : "text-destructive"
           }`}
         >
-          {trend >= 0 ? (
-            <TrendingUp className="h-3 w-3" />
-          ) : (
-            <TrendingDown className="h-3 w-3" />
-          )}
+          {trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {trend >= 0 ? "+" : ""}
           {trend.toFixed(0)}% vs settimana scorsa
         </div>

@@ -10,7 +10,6 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Trophy,
   UserX,
   MoreHorizontal,
 } from "lucide-react";
@@ -23,12 +22,7 @@ import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCircle, type Circle } from "@/hooks/useCircle";
 import { MemberWorkouts } from "@/components/MemberWorkouts";
 import { CircleChat, ChatBubbleButton } from "@/components/CircleChat";
-import {
-  estimateCalories,
-  formatCalories,
-  formatVolume,
-  getWeightOrDefault,
-} from "@/lib/calories";
+import { formatVolume } from "@/lib/calories";
 
 export const Route = createFileRoute("/_authenticated/cerchia/$circleId")({
   component: CircleDetailPage,
@@ -51,7 +45,16 @@ function CircleDetailPage() {
   const navigate = useNavigate();
   const { display: fmtWeight } = useWeightUnit();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
-  const { leaveCircle, isLeaving, deleteCircle, isDeleting, removeMember, isRemovingMember, updateNickname, isUpdatingNickname } = useCircle(user.id);
+  const {
+    leaveCircle,
+    isLeaving,
+    deleteCircle,
+    isDeleting,
+    removeMember,
+    isRemovingMember,
+    updateNickname,
+    isUpdatingNickname,
+  } = useCircle(user.id);
 
   // Single aggregate query: 1 roundtrip per dataset pesante.
   // RLS garantisce che l'utente possa vedere solo le cerchie di cui è membro.
@@ -59,18 +62,18 @@ function CircleDetailPage() {
     queryKey: ["circle-detail", circleId],
     queryFn: async () => {
       // 1. Dettaglio cerchia — usa RPC SECURITY DEFINER che bypassa RLS
-      const { data: raw, error: cErr } = await supabase
-        .rpc("get_circle_by_id", { p_circle_id: circleId });
+      const { data: raw, error: cErr } = await supabase.rpc("get_circle_by_id", {
+        p_circle_id: circleId,
+      });
       if (cErr) throw cErr;
       const circle = ((raw ?? [])[0] ?? null) as Circle | null;
       if (!circle) throw new Error("Non hai più accesso a questa cerchia.");
 
       // 2. Membri — usa RPC SECURITY DEFINER che bypassa RLS.
       //    Restituisce user_id + nickname (se impostato dall'owner).
-      const { data: rawMembers, error: mErr } = await supabase.rpc(
-        "get_circle_members",
-        { p_circle_id: circleId },
-      );
+      const { data: rawMembers, error: mErr } = await supabase.rpc("get_circle_members", {
+        p_circle_id: circleId,
+      });
       if (mErr) throw mErr;
       const members = (rawMembers ?? []) as {
         user_id: string;
@@ -93,12 +96,11 @@ function CircleDetailPage() {
       // 3. Profili dei membri (display_name, avatar_url)
       const profRes = await supabase
         .from("profiles")
-        .select("id, display_name, weight_kg, weekly_goal")
+        .select("id, display_name, weekly_goal")
         .in("id", userIds);
       const profiles = (profRes.data ?? []) as {
         id: string;
         display_name: string | null;
-        weight_kg: number | null;
         weekly_goal: number | null;
       }[];
 
@@ -155,26 +157,31 @@ function CircleDetailPage() {
     return (nicknameMap?.get(profileId) || displayName || "?").trim().slice(0, 2).toUpperCase();
   }
 
-  // Aggregazione stats per membro (copertura settimanale + calorie + volume).
+  // Aggregazione stats per membro (copertura settimanale + volume).
   const memberStats = useMemo(() => {
-    if (!detailQ.data) return new Map<string, { weeklyVolume: number; weeklyCalories: number; weeklySessions: number; weeklyGoal: number }>();
+    if (!detailQ.data)
+      return new Map<
+        string,
+        { weeklyVolume: number; weeklySessions: number; weeklyGoal: number }
+      >();
     const { profiles, sessions } = detailQ.data;
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const weightMap = new Map(profiles.map((p) => [p.id, getWeightOrDefault(p.weight_kg)]));
     const goalMap = new Map(profiles.map((p) => [p.id, p.weekly_goal ?? 3]));
-    const stats = new Map<string, { weeklyVolume: number; weeklyCalories: number; weeklySessions: number; weeklyGoal: number }>();
+    const stats = new Map<
+      string,
+      { weeklyVolume: number; weeklySessions: number; weeklyGoal: number }
+    >();
     const weeklyDates = new Map<string, Set<string>>();
 
     for (const s of sessions) {
       const d = new Date(s.completed_at);
       if (d >= weekStart) {
-        const stat = stats.get(s.user_id) ?? { weeklyVolume: 0, weeklyCalories: 0, weeklySessions: 0, weeklyGoal: goalMap.get(s.user_id) ?? 3 };
+        const stat = stats.get(s.user_id) ?? {
+          weeklyVolume: 0,
+          weeklySessions: 0,
+          weeklyGoal: goalMap.get(s.user_id) ?? 3,
+        };
         stat.weeklyVolume += Number(s.total_volume || 0);
-        const durMs = new Date(s.completed_at).getTime() - new Date(s.started_at).getTime();
-        if (durMs > 0) {
-          const w = weightMap.get(s.user_id) ?? 70;
-          stat.weeklyCalories += estimateCalories(w, Math.round(durMs / 60000));
-        }
         stats.set(s.user_id, stat);
         const key = format(d, "yyyy-MM-dd");
         const set = weeklyDates.get(s.user_id) ?? new Set<string>();
@@ -184,7 +191,11 @@ function CircleDetailPage() {
     }
 
     for (const p of profiles) {
-      const stat = stats.get(p.id) ?? { weeklyVolume: 0, weeklyCalories: 0, weeklySessions: 0, weeklyGoal: goalMap.get(p.id) ?? 3 };
+      const stat = stats.get(p.id) ?? {
+        weeklyVolume: 0,
+        weeklySessions: 0,
+        weeklyGoal: goalMap.get(p.id) ?? 3,
+      };
       stat.weeklySessions = weeklyDates.get(p.id)?.size ?? 0;
       stat.weeklyGoal = goalMap.get(p.id) ?? 3;
       stats.set(p.id, stat);
@@ -197,8 +208,8 @@ function CircleDetailPage() {
     if (!detailQ.data) return [];
     const { profiles } = detailQ.data;
     return [...profiles].sort((a, b) => {
-      const sa = memberStats.get(a.id) ?? { weeklyVolume: 0, weeklyCalories: 0, weeklySessions: 0, weeklyGoal: 3 };
-      const sb = memberStats.get(b.id) ?? { weeklyVolume: 0, weeklyCalories: 0, weeklySessions: 0, weeklyGoal: 3 };
+      const sa = memberStats.get(a.id) ?? { weeklyVolume: 0, weeklySessions: 0, weeklyGoal: 3 };
+      const sb = memberStats.get(b.id) ?? { weeklyVolume: 0, weeklySessions: 0, weeklyGoal: 3 };
       return sb.weeklyVolume - sa.weeklyVolume;
     });
   }, [detailQ.data, memberStats]);
@@ -227,11 +238,7 @@ function CircleDetailPage() {
           <ChevronLeft className="h-5 w-5" /> Cerchie
         </Link>
         <div className="flex items-center gap-2">
-          <CircleChat
-            circleId={circle.id}
-            circleName={circle.name}
-            userId={user.id}
-          />
+          <CircleChat circleId={circle.id} circleName={circle.name} userId={user.id} />
           {isOwner ? (
             <button
               onClick={async () => {
@@ -284,8 +291,7 @@ function CircleDetailPage() {
       <div className="mb-2">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           <Users className="mr-1 inline h-3 w-3" />
-          {detailQ.data.profiles.length}{" "}
-          {detailQ.data.profiles.length === 1 ? "membro" : "membri"}
+          {detailQ.data.profiles.length} {detailQ.data.profiles.length === 1 ? "membro" : "membri"}
           {isOwner && " · owner"}
         </p>
         <h1 className="mt-1 text-3xl font-black tracking-tight">{circle.name}</h1>
@@ -302,7 +308,11 @@ function CircleDetailPage() {
         <h2 className="mb-3 text-lg font-bold">Membri</h2>
         <div className="space-y-2">
           {sortedMembers.map((p) => {
-            const s = memberStats.get(p.id) ?? { weeklyVolume: 0, weeklyCalories: 0, weeklySessions: 0, weeklyGoal: 3 };
+            const s = memberStats.get(p.id) ?? {
+              weeklyVolume: 0,
+              weeklySessions: 0,
+              weeklyGoal: 3,
+            };
             const isThisUser = p.id === user.id;
             return (
               <Link
@@ -317,9 +327,7 @@ function CircleDetailPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 truncate text-sm font-semibold">
-                    <span className="truncate">
-                      {resolveName(p.id, p.display_name)}
-                    </span>
+                    <span className="truncate">{resolveName(p.id, p.display_name)}</span>
                     {isThisUser && (
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                         (tu)
@@ -334,15 +342,12 @@ function CircleDetailPage() {
                   <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground flex-nowrap">
                     <span className="whitespace-nowrap">{formatVolume(s.weeklyVolume)}</span>
                     <span className="text-muted-foreground/40">·</span>
-                    <span className="whitespace-nowrap">{formatCalories(s.weeklyCalories)}</span>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span className="whitespace-nowrap">{s.weeklySessions}/{s.weeklyGoal}</span>
+                    <span className="whitespace-nowrap">
+                      {s.weeklySessions}/{s.weeklyGoal}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  {s.weeklyCalories > 0 && (
-                    <Trophy className="h-4 w-4 text-muted-foreground/60" />
-                  )}
                   {isOwner && p.id !== circle.owner_id && (
                     <>
                       <button
@@ -370,7 +375,9 @@ function CircleDetailPage() {
                           if (!ok) return;
                           try {
                             await removeMember(circle.id, p.id);
-                          } catch { /* toast gestito da hook */ }
+                          } catch {
+                            /* toast gestito da hook */
+                          }
                         }}
                         disabled={isRemovingMember}
                         className="rounded-full p-1 text-muted-foreground/50 hover:text-destructive disabled:opacity-60"
@@ -414,16 +421,11 @@ function RevealCode({ code }: { code: string }) {
   const [show, setShow] = useState(false);
   if (!show) {
     return (
-      <button
-        onClick={() => setShow(true)}
-        className="w-full text-left"
-      >
+      <button onClick={() => setShow(true)} className="w-full text-left">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Codice invito
         </p>
-        <p className="mt-2 text-sm font-semibold text-muted-foreground/70">
-          Tocca per mostrare
-        </p>
+        <p className="mt-2 text-sm font-semibold text-muted-foreground/70">Tocca per mostrare</p>
       </button>
     );
   }
@@ -463,7 +465,6 @@ function DetailSkeleton() {
         <Skeleton className="h-16 rounded-2xl" />
         <Skeleton className="h-16 rounded-2xl" />
       </div>
-
     </div>
   );
 }
