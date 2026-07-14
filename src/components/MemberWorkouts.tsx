@@ -2,15 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ChevronLeft, ChevronDown } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { format, formatDistanceToNow, subDays } from "date-fns";
-import { it } from "date-fns/locale";
-import { useWeightUnit } from "@/hooks/useWeightUnit";
+import { subDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WorkoutCard, type WorkoutLog } from "@/components/WorkoutCard";
 
 export function MemberWorkouts({ circleId, userId }: { circleId: string; userId: string }) {
-  const { display: fmtWeight } = useWeightUnit();
   const [openId, setOpenId] = useState<string | null>(null);
 
   const q = useQuery({
@@ -32,13 +30,7 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
         .order("completed_at", { ascending: false });
 
       const sessionIds = (sessions ?? []).map((s) => s.id);
-      let logs: {
-        session_id: string;
-        exercise_name: string;
-        set_number: number;
-        reps: number;
-        weight: number;
-      }[] = [];
+      let logs: (WorkoutLog & { session_id: string })[] = [];
       if (sessionIds.length > 0) {
         const { data: logsData } = await supabase
           .from("session_logs")
@@ -67,7 +59,7 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
     return q.data.sessions.map((s) => {
       return {
         session: { ...s },
-        logs: q.data!.logs.filter((l) => l.session_id === s.id),
+        logs: q.data!.logs.filter((l) => l.session_id === s.id) as WorkoutLog[],
       };
     });
   }, [q.data]);
@@ -128,7 +120,7 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
                 key={item.session.id}
                 session={item.session}
                 logs={item.logs}
-                fmtWeight={fmtWeight}
+                date={item.session.completed_at}
                 isOpen={openId === item.session.id}
                 onToggle={() =>
                   setOpenId((prev) => (prev === item.session.id ? null : item.session.id))
@@ -138,100 +130,6 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function WorkoutCard({
-  session,
-  logs,
-  fmtWeight,
-  isOpen,
-  onToggle,
-}: {
-  session: { id: string; plan_name: string | null; completed_at: string; total_volume: number };
-  logs: { exercise_name: string; set_number: number; reps: number; weight: number }[];
-  fmtWeight: (kg: number | null | undefined, opts?: { digits?: number }) => string;
-  isOpen: boolean;
-  onToggle: () => void;
-}) {
-  const grouped = useMemo(() => {
-    const map = new Map<
-      string,
-      { name: string; sets: { setNumber: number; reps: number; weight: number }[] }
-    >();
-    for (const l of logs) {
-      const entry = map.get(l.exercise_name) ?? { name: l.exercise_name, sets: [] };
-      entry.sets.push({ setNumber: l.set_number, reps: l.reps, weight: Number(l.weight) });
-      map.set(l.exercise_name, entry);
-    }
-    for (const e of map.values()) {
-      e.sets.sort((a, b) => a.setNumber - b.setNumber);
-    }
-    return [...map.values()];
-  }, [logs]);
-
-  const when = formatDistanceToNow(new Date(session.completed_at), {
-    addSuffix: true,
-    locale: it,
-  });
-
-  const fullDate = format(new Date(session.completed_at), "EEEE d MMM, HH:mm", { locale: it });
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-card">
-      <button
-        onClick={onToggle}
-        className="no-tap-highlight flex w-full items-center gap-3 px-4 py-3 text-left active:scale-[0.99]"
-        aria-expanded={isOpen}
-      >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <div className="truncate text-sm font-semibold">
-              {session.plan_name ?? "Allenamento"}
-            </div>
-            <div className="shrink-0 text-xs text-muted-foreground">{when}</div>
-          </div>
-          <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {grouped.length} {grouped.length === 1 ? "esercizio" : "esercizi"}
-          </div>
-        </div>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="space-y-3 border-t border-border bg-background/50 px-4 py-3">
-          {grouped.length === 0 ? (
-            <p className="text-center text-xs text-muted-foreground">
-              Nessun dettaglio disponibile.
-            </p>
-          ) : (
-            grouped.map((g) => (
-              <div key={g.name}>
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {g.name}
-                </div>
-                <div className="mt-1 space-y-1">
-                  {g.sets.map((s, i) => (
-                    <div
-                      key={i}
-                      className="flex justify-between rounded-lg bg-card px-3 py-1.5 text-xs"
-                    >
-                      <span className="font-semibold">Set {i + 1}</span>
-                      <span>
-                        {s.reps} × {fmtWeight(s.weight, { digits: 1 })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-          <div className="text-[10px] text-muted-foreground">{fullDate}</div>
-        </div>
-      )}
     </div>
   );
 }

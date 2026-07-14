@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { it } from "date-fns/locale";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
-import { useWeightUnit } from "@/hooks/useWeightUnit";
+import { WorkoutCard, type WorkoutLog } from "@/components/WorkoutCard";
 import { StoricoSkeleton } from "@/components/skeletons/StoricoSkeleton";
 
 export const Route = createFileRoute("/_authenticated/storico")({
@@ -23,6 +23,7 @@ type Session = {
 function Storico() {
   const { user } = Route.useRouteContext();
   const [monthOffset, setMonthOffset] = useState(0);
+  const [openId, setOpenId] = useState<string | null>(null);
   const month = subMonths(new Date(), monthOffset);
   const from = startOfMonth(month);
   const to = endOfMonth(month);
@@ -44,8 +45,29 @@ function Storico() {
     },
   });
 
-  // Peso utente per stima calorie
-  const { display } = useWeightUnit();
+  const sessionIds = (q.data ?? []).map((s) => s.id);
+
+  // Dettagli degli esercizi (set, serie, ripetizioni) per ogni sessione.
+  const logsQ = useQuery({
+    queryKey: ["history-logs", user.id, from.toISOString()],
+    enabled: sessionIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("session_logs")
+        .select("session_id, exercise_name, set_number, reps, weight")
+        .in("session_id", sessionIds);
+      if (error) throw error;
+      return (data ?? []) as (WorkoutLog & { session_id: string })[];
+    },
+  });
+
+  const sessionsWithLogs = useMemo(() => {
+    const logs = logsQ.data ?? [];
+    return (q.data ?? []).map((s) => ({
+      session: s,
+      logs: logs.filter((l) => l.session_id === s.id) as WorkoutLog[],
+    }));
+  }, [q.data, logsQ.data]);
 
   // TASK 4 — skeleton gate su TUTTE le query principali.
   if (q.isLoading) {
@@ -111,25 +133,19 @@ function Storico() {
       </div>
 
       <section className="space-y-2">
-        {q.data?.map((s) => (
-          <div
-            key={s.id}
-            className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4"
-          >
-            <div>
-              <div className="text-sm font-semibold">{s.plan_name ?? "Allenamento"}</div>
-              <div className="mt-0.5 text-xs text-muted-foreground capitalize">
-                {format(new Date(s.started_at), "EEEE d MMM, HH:mm", { locale: it })}
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] text-muted-foreground">
-                {display(Number(s.total_volume), { digits: 0 })}
-              </div>
-            </div>
-          </div>
+        {sessionsWithLogs.map((item) => (
+          <WorkoutCard
+            key={item.session.id}
+            session={item.session}
+            logs={item.logs}
+            date={item.session.completed_at ?? item.session.started_at}
+            isOpen={openId === item.session.id}
+            onToggle={() =>
+              setOpenId((prev) => (prev === item.session.id ? null : item.session.id))
+            }
+          />
         ))}
-        {q.data?.length === 0 && (
+        {sessionsWithLogs.length === 0 && (
           <p className="py-12 text-center text-sm text-muted-foreground">
             Nessun allenamento in questo mese.
           </p>
