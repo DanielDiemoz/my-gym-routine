@@ -103,7 +103,7 @@ function BottomNav({ pathname }: { pathname: string }) {
               key={it.to}
               to={it.to}
               className={`no-tap-highlight flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors ${
-                active ? "text-foreground" : "text-muted-foreground"
+                active ? "text-black" : "text-muted-foreground"
               }`}
             >
               <Icon className={`h-5 w-5 ${active ? "stroke-[2.5]" : ""}`} />

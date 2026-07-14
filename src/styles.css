@@ -47,8 +47,8 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.13 0 0);
 
-  /* Brand: deep near-black */
-  --primary: oklch(0.16 0 0);
+  /* Brand: electric violet/indigo */
+  --primary: oklch(0.62 0.21 280);
   --primary-foreground: oklch(0.99 0 0);
 
   --secondary: oklch(0.97 0 0);
@@ -68,7 +68,7 @@
 
   --border: oklch(0.92 0 0);
   --input: oklch(0.92 0 0);
-  --ring: oklch(0.16 0 0);
+  --ring: oklch(0.62 0.21 280);
 }
 
 .dark {
@@ -78,8 +78,8 @@
   --card-foreground: oklch(0.99 0 0);
   --popover: oklch(0.18 0 0);
   --popover-foreground: oklch(0.99 0 0);
-  --primary: oklch(0.99 0 0);
-  --primary-foreground: oklch(0.13 0 0);
+  --primary: oklch(0.75 0.19 280);
+  --primary-foreground: oklch(0.16 0 0);
   --secondary: oklch(0.22 0 0);
   --secondary-foreground: oklch(0.99 0 0);
   --muted: oklch(0.22 0 0);
@@ -92,7 +92,7 @@
   --success-foreground: oklch(0.13 0 0);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.99 0 0);
+  --ring: oklch(0.75 0.19 280);
 }
 
 @layer base {
@@ -117,10 +117,21 @@
 @utility container-app {
   width: 100%;
   max-width: 28rem;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1.25rem;
-  padding-right: 1.25rem;
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+
+  @media (min-width: 640px) {
+    max-width: 36rem;
+  }
+  @media (min-width: 768px) {
+    max-width: 44rem;
+  }
+  @media (min-width: 1024px) {
+    max-width: 56rem;
+  }
+  @media (min-width: 1280px) {
+    max-width: 64rem;
+  }
 }
 
 @utility no-tap-highlight {

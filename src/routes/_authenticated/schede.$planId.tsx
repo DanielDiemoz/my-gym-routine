@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Play, Pencil } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { ExerciseAutocomplete, type ExerciseLibraryEntry } from "@/components/ExerciseAutocomplete";
+import { muscleColor } from "@/lib/muscleColors";
 import {
   DndContext,
   closestCenter,
@@ -246,8 +247,21 @@ function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLa
       </button>
       <button onClick={onEdit} className="flex-1 text-left">
         <div className="font-semibold">{ex.name}</div>
-        <div className="text-xs text-muted-foreground">
-          {ex.sets}×{ex.reps} · {Number(ex.weight)} Kg{ex.muscle_group ? ` · ${ex.muscle_group}` : ""}
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs text-muted-foreground">
+          <span>
+            {ex.sets}×{ex.reps} · {Number(ex.weight)} Kg
+          </span>
+          {ex.muscle_group && (
+            <span
+              className="rounded-full px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                backgroundColor: `${muscleColor(ex.muscle_group)} / 15%`,
+                color: muscleColor(ex.muscle_group),
+              }}
+            >
+              {ex.muscle_group}
+            </span>
+          )}
         </div>
       </button>
       <div className="flex items-center gap-0.5">
@@ -367,10 +381,14 @@ function ExerciseSheet({
                   key={m}
                   type="button"
                   onClick={() => setMuscle(m)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
                     muscle === m ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   }`}
                 >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: muscleColor(m) }}
+                  />
                   {m}
                 </button>
               ))}

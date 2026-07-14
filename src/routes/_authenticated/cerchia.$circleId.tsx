@@ -312,7 +312,7 @@ function CircleDetailPage() {
       </p>
 
       {/* Codice invito: tutti i membri possono copiarlo */}
-      <div className="mb-6 flex items-center justify-between rounded-xl border border-border bg-[#F0F0F0] px-4 py-3">
+      <div className="mb-6 flex items-center justify-between rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             Codice invito
@@ -326,7 +326,7 @@ function CircleDetailPage() {
 
       {/* Statistiche aggregate cerchia */}
       <div className="mb-6 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-border bg-[#F0F0F0] px-4 py-3">
+        <div className="rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             kg totali cerchia
           </p>
@@ -334,7 +334,7 @@ function CircleDetailPage() {
             {Math.round(aggregate.weeklyKg).toLocaleString("it-IT")}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-[#F0F0F0] px-4 py-3">
+        <div className="rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             allenamenti sett.
           </p>
@@ -358,13 +358,14 @@ function CircleDetailPage() {
             const isCircleOwner = p.id === circle.owner_id;
             const progress = Math.min(s.weeklySessions / s.weeklyGoal, 1);
             const ringCirc = 2 * Math.PI * 22;
+            const ringColor = `oklch(${0.7 - 0.08 * progress} ${0.21 * progress} 280)`;
             return (
               <Link
                 key={p.id}
                 to="/cerchia/$circleId"
                 search={{ user: p.id }}
                 params={{ circleId }}
-                className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3"
+                className="flex items-center gap-3 rounded-2xl border-[0.5px] border-neutral-200 bg-card px-4 py-3"
               >
                 {/* Rango */}
                 <span className="w-5 text-center text-sm font-semibold text-muted-foreground">
@@ -380,7 +381,7 @@ function CircleDetailPage() {
                       cy="24"
                       r="22"
                       fill="none"
-                      stroke="#111111"
+                      stroke={ringColor}
                       strokeWidth="3"
                       strokeLinecap="round"
                       strokeDasharray={ringCirc}
