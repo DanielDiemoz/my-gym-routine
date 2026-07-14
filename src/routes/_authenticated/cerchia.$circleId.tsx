@@ -11,7 +11,7 @@ import {
   ChevronDown,
   ChevronRight,
   UserX,
-  MoreHorizontal,
+  Dumbbell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -200,6 +200,19 @@ function CircleDetailPage() {
     return stats;
   }, [detailQ.data]);
 
+  const aggregate = useMemo(() => {
+    if (!detailQ.data) return { weeklyKg: 0, weekSessions: 0, weekGoal: 0 };
+    let weeklyKg = 0;
+    let weekSessions = 0;
+    let weekGoal = 0;
+    for (const st of memberStats.values()) {
+      weeklyKg += st.weeklyVolume;
+      weekSessions += st.weeklySessions;
+      weekGoal += st.weeklyGoal;
+    }
+    return { weeklyKg, weekSessions, weekGoal };
+  }, [detailQ.data, memberStats]);
+
   const sortedMembers = useMemo(() => {
     if (!detailQ.data) return [];
     const { profiles } = detailQ.data;
@@ -283,33 +296,68 @@ function CircleDetailPage() {
         </div>
       </header>
 
-      {/* Title + meta */}
-      <div className="mb-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <Users className="mr-1 inline h-3 w-3" />
-          {detailQ.data.profiles.length} {detailQ.data.profiles.length === 1 ? "membro" : "membri"}
-          {isOwner && " · owner"}
-        </p>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">{circle.name}</h1>
+      {/* Header icona + titolo */}
+      <div className="mb-2 flex items-center gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-900">
+          <Dumbbell className="h-6 w-6 text-white" strokeWidth={2} />
+        </div>
+        <h1 className="text-4xl font-semibold tracking-tight text-black">{circle.name}</h1>
       </div>
 
-      {isOwner && (
-        <div className="mb-6 rounded-2xl border border-border bg-card p-4">
-          <RevealCode code={circle.code} />
+      {/* Riga informativa membri */}
+      <p className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
+        <Users className="h-4 w-4" />
+        {detailQ.data.profiles.length} {detailQ.data.profiles.length === 1 ? "membro" : "membri"}
+        {isOwner && " · owner"}
+      </p>
+
+      {/* Codice invito: tutti i membri possono copiarlo */}
+      <div className="mb-6 flex items-center justify-between rounded-xl border border-border bg-[#F0F0F0] px-4 py-3">
+        <div>
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Codice invito
+          </p>
+          <p className="mt-1 font-mono text-base tracking-[0.25em] text-foreground/80">
+            •••• •••• ••••
+          </p>
         </div>
-      )}
+        <CopyCodeButton text={circle.code} label="Copia" size="sm" />
+      </div>
+
+      {/* Statistiche aggregate cerchia */}
+      <div className="mb-6 grid grid-cols-2 gap-3">
+        <div className="rounded-xl border border-border bg-[#F0F0F0] px-4 py-3">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            kg totali cerchia
+          </p>
+          <p className="mt-1 text-2xl font-bold text-black">
+            {Math.round(aggregate.weeklyKg).toLocaleString("it-IT")}
+          </p>
+        </div>
+        <div className="rounded-xl border border-border bg-[#F0F0F0] px-4 py-3">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            allenamenti sett.
+          </p>
+          <p className="mt-1 text-2xl font-bold text-black">
+            {aggregate.weekSessions}/{aggregate.weekGoal}
+          </p>
+        </div>
+      </div>
 
       {/* Members */}
       <section className="mt-6">
         <h2 className="mb-3 text-lg font-bold">Membri</h2>
         <div className="space-y-2">
-          {sortedMembers.map((p) => {
+          {sortedMembers.map((p, idx) => {
             const s = memberStats.get(p.id) ?? {
               weeklyVolume: 0,
               weeklySessions: 0,
               weeklyGoal: 3,
             };
             const isThisUser = p.id === user.id;
+            const isCircleOwner = p.id === circle.owner_id;
+            const progress = Math.min(s.weeklySessions / s.weeklyGoal, 1);
+            const ringCirc = 2 * Math.PI * 22;
             return (
               <Link
                 key={p.id}
@@ -318,70 +366,82 @@ function CircleDetailPage() {
                 params={{ circleId }}
                 className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">
-                  {resolveInitials(p.id, p.display_name)}
+                {/* Rango */}
+                <span className="w-5 text-center text-sm font-semibold text-muted-foreground">
+                  {idx + 1}
+                </span>
+
+                {/* Avatar con anello di progresso */}
+                <div className="relative h-12 w-12 shrink-0">
+                  <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48" aria-hidden="true">
+                    <circle cx="24" cy="24" r="22" fill="none" stroke="#E5E5E5" strokeWidth="3" />
+                    <circle
+                      cx="24"
+                      cy="24"
+                      r="22"
+                      fill="none"
+                      stroke="#111111"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeDasharray={ringCirc}
+                      strokeDashoffset={ringCirc * (1 - progress)}
+                    />
+                  </svg>
+                  <div className="absolute inset-[3px] flex items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+                    {resolveInitials(p.id, p.display_name)}
+                  </div>
                 </div>
+
+                {/* Nome + badge + dati */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 truncate text-sm font-semibold">
                     <span className="truncate">{resolveName(p.id, p.display_name)}</span>
-                    {isThisUser && (
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                        (tu)
+                    {isThisUser && isCircleOwner && (
+                      <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-semibold text-black">
+                        tu · owner
                       </span>
                     )}
-                    {p.id === circle.owner_id && (
-                      <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-primary-foreground">
-                        Owner
+                    {isThisUser && !isCircleOwner && (
+                      <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-semibold text-black">
+                        tu
+                      </span>
+                    )}
+                    {!isThisUser && isCircleOwner && (
+                      <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-semibold text-black">
+                        owner
                       </span>
                     )}
                   </div>
-                  <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground flex-nowrap">
-                    <span className="whitespace-nowrap">{formatVolume(s.weeklyVolume)}</span>
-                    <span className="text-muted-foreground/40">·</span>
-                    <span className="whitespace-nowrap">
-                      {s.weeklySessions}/{s.weeklyGoal}
-                    </span>
-                  </div>
+                  <p className="mt-1 font-mono text-xs text-foreground/80">
+                    questa settimana · {formatVolume(s.weeklyVolume)} · {s.weeklySessions}/
+                    {s.weeklyGoal}
+                  </p>
                 </div>
+
+                {/* Azioni */}
                 <div className="flex items-center gap-1 shrink-0">
                   {isOwner && p.id !== circle.owner_id && (
-                    <>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setEditTarget({
-                            userId: p.id,
-                            currentNickname: nicknameMap?.get(p.id) || "",
-                          });
-                        }}
-                        className="rounded-full p-1 text-muted-foreground/50 hover:text-foreground"
-                        aria-label="Modifica nome"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          const ok = await confirmDialog(
-                            "Rimuovere questo membro?",
-                            `${resolveName(p.id, p.display_name)} non farà più parte della cerchia.`,
-                          );
-                          if (!ok) return;
-                          try {
-                            await removeMember(circle.id, p.id);
-                          } catch {
-                            /* toast gestito da hook */
-                          }
-                        }}
-                        disabled={isRemovingMember}
-                        className="rounded-full p-1 text-muted-foreground/50 hover:text-destructive disabled:opacity-60"
-                        aria-label="Rimuovi membro"
-                      >
-                        <UserX className="h-4 w-4" />
-                      </button>
-                    </>
+                    <button
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const ok = await confirmDialog(
+                          "Rimuovere questo membro?",
+                          `${resolveName(p.id, p.display_name)} non farà più parte della cerchia.`,
+                        );
+                        if (!ok) return;
+                        try {
+                          await removeMember(circle.id, p.id);
+                        } catch {
+                          /* toast gestito da hook */
+                        }
+                      }}
+                      disabled={isRemovingMember}
+                      className="rounded-full p-1 text-muted-foreground/50 hover:text-destructive disabled:opacity-60"
+                      aria-label="Rimuovi membro"
+                    >
+                      <UserX className="h-4 w-4" />
+                    </button>
                   )}
                   <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
                 </div>
@@ -413,34 +473,6 @@ function CircleDetailPage() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Codice invito a svelamento
 // ─────────────────────────────────────────────────────────────────────────────
-function RevealCode({ code }: { code: string }) {
-  const [show, setShow] = useState(false);
-  if (!show) {
-    return (
-      <button onClick={() => setShow(true)} className="w-full text-left">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Codice invito
-        </p>
-        <p className="mt-2 text-sm font-semibold text-muted-foreground/70">Tocca per mostrare</p>
-      </button>
-    );
-  }
-  return (
-    <>
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-        Codice invito
-      </p>
-      <div className="mt-2 flex items-center justify-between">
-        <code className="text-2xl font-black tracking-[0.3em]">{code}</code>
-        <CopyCodeButton text={code} label="Copia codice" />
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Condividi questo codice per invitare nuovi compagni di allenamento.
-      </p>
-    </>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeleton loading
 // ─────────────────────────────────────────────────────────────────────────────
