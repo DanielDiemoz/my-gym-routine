@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
-import { format, startOfWeek, startOfDay, subDays } from "date-fns";
+import { startOfWeek, endOfWeek, subDays } from "date-fns";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCircle, type Circle } from "@/hooks/useCircle";
@@ -166,39 +166,35 @@ function CircleDetailPage() {
       >();
     const { profiles, sessions } = detailQ.data;
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     const goalMap = new Map(profiles.map((p) => [p.id, p.weekly_goal ?? 3]));
     const stats = new Map<
       string,
       { weeklyVolume: number; weeklySessions: number; weeklyGoal: number }
     >();
-    const weeklyDates = new Map<string, Set<string>>();
 
     for (const s of sessions) {
-      const d = new Date(s.completed_at);
-      if (d >= weekStart) {
+      const d = new Date(s.started_at);
+      if (d >= weekStart && d <= weekEnd) {
         const stat = stats.get(s.user_id) ?? {
           weeklyVolume: 0,
           weeklySessions: 0,
           weeklyGoal: goalMap.get(s.user_id) ?? 3,
         };
         stat.weeklyVolume += Number(s.total_volume || 0);
+        stat.weeklySessions += 1;
         stats.set(s.user_id, stat);
-        const key = format(d, "yyyy-MM-dd");
-        const set = weeklyDates.get(s.user_id) ?? new Set<string>();
-        set.add(key);
-        weeklyDates.set(s.user_id, set);
       }
     }
 
     for (const p of profiles) {
-      const stat = stats.get(p.id) ?? {
-        weeklyVolume: 0,
-        weeklySessions: 0,
-        weeklyGoal: goalMap.get(p.id) ?? 3,
-      };
-      stat.weeklySessions = weeklyDates.get(p.id)?.size ?? 0;
-      stat.weeklyGoal = goalMap.get(p.id) ?? 3;
-      stats.set(p.id, stat);
+      if (!stats.has(p.id)) {
+        stats.set(p.id, {
+          weeklyVolume: 0,
+          weeklySessions: 0,
+          weeklyGoal: goalMap.get(p.id) ?? 3,
+        });
+      }
     }
 
     return stats;

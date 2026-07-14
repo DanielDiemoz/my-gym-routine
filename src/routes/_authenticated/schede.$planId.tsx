@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Play, Pencil } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
@@ -378,8 +378,8 @@ function ExerciseSheet({
           </Field>
 
           <div className="grid grid-cols-3 gap-3">
-            <NumField label="Serie" value={sets} onChange={setSets} min={1} max={20} />
-            <NumField label="Rip." value={reps} onChange={setReps} min={1} max={100} />
+            <NumField label="Serie" value={sets} onChange={setSets} min={0} max={20} />
+            <NumField label="Rip." value={reps} onChange={setReps} min={0} max={100} />
             <NumField label="Kg" value={weight} onChange={setWeight} min={0} step={0.5} />
           </div>
 
@@ -414,14 +414,48 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function NumField({ label, value, onChange, min, max, step = 1 }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number; step?: number }) {
+  const [text, setText] = useState(String(value));
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) setText(String(value));
+  }, [value]);
+
+  function clamp(n: number) {
+    let v = n;
+    if (min !== undefined) v = Math.max(min, v);
+    if (max !== undefined) v = Math.min(max, v);
+    return v;
+  }
+
   return (
     <Field label={label}>
       <input
         type="number"
         inputMode="decimal"
-        value={value}
+        value={text}
         min={min} max={max} step={step}
-        onChange={(e) => onChange(Number(e.target.value))}
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setText(raw);
+          if (raw !== "") {
+            const n = Number(raw);
+            if (!Number.isNaN(n)) onChange(clamp(n));
+          }
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          if (text === "") {
+            const zero = clamp(0);
+            onChange(zero);
+            setText(String(zero));
+          } else {
+            setText(String(value));
+          }
+        }}
         className="w-full rounded-xl border border-border bg-card px-3 py-3 text-center text-base font-bold outline-none focus:border-foreground"
       />
     </Field>

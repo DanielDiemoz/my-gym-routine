@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { X, Check, Plus, Minus, RotateCcw, Search, ChevronUp, ChevronDown } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
-import { useLastSessionLog } from "@/hooks/useLastSessionLog";
+import { ExerciseHistory } from "@/components/ExerciseHistory";
 import { RestTimer } from "@/components/RestTimer";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useWorkoutStash } from "@/lib/workout-context";
@@ -419,9 +419,6 @@ function ActiveSession() {
     };
   }
 
-  // TASK 1 — Query dell'ultima session_log per l'esercizio corrente.
-  const lastLogQ = useLastSessionLog(current?.name);
-
   // Query di ricerca esercizi per la sostituzione.
   const searchQ = useQuery({
     queryKey: ["exercise-search", searchQuery],
@@ -437,30 +434,6 @@ function ActiveSession() {
     enabled: showReplace && searchQuery.length >= 1,
     staleTime: 60_000,
   });
-
-  // TASK 2 — Smart default: sovrascrive reps+weight della prima serie SOLO SE
-  // l'utente non ha ancora toccato nulla e l'ultimo log è disponibile.
-  // Reapplicato a ogni cambio esercizio (current.id / current.name) o quando
-  // il log risolve. Il guard `lastLogQ.isFetching` evita di applicare dati
-  // stantii dell'esercizio precedente durante la transizione.
-  useEffect(() => {
-    if (!current || !lastLogQ.data || lastLogQ.isFetching) return;
-    setLogs((prev) => {
-      const sets = prev[current.id];
-      if (!sets || sets.length === 0) return prev;
-      const allDefault = sets.every(
-        (s) => !s.done && s.reps === current.reps && s.weight === Number(current.weight),
-      );
-      if (!allDefault) return prev; // utente ha già interagito
-      const updated = [...sets];
-      updated[0] = {
-        ...updated[0],
-        reps: lastLogQ.data!.reps,
-        weight: Number(lastLogQ.data!.weight),
-      };
-      return { ...prev, [current.id]: updated };
-    });
-  }, [current?.id, current?.name, lastLogQ.data, lastLogQ.isFetching]);
 
   // Handlers della dialog orfana.
   function decideResume() {
@@ -515,7 +488,7 @@ function ActiveSession() {
     for (const ex of exercises) {
       const sets = logs[ex.id] ?? [];
       sets.forEach((s, i) => {
-        if (s.done) {
+        if (s.done && s.reps > 0) {
           rows.push({
             session_id: sessionId,
             user_id: user.id,
@@ -810,17 +783,8 @@ function ActiveSession() {
           </button>
         </div>
 
-        {/* TASK 1 — ultima volta inline */}
-        <div className="mt-4 h-5">
-          {lastLogQ.isLoading ? null : lastLogQ.data ? (
-            <p className="text-xs text-muted-foreground">
-              Ultima volta: {lastLogQ.data.reps} rip ×{" "}
-              {fmtWeight(Number(lastLogQ.data.weight))}
-            </p>
-          ) : !lastLogQ.isError ? (
-            <p className="text-xs text-muted-foreground">Prima volta 💪</p>
-          ) : null}
-        </div>
+        {/* Storico: le ultime volte per questo esercizio */}
+        <ExerciseHistory exerciseName={current.name} />
 
         {/* TASK 4 timer (estratto) */}
         <RestTimer />
@@ -954,6 +918,13 @@ function StepperInput({
   onChange: (n: number) => void;
   step: number;
 }) {
+  const [text, setText] = useState(String(value));
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) setText(String(value));
+  }, [value]);
+
   return (
     <div className="flex items-center justify-center gap-1">
       <button
@@ -964,9 +935,28 @@ function StepperInput({
       </button>
       <input
         type="number"
-        value={value}
+        value={text}
         inputMode="decimal"
-        onChange={(e) => onChange(Number(e.target.value))}
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setText(raw);
+          if (raw !== "") {
+            const n = Number(raw);
+            if (!Number.isNaN(n)) onChange(Math.max(0, n));
+          }
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          if (text === "") {
+            onChange(0);
+            setText("0");
+          } else {
+            setText(String(value));
+          }
+        }}
         className="w-12 bg-transparent text-center text-lg font-bold outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
       />
       <button
