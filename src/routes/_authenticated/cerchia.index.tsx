@@ -88,13 +88,13 @@ function CerchiePage() {
           <div className="space-y-2">
             <button
               onClick={openJoin}
-              className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card py-4 text-sm font-bold uppercase tracking-wide text-foreground active:scale-[0.98]"
+              className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3.5 text-sm font-semibold text-foreground transition active:scale-[0.98] hover:bg-muted"
             >
               <LogIn className="h-4 w-4" /> Entra con un codice
             </button>
             <button
               onClick={openCreate}
-              className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+              className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
             >
               <Plus className="h-4 w-4" /> Crea cerchia
             </button>
@@ -153,16 +153,16 @@ function EmptyState({ onJoin, onCreate }: { onJoin: () => void; onCreate: () => 
         Entra con un codice di invito o creane una nuova.
       </p>
 
-      <div className="mt-10 w-full max-w-xs space-y-3">
+      <div className="mt-10 grid w-full max-w-xs grid-cols-2 gap-3">
         <button
           onClick={onJoin}
-          className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card py-4 text-sm font-bold uppercase tracking-wide text-foreground active:scale-[0.98]"
+          className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3.5 text-sm font-semibold text-foreground transition active:scale-[0.98] hover:bg-muted"
         >
           <LogIn className="h-4 w-4" /> Entra con un codice
         </button>
         <button
           onClick={onCreate}
-          className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+          className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" /> Crea cerchia
         </button>
@@ -198,13 +198,13 @@ function CirclesList({
       <div className="mb-4 grid grid-cols-2 gap-3">
         <button
           onClick={onCreate}
-          className="no-tap-highlight flex items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+          className="no-tap-highlight flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
         >
           <Plus className="h-4 w-4" /> Crea cerchia
         </button>
         <button
           onClick={onJoin}
-          className="no-tap-highlight flex items-center justify-center gap-2 rounded-full border border-border bg-card py-3.5 text-sm font-bold uppercase tracking-wide text-foreground active:scale-[0.98]"
+          className="no-tap-highlight flex items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3.5 text-sm font-semibold text-foreground transition active:scale-[0.98] hover:bg-muted"
         >
           <LogIn className="h-4 w-4" /> Entra con codice
         </button>
@@ -392,7 +392,7 @@ function JoinForm({
         <button
           onClick={handleSubmit}
           disabled={loading || code.length !== 6}
-          className="no-tap-highlight flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+          className="no-tap-highlight flex-1 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90 disabled:opacity-60"
         >
           {loading ? "..." : "Entra"}
         </button>
@@ -431,7 +431,7 @@ function CreateForm({
         <button
           onClick={handleSubmit}
           disabled={loading || !name.trim()}
-          className="no-tap-highlight flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+          className="no-tap-highlight flex-1 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90 disabled:opacity-60"
         >
           {loading ? "..." : "Crea"}
         </button>
@@ -468,7 +468,7 @@ function CreatedCircleCard({ circle, onDone }: { circle: Circle; onDone: () => v
 
       <button
         onClick={onDone}
-        className="no-tap-highlight w-full rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+        className="no-tap-highlight w-full rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
       >
         Fatto
       </button>
