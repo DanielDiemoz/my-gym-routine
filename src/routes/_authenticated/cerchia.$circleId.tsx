@@ -414,7 +414,7 @@ function CircleDetailPage() {
                     )}
                   </div>
                   <p className="mt-1 font-mono text-xs text-foreground/80">
-                    questa settimana · {formatVolume(s.weeklyVolume)} · {s.weeklySessions}/
+                    {formatVolume(s.weeklyVolume)} · {s.weeklySessions}/
                     {s.weeklyGoal}
                   </p>
                 </div>
