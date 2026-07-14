@@ -358,7 +358,7 @@ function CircleDetailPage() {
             const isCircleOwner = p.id === circle.owner_id;
             const progress = Math.min(s.weeklySessions / s.weeklyGoal, 1);
             const ringCirc = 2 * Math.PI * 22;
-            const ringColor = `oklch(${0.7 - 0.08 * progress} ${0.21 * progress} 280)`;
+            const ringColor = `oklch(${0.7 - 0.2 * progress} ${0.24 * progress} 280)`;
             return (
               <Link
                 key={p.id}
