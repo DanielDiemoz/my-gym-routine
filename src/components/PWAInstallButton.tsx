@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useLanguage } from "@/lib/i18n";
 
 /**
  * Bottone CTA per installare la PWA.
@@ -8,6 +9,7 @@ import { usePWAInstall } from "@/hooks/usePWAInstall";
  */
 export function PWAInstallButton() {
   const { canInstall, install } = usePWAInstall();
+  const { t } = useLanguage();
 
   if (!canInstall) return null;
 
@@ -18,10 +20,10 @@ export function PWAInstallButton() {
         void install();
       }}
       className="no-tap-highlight flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
-      aria-label="Scarica l'app"
+      aria-label={t("Scarica l'app", "Download app")}
     >
       <Download className="h-4 w-4" />
-      Scarica l'app
+      {t("Scarica l'app", "Download app")}
     </button>
   );
 }

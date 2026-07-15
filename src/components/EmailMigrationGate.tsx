@@ -6,8 +6,10 @@ import { Mail } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { isLegacyEmail } from "@/lib/legacy-email";
 import { OTP_LENGTH } from "@/lib/otp";
+import { useLanguage } from "@/lib/i18n";
 
 export function EmailMigrationGate({ user }: { user: { id: string; email?: string | null } }) {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
@@ -42,7 +44,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
       return;
     }
     setSent(true);
-    toast.success("Codice di conferma inviato alla tua email.");
+    toast.success(t("Codice di conferma inviato alla tua email.", "Confirmation code sent to your email."));
   }
 
   async function handleVerify() {
@@ -56,10 +58,10 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
     });
     setVerifying(false);
     if (error) {
-      toast.error("Codice non valido o scaduto.");
+      toast.error(t("Codice non valido o scaduto.", "Invalid or expired code."));
       return;
     }
-    toast.success("Email confermata!");
+    toast.success(t("Email confermata!", "Email confirmed!"));
     navigate({ to: "/" }).catch(() => {});
   }
 
@@ -70,7 +72,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
       toast.error(error.message);
       return;
     }
-    toast.success("Codice inviato di nuovo.");
+    toast.success(t("Codice inviato di nuovo.", "Code sent again."));
   }
 
   return (
@@ -85,17 +87,18 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
 
         {!sent ? (
           <>
-            <h1 className="text-2xl font-bold">Aggiungi la tua email</h1>
+            <h1 className="text-2xl font-bold">{t("Aggiungi la tua email", "Add your email")}</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              Il tuo account è stato creato con solo username. Per poter recuperare la password e
-              continuare a usare GymBro devi collegare un'email reale. Non puoi usare l'app finché
-              non lo fai.
+              {t(
+                "Il tuo account è stato creato con solo username. Per poter recuperare la password e continuare a usare GymBro devi collegare un'email reale. Non puoi usare l'app finché non lo fai.",
+                "Your account was created with username only. To recover your password and keep using GymBro you must link a real email. You can't use the app until you do.",
+              )}
             </p>
 
             <div className="mt-8 space-y-4">
               <div>
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Email
+                  {t("Email", "Email")}
                 </label>
                 <input
                   type="email"
@@ -113,17 +116,20 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
                 disabled={saving || !email.trim()}
                 className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
               >
-                {saving ? "Invio…" : "Invia codice"}
+                {saving ? t("Invio…", "Sending…") : t("Invia codice", "Send code")}
               </button>
             </div>
           </>
         ) : (
           <>
-            <h1 className="text-2xl font-bold">Inserisci il codice</h1>
+            <h1 className="text-2xl font-bold">{t("Inserisci il codice", "Enter the code")}</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              Abbiamo inviato un codice di conferma a{" "}
-              <span className="font-semibold text-foreground">{email.trim()}</span>. Inseriscilo per
-              attivare l'account.
+              {t(
+                "Abbiamo inviato un codice di conferma a ",
+                "We sent a confirmation code to ",
+              )}
+              <span className="font-semibold text-foreground">{email.trim()}</span>.{" "}
+              {t("Inseriscilo per attivare l'account.", "Enter it to activate your account.")}
             </p>
 
             <div className="mt-8 space-y-6">
@@ -147,7 +153,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
                 disabled={verifying || code.length < OTP_LENGTH}
                 className="no-tap-highlight flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-bold uppercase tracking-wide text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
               >
-                {verifying ? "Verifica…" : "Conferma"}
+                {verifying ? t("Verifica…", "Verifying…") : t("Conferma", "Confirm")}
               </button>
 
               <button
@@ -155,7 +161,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
                 onClick={handleResend}
                 className="block w-full text-center text-xs font-semibold text-muted-foreground"
               >
-                Non hai ricevuto il codice? Inviane un altro
+                {t("Non hai ricevuto il codice? Inviane un altro", "Didn't get the code? Send another")}
               </button>
             </div>
           </>

@@ -23,6 +23,7 @@ import { useCircle, type Circle } from "@/hooks/useCircle";
 import { MemberWorkouts } from "@/components/MemberWorkouts";
 import { CircleChat, ChatBubbleButton } from "@/components/CircleChat";
 import { formatVolume } from "@/lib/calories";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/cerchia/$circleId")({
   component: CircleDetailPage,
@@ -44,6 +45,8 @@ function CircleDetailPage() {
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
   const { display: fmtWeight } = useWeightUnit();
+  const { t, language } = useLanguage();
+  const intlLocale = language === "en" ? "en-US" : "it-IT";
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
   const {
     leaveCircle,
@@ -131,7 +134,7 @@ function CircleDetailPage() {
   // Redirect se la cerchia non esiste / non accessibile (RLS blocca se non membro).
   useEffect(() => {
     if (detailQ.isError) {
-      toast.error(detailQ.error instanceof Error ? detailQ.error.message : "Errore");
+      toast.error(detailQ.error instanceof Error ? detailQ.error.message : t("Errore", "Error"));
       navigate({ to: "/cerchia" });
     }
   }, [detailQ.isError, detailQ.error, navigate]);
@@ -150,7 +153,7 @@ function CircleDetailPage() {
 
   // Mostra nickname se presente, altrimenti display_name
   function resolveName(profileId: string, displayName: string | null): string {
-    return nicknameMap?.get(profileId) || displayName?.trim() || "Atleta";
+    return nicknameMap?.get(profileId) || displayName?.trim() || t("Atleta", "Athlete");
   }
 
   function resolveInitials(profileId: string, displayName: string | null): string {
@@ -244,7 +247,7 @@ function CircleDetailPage() {
           to="/cerchia"
           className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
         >
-          <ChevronLeft className="h-5 w-5" /> Cerchie
+          <ChevronLeft className="h-5 w-5" /> {t("Cerchie", "Circles")}
         </Link>
         <div className="flex items-center gap-2">
           <CircleChat circleId={circle.id} circleName={circle.name} userId={user.id} />
@@ -252,13 +255,13 @@ function CircleDetailPage() {
             <button
               onClick={async () => {
                 const ok = await confirmDialog(
-                  "Eliminare questa cerchia?",
-                  "L'azione è irreversibile. Tutti i membri verranno rimossi.",
+                  t("Eliminare questa cerchia?", "Delete this circle?"),
+                  t("L'azione è irreversibile. Tutti i membri verranno rimossi.", "This action is irreversible. All members will be removed."),
                 );
                 if (!ok) return;
                 try {
                   await deleteCircle(circle.id);
-                  toast.success("Cerchia eliminata.");
+                  toast.success(t("Cerchia eliminata.", "Circle deleted."));
                   navigate({ to: "/cerchia" });
                 } catch {
                   /* toast gestito da hook */
@@ -268,19 +271,19 @@ function CircleDetailPage() {
               className="text-xs font-semibold text-destructive disabled:opacity-60"
             >
               <Trash2 className="mr-1 inline h-3.5 w-3.5" />
-              Elimina
+              {t("Elimina", "Delete")}
             </button>
           ) : (
             <button
               onClick={async () => {
                 const ok = await confirmDialog(
-                  "Uscire da questa cerchia?",
-                  "Potrai rientrare in qualsiasi momento con il codice.",
+                  t("Uscire da questa cerchia?", "Leave this circle?"),
+                  t("Potrai rientrare in qualsiasi momento con il codice.", "You can rejoin anytime with the code."),
                 );
                 if (!ok) return;
                 try {
                   await leaveCircle(circle.id);
-                  toast.success("Hai lasciato la cerchia.");
+                  toast.success(t("Hai lasciato la cerchia.", "You left the circle."));
                   navigate({ to: "/cerchia" });
                 } catch {
                   /* toast gestito da hook */
@@ -290,7 +293,7 @@ function CircleDetailPage() {
               className="text-xs font-semibold text-muted-foreground disabled:opacity-60"
             >
               <LogOut className="mr-1 inline h-3.5 w-3.5" />
-              Esci
+              {t("Esci", "Leave")}
             </button>
           )}
         </div>
@@ -307,7 +310,7 @@ function CircleDetailPage() {
       {/* Riga informativa membri */}
       <p className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
         <Users className="h-4 w-4" />
-        {detailQ.data.profiles.length} {detailQ.data.profiles.length === 1 ? "membro" : "membri"}
+        {detailQ.data.profiles.length} {detailQ.data.profiles.length === 1 ? t("membro", "member") : t("membri", "members")}
         {isOwner && " · owner"}
       </p>
 
@@ -315,28 +318,28 @@ function CircleDetailPage() {
       <div className="mb-6 flex items-center justify-between rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            Codice invito
+            {t("Codice invito", "Invite code")}
           </p>
           <p className="mt-1 font-mono text-base tracking-[0.25em] text-foreground/80">
             •••• •••• ••••
           </p>
         </div>
-        <CopyCodeButton text={circle.code} label="Copia" size="sm" />
+        <CopyCodeButton text={circle.code} label={t("Copia", "Copy")} size="sm" />
       </div>
 
       {/* Statistiche aggregate cerchia */}
       <div className="mb-6 grid grid-cols-2 gap-3">
         <div className="rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            kg totali cerchia
+            {t("kg totali cerchia", "circle total kg")}
           </p>
           <p className="mt-1 text-2xl font-bold text-black">
-            {Math.round(aggregate.weeklyKg).toLocaleString("it-IT")}
+            {Math.round(aggregate.weeklyKg).toLocaleString(intlLocale)}
           </p>
         </div>
         <div className="rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            allenamenti sett.
+            {t("allenamenti sett.", "weekly workouts")}
           </p>
           <p className="mt-1 text-2xl font-bold text-black">
             {aggregate.weekSessions}/{aggregate.weekGoal}
@@ -346,7 +349,7 @@ function CircleDetailPage() {
 
       {/* Members */}
       <section className="mt-6">
-        <h2 className="mb-3 text-lg font-bold">Membri</h2>
+        <h2 className="mb-3 text-lg font-bold">{t("Membri", "Members")}</h2>
         <div className="space-y-2">
           {sortedMembers.map((p, idx) => {
             const s = memberStats.get(p.id) ?? {
@@ -427,8 +430,8 @@ function CircleDetailPage() {
                         e.preventDefault();
                         e.stopPropagation();
                         const ok = await confirmDialog(
-                          "Rimuovere questo membro?",
-                          `${resolveName(p.id, p.display_name)} non farà più parte della cerchia.`,
+                          t("Rimuovere questo membro?", "Remove this member?"),
+                          t(`${resolveName(p.id, p.display_name)} non farà più parte della cerchia.`, `${resolveName(p.id, p.display_name)} will no longer be part of the circle.`),
                         );
                         if (!ok) return;
                         try {
@@ -439,7 +442,7 @@ function CircleDetailPage() {
                       }}
                       disabled={isRemovingMember}
                       className="rounded-full p-1 text-muted-foreground/50 hover:text-destructive disabled:opacity-60"
-                      aria-label="Rimuovi membro"
+                      aria-label={t("Rimuovi membro", "Remove member")}
                     >
                       <UserX className="h-4 w-4" />
                     </button>
@@ -517,6 +520,7 @@ function NicknameModal({
   onClose: () => void;
 }) {
   const [value, setValue] = useState(initial);
+  const { t } = useLanguage();
 
   return (
     <div
@@ -528,9 +532,9 @@ function NicknameModal({
         className="w-full max-w-md rounded-t-3xl bg-background p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:rounded-3xl"
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border sm:hidden" />
-        <h3 className="text-xl font-bold">Modifica nome</h3>
+        <h3 className="text-xl font-bold">{t("Modifica nome", "Edit name")}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Il nickname sarà visibile a tutti i membri della cerchia.
+          {t("Il nickname sarà visibile a tutti i membri della cerchia.", "The nickname will be visible to all circle members.")}
         </p>
 
         <input
@@ -545,7 +549,7 @@ function NicknameModal({
           className="mt-5 w-full rounded-2xl border border-border bg-card px-4 py-3 text-base outline-none focus:border-foreground"
         />
         <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-          max 30 caratteri · lascia vuoto per usare il nome originale
+          {t("max 30 caratteri · lascia vuoto per usare il nome originale", "max 30 chars · leave empty to use the original name")}
         </p>
 
         <div className="mt-5 flex gap-2">
@@ -553,14 +557,14 @@ function NicknameModal({
             onClick={() => onClose()}
             className="no-tap-highlight flex-1 rounded-full border border-border bg-card py-3.5 text-sm font-bold uppercase tracking-wide active:scale-[0.98]"
           >
-            Annulla
+            {t("Annulla", "Cancel")}
           </button>
           <button
             onClick={() => onSave(value)}
             disabled={isSaving}
             className="no-tap-highlight flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
           >
-            {isSaving ? "..." : "Salva"}
+            {isSaving ? "..." : t("Salva", "Save")}
           </button>
         </div>
       </div>

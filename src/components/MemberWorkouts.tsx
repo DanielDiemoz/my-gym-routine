@@ -7,8 +7,10 @@ import { Link } from "@tanstack/react-router";
 import { subDays } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorkoutCard, type WorkoutLog } from "@/components/WorkoutCard";
+import { useLanguage } from "@/lib/i18n";
 
 export function MemberWorkouts({ circleId, userId }: { circleId: string; userId: string }) {
+  const { t } = useLanguage();
   const [openId, setOpenId] = useState<string | null>(null);
 
   const q = useQuery({
@@ -78,7 +80,7 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
     );
   }
 
-  const memberName = q.data?.profile?.display_name?.trim() || "Atleta";
+  const memberName = q.data?.profile?.display_name?.trim() || t("Atleta", "Athlete");
 
   return (
     <div className="container-app pt-6">
@@ -89,7 +91,7 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
           search={{ user: undefined }}
           className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
         >
-          <ChevronLeft className="h-5 w-5" /> Cerchia
+          <ChevronLeft className="h-5 w-5" /> {t("Cerchia", "Circle")}
         </Link>
       </div>
 
@@ -101,17 +103,17 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
           <div>
             <h1 className="text-3xl font-black tracking-tight">{memberName}</h1>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {q.data?.sessions.length ?? 0} allenamenti
+              {q.data?.sessions.length ?? 0} {q.data?.sessions.length === 1 ? t("allenamento", "workout") : t("allenamenti", "workouts")}
             </p>
           </div>
         </div>
       </div>
 
       <section>
-        <h2 className="mb-3 text-lg font-bold">Allenamenti</h2>
+        <h2 className="mb-3 text-lg font-bold">{t("Allenamenti", "Workouts")}</h2>
         {sessionsWithLogs.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
-            Nessun allenamento recente.
+            {t("Nessun allenamento recente.", "No recent workouts.")}
           </p>
         ) : (
           <div className="space-y-2">

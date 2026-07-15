@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { ChevronLeft, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Play, Pencil } from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { ExerciseAutocomplete, type ExerciseLibraryEntry } from "@/components/ExerciseAutocomplete";
-import { muscleColor } from "@/lib/muscleColors";
+import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
+import { useLanguage } from "@/lib/i18n";
 import {
   DndContext,
   closestCenter,
@@ -39,7 +40,16 @@ type Exercise = {
   exercise_library_id?: string | null;
 };
 
-const MUSCLES = ["Petto", "Schiena", "Gambe", "Spalle", "Braccia", "Core", "Glutei", "Altro"];
+const MUSCLES: [string, string][] = [
+  ["Petto", "Chest"],
+  ["Schiena", "Back"],
+  ["Gambe", "Legs"],
+  ["Spalle", "Shoulders"],
+  ["Braccia", "Arms"],
+  ["Core", "Core"],
+  ["Glutei", "Glutes"],
+  ["Altro", "Other"],
+];
 
 function PlanEditor() {
   const { planId } = Route.useParams();
@@ -47,6 +57,7 @@ function PlanEditor() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
+  const { t } = useLanguage();
 
   const planQ = useQuery({
     queryKey: ["plan", planId],
@@ -139,7 +150,7 @@ function PlanEditor() {
   }
 
   async function deletePlan() {
-    const ok = await confirmDialog("Eliminare questa scheda?", "L'azione è irreversibile.");
+    const ok = await confirmDialog(t("Eliminare questa scheda?", "Delete this plan?"), t("L'azione è irreversibile.", "This action is irreversible."));
     if (!ok) return;
     await supabase.from("plans").delete().eq("id", planId);
     qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
@@ -151,9 +162,9 @@ function PlanEditor() {
     <div className="container-app pt-6">
       <div className="mb-6 flex items-center justify-between">
         <Link to="/schede" className="flex items-center gap-1 text-sm font-semibold text-muted-foreground">
-          <ChevronLeft className="h-5 w-5" /> Schede
+          <ChevronLeft className="h-5 w-5" /> {t("Schede", "Plans")}
         </Link>
-        <button onClick={deletePlan} className="text-xs font-semibold text-destructive">Elimina</button>
+        <button onClick={deletePlan} className="text-xs font-semibold text-destructive">{t("Elimina", "Delete")}</button>
       </div>
 
       <div className="mb-8">
@@ -172,7 +183,7 @@ function PlanEditor() {
             <Pencil className="h-4 w-4 text-muted-foreground" />
           </button>
         )}
-        <p className="mt-1 text-sm text-muted-foreground">{items.length} {items.length === 1 ? "esercizio" : "esercizi"}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{items.length} {items.length === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}</p>
       </div>
 
       {items.length > 0 && (
@@ -181,7 +192,7 @@ function PlanEditor() {
           params={{ planId }}
           className="no-tap-highlight mb-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
         >
-          <Play className="h-4 w-4 fill-current" /> {hasActiveQ.data ? "Continua" : "Inizia"} allenamento
+          <Play className="h-4 w-4 fill-current" /> {hasActiveQ.data ? t("Continua", "Continue") : t("Inizia", "Start")} {t("allenamento", "workout")}
         </Link>
       )}
 
@@ -208,7 +219,7 @@ function PlanEditor() {
         onClick={() => setAdding(true)}
         className="no-tap-highlight mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-semibold text-muted-foreground"
       >
-        <Plus className="h-4 w-4" /> Aggiungi esercizio
+        <Plus className="h-4 w-4" /> {t("Aggiungi esercizio", "Add exercise")}
       </button>
 
       {(adding || editing) && (
@@ -235,6 +246,7 @@ function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLa
   isFirst: boolean;
   isLast: boolean;
 }) {
+  const { t } = useLanguage();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id });
   return (
     <div
@@ -259,7 +271,7 @@ function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLa
                 color: muscleColor(ex.muscle_group),
               }}
             >
-              {ex.muscle_group}
+              {t(ex.muscle_group, MUSCLE_EN[ex.muscle_group] ?? ex.muscle_group)}
             </span>
           )}
         </div>
@@ -269,7 +281,7 @@ function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLa
           onClick={onMoveUp}
           disabled={isFirst}
           className="rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
-          aria-label="Sposta su"
+          aria-label={t("Sposta su", "Move up")}
         >
           <ChevronUp className="h-4 w-4" />
         </button>
@@ -277,7 +289,7 @@ function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLa
           onClick={onMoveDown}
           disabled={isLast}
           className="rounded-full p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
-          aria-label="Sposta giù"
+          aria-label={t("Sposta giù", "Move down")}
         >
           <ChevronDown className="h-4 w-4" />
         </button>
@@ -295,6 +307,7 @@ function ExerciseSheet({
   ex: Exercise | null; planId: string; userId: string; nextPosition: number;
   onClose: () => void; onSaved: () => void;
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState(ex?.name ?? "");
   const [muscle, setMuscle] = useState(ex?.muscle_group ?? "Petto");
   const [sets, setSets] = useState(ex?.sets ?? 3);
@@ -325,7 +338,7 @@ function ExerciseSheet({
   }
 
   async function save() {
-    if (!name.trim()) { toast.error("Inserisci un nome"); return; }
+    if (!name.trim()) { toast.error(t("Inserisci un nome", "Enter a name")); return; }
     setSaving(true);
     const data = {
       name: name.trim(),
@@ -359,49 +372,49 @@ function ExerciseSheet({
         className="w-full max-w-md rounded-t-3xl bg-background p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:rounded-3xl"
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border sm:hidden" />
-        <h3 className="text-xl font-bold">{ex ? "Modifica esercizio" : "Nuovo esercizio"}</h3>
+        <h3 className="text-xl font-bold">{ex ? t("Modifica esercizio", "Edit exercise") : t("Nuovo esercizio", "New exercise")}</h3>
 
         <div className="mt-5 space-y-4">
-          <Field label="Nome">
+          <Field label={t("Nome", "Name")}>
             <ExerciseAutocomplete
               value={name}
               onChange={setName}
               onPick={handlePick}
-              placeholder="Cerca esercizio (es. Panca piana)"
+              placeholder={t("Cerca esercizio (es. Panca piana)", "Search exercise (e.g. Bench press)")}
             />
             <p className="mt-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-              Seleziona un suggerimento per auto-compilare il gruppo muscolare.
+              {t("Seleziona un suggerimento per auto-compilare il gruppo muscolare.", "Pick a suggestion to auto-fill the muscle group.")}
             </p>
           </Field>
 
-          <Field label="Gruppo muscolare">
+          <Field label={t("Gruppo muscolare", "Muscle group")}>
             <div className="flex flex-wrap gap-2">
-              {MUSCLES.map((m) => (
+              {MUSCLES.map(([value, en]) => (
                 <button
-                  key={m}
+                  key={value}
                   type="button"
-                  onClick={() => setMuscle(m)}
+                  onClick={() => setMuscle(value)}
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    muscle === m ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    muscle === value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                   }`}
                 >
                   <span
                     className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: muscleColor(m) }}
+                    style={{ backgroundColor: muscleColor(value) }}
                   />
-                  {m}
+                  {t(value, en)}
                 </button>
               ))}
             </div>
           </Field>
 
           <div className="grid grid-cols-3 gap-3">
-            <NumField label="Serie" value={sets} onChange={setSets} min={0} max={20} />
-            <NumField label="Rip." value={reps} onChange={setReps} min={0} max={100} />
-            <NumField label="Kg" value={weight} onChange={setWeight} min={0} step={0.5} />
+            <NumField label={t("Serie", "Sets")} value={sets} onChange={setSets} min={0} max={20} />
+            <NumField label={t("Rip.", "Reps")} value={reps} onChange={setReps} min={0} max={100} />
+            <NumField label={t("Kg", "Kg")} value={weight} onChange={setWeight} min={0} step={0.5} />
           </div>
 
-          <Field label="Note (opzionale)">
+          <Field label={t("Note (opzionale)", "Notes (optional)")}>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -412,9 +425,9 @@ function ExerciseSheet({
         </div>
 
         <div className="mt-6 flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-full border border-border py-3 text-sm font-semibold">Annulla</button>
+          <button onClick={onClose} className="flex-1 rounded-full border border-border py-3 text-sm font-semibold">{t("Annulla", "Cancel")}</button>
           <button onClick={save} disabled={saving} className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60">
-            {saving ? "..." : "Salva"}
+            {saving ? "..." : t("Salva", "Save")}
           </button>
         </div>
       </div>

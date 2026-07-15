@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
 import { useCircle, type Circle } from "@/hooks/useCircle";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/cerchia/")({
   component: CerchiePage,
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/cerchia/")({
  */
 function CerchiePage() {
   const { user } = Route.useRouteContext();
+  const { t } = useLanguage();
   const { myCircles, isLoadingCircles, joinCircle, isJoining, createCircle, isCreating } =
     useCircle(user.id);
 
@@ -66,9 +68,9 @@ function CerchiePage() {
     <div className="container-app pt-10">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Insieme
+          {t("Insieme", "Together")}
         </p>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">Cerchie</h1>
+        <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Cerchie", "Circles")}</h1>
       </header>
 
       {!hasCircles ? (
@@ -90,13 +92,13 @@ function CerchiePage() {
               onClick={openJoin}
               className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3.5 text-sm font-semibold text-foreground transition active:scale-[0.98] hover:bg-muted"
             >
-              <LogIn className="h-4 w-4" /> Entra con un codice
+              <LogIn className="h-4 w-4" /> {t("Entra con un codice", "Join with a code")}
             </button>
             <button
               onClick={openCreate}
               className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
             >
-              <Plus className="h-4 w-4" /> Crea cerchia
+              <Plus className="h-4 w-4" /> {t("Crea cerchia", "Create circle")}
             </button>
           </div>
         </CerchieModal>
@@ -143,14 +145,15 @@ function CerchiePage() {
 // Empty state (TASK 4: nessuna cerchia)
 // ─────────────────────────────────────────────────────────────────────────────
 function EmptyState({ onJoin, onCreate }: { onJoin: () => void; onCreate: () => void }) {
+  const { t } = useLanguage();
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
         <Users className="h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
       </div>
-      <p className="mt-6 text-base font-semibold">Non sei ancora in nessuna cerchia</p>
+      <p className="mt-6 text-base font-semibold">{t("Non sei ancora in nessuna cerchia", "You're not in any circle yet")}</p>
       <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-        Entra con un codice di invito o creane una nuova.
+        {t("Entra con un codice di invito o creane una nuova.", "Join with an invite code or create a new one.")}
       </p>
 
       <div className="mt-10 grid w-full max-w-xs grid-cols-2 gap-3">
@@ -158,13 +161,13 @@ function EmptyState({ onJoin, onCreate }: { onJoin: () => void; onCreate: () => 
           onClick={onJoin}
           className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3.5 text-sm font-semibold text-foreground transition active:scale-[0.98] hover:bg-muted"
         >
-          <LogIn className="h-4 w-4" /> Entra con un codice
+          <LogIn className="h-4 w-4" /> {t("Entra con un codice", "Join with a code")}
         </button>
         <button
           onClick={onCreate}
           className="no-tap-highlight flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
         >
-          <Plus className="h-4 w-4" /> Crea cerchia
+          <Plus className="h-4 w-4" /> {t("Crea cerchia", "Create circle")}
         </button>
       </div>
     </div>
@@ -187,6 +190,7 @@ function CirclesList({
   onCreate: () => void;
   onMenu: () => void;
 }) {
+  const { t } = useLanguage();
   const { useAllUnreadCounts } = useCircle(selfId);
   const { data: unreadCounts } = useAllUnreadCounts();
 
@@ -200,13 +204,13 @@ function CirclesList({
           onClick={onCreate}
           className="no-tap-highlight flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
         >
-          <Plus className="h-4 w-4" /> Crea cerchia
+          <Plus className="h-4 w-4" /> {t("Crea cerchia", "Create circle")}
         </button>
         <button
           onClick={onJoin}
           className="no-tap-highlight flex items-center justify-center gap-2 rounded-full border border-border bg-card px-5 py-3.5 text-sm font-semibold text-foreground transition active:scale-[0.98] hover:bg-muted"
         >
-          <LogIn className="h-4 w-4" /> Entra con codice
+          <LogIn className="h-4 w-4" /> {t("Entra con codice", "Join with code")}
         </button>
       </div>
 
@@ -225,7 +229,7 @@ function CirclesList({
           o crearne di nuove (anche se si è già in una cerchia). */}
       <button
         onClick={onMenu}
-        aria-label="Aggiungi una cerchia"
+        aria-label={t("Aggiungi una cerchia", "Add a circle")}
         className="no-tap-highlight fixed bottom-24 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition active:scale-95"
       >
         <Plus className="h-6 w-6" />
@@ -243,6 +247,7 @@ function CircleCard({
   selfId: string;
   unreadCount: number;
 }) {
+  const { t } = useLanguage();
   const isOwner = circle.owner_id === selfId;
   return (
     <Link
@@ -266,7 +271,7 @@ function CircleCard({
             {unreadCount > 0 && <MessageCircle className="h-3 w-3 text-destructive" />}
           </div>
           <div className="text-xs text-muted-foreground">
-            {circle.member_count ?? 1} {circle.member_count === 1 ? "membro" : "membri"}
+            {circle.member_count ?? 1} {circle.member_count === 1 ? t("membro", "member") : t("membri", "members")}
           </div>
         </div>
       </div>
@@ -274,7 +279,7 @@ function CircleCard({
         <CodeBadge code={circle.code} />
       ) : (
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Membro
+          {t("Membro", "Member")}
         </span>
       )}
     </Link>
@@ -283,6 +288,7 @@ function CircleCard({
 
 function CodeBadge({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useLanguage();
   function copy(e: React.MouseEvent) {
     // Evita la navigazione del <Link> genitore.
     e.preventDefault();
@@ -291,10 +297,10 @@ function CodeBadge({ code }: { code: string }) {
       .writeText(code)
       .then(() => {
         setCopied(true);
-        toast.success("Codice copiato!");
+        toast.success(t("Codice copiato!", "Code copied!"));
         setTimeout(() => setCopied(false), 1500);
       })
-      .catch(() => toast.error("Impossibile copiare il codice"));
+      .catch(() => toast.error(t("Impossibile copiare il codice", "Unable to copy code")));
   }
   return (
     <button
@@ -319,16 +325,17 @@ function CerchieModal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = useLanguage();
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={
         sheet === "join"
-          ? "Entra in cerchia"
+          ? t("Entra in cerchia", "Join a circle")
           : sheet === "create"
-            ? "Crea cerchia"
-            : "Aggiungi cerchia"
+            ? t("Crea cerchia", "Create circle")
+            : t("Aggiungi cerchia", "Add circle")
       }
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={onClose}
@@ -339,7 +346,7 @@ function CerchieModal({
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border sm:hidden" />
         <h3 className="text-xl font-bold">
-          {sheet === "join" ? "Entra in una cerchia" : "Crea una cerchia"}
+          {sheet === "join" ? t("Entra in una cerchia", "Join a circle") : t("Crea una cerchia", "Create a circle")}
         </h3>
         <div className="mt-5">{children}</div>
       </div>
@@ -354,6 +361,7 @@ function JoinForm({
   loading: boolean;
   onSubmit: (code: string) => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [code, setCode] = useState("");
   // Forza uppercase + max 6 caratteri. Lo facciamo nel componente invece di
   // affidarsi solo a maxLength così evitiamo caratteri speciali / spazi.
@@ -370,7 +378,7 @@ function JoinForm({
   }
   return (
     <>
-      <Field label="Codice invito">
+      <Field label={t("Codice invito", "Invite code")}>
         <input
           autoFocus
           inputMode="text"
@@ -384,7 +392,7 @@ function JoinForm({
           className="w-full rounded-2xl border border-border bg-card px-4 py-4 text-center text-2xl font-black uppercase tracking-[0.4em] outline-none focus:border-foreground"
         />
         <p className="mt-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-          6 caratteri · lettere e numeri
+          {t("6 caratteri · lettere e numeri", "6 characters · letters and numbers")}
         </p>
       </Field>
 
@@ -394,7 +402,7 @@ function JoinForm({
           disabled={loading || code.length !== 6}
           className="no-tap-highlight flex-1 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90 disabled:opacity-60"
         >
-          {loading ? "..." : "Entra"}
+          {loading ? "..." : t("Entra", "Join")}
         </button>
       </div>
     </>
@@ -408,6 +416,7 @@ function CreateForm({
   loading: boolean;
   onSubmit: (name: string) => Promise<void>;
 }) {
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   async function handleSubmit() {
     if (!name.trim()) return;
@@ -416,7 +425,7 @@ function CreateForm({
   }
   return (
     <>
-      <Field label="Nome cerchia">
+      <Field label={t("Nome cerchia", "Circle name")}>
         <input
           autoFocus
           value={name}
@@ -433,7 +442,7 @@ function CreateForm({
           disabled={loading || !name.trim()}
           className="no-tap-highlight flex-1 rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90 disabled:opacity-60"
         >
-          {loading ? "..." : "Crea"}
+          {loading ? "..." : t("Crea", "Create")}
         </button>
       </div>
     </>
@@ -441,6 +450,7 @@ function CreateForm({
 }
 
 function CreatedCircleCard({ circle, onDone }: { circle: Circle; onDone: () => void }) {
+  const { t } = useLanguage();
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
@@ -448,18 +458,18 @@ function CreatedCircleCard({ circle, onDone }: { circle: Circle; onDone: () => v
           ✓
         </div>
         <div>
-          <p className="text-base font-bold">Cerchia creata</p>
+          <p className="text-base font-bold">{t("Cerchia creata", "Circle created")}</p>
           <p className="text-xs text-muted-foreground">{circle.name}</p>
         </div>
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5 text-center">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Codice invito
+          {t("Codice invito", "Invite code")}
         </p>
         <code className="mt-2 block text-3xl font-black tracking-[0.3em]">{circle.code}</code>
         <p className="mt-2 text-xs text-muted-foreground">
-          Condividi questo codice per invitare nuovi compagni.
+          {t("Condividi questo codice per invitare nuovi compagni.", "Share this code to invite new buddies.")}
         </p>
         <div className="mt-4 flex justify-center">
           <CopyCodeButton text={circle.code} />
@@ -470,7 +480,7 @@ function CreatedCircleCard({ circle, onDone }: { circle: Circle; onDone: () => v
         onClick={onDone}
         className="no-tap-highlight w-full rounded-full bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98] hover:bg-primary/90"
       >
-        Fatto
+        {t("Fatto", "Done")}
       </button>
     </div>
   );

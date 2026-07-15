@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { format, formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
 import { ChevronDown } from "lucide-react";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
+import { useLanguage } from "@/lib/i18n";
 
 export type WorkoutLog = {
   exercise_name: string;
@@ -31,6 +31,7 @@ export function WorkoutCard({
   onToggle: () => void;
 }) {
   const { display } = useWeightUnit();
+  const { t, dateLocale } = useLanguage();
 
   const grouped = useMemo(() => {
     const map = new Map<
@@ -50,10 +51,10 @@ export function WorkoutCard({
 
   const when = formatDistanceToNow(new Date(date), {
     addSuffix: true,
-    locale: it,
+    locale: dateLocale,
   });
 
-  const fullDate = format(new Date(date), "EEEE d MMM, HH:mm", { locale: it });
+  const fullDate = format(new Date(date), "EEEE d MMM, HH:mm", { locale: dateLocale });
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card">
@@ -65,12 +66,12 @@ export function WorkoutCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
             <div className="truncate text-sm font-semibold">
-              {session.plan_name ?? "Allenamento"}
+              {session.plan_name ?? t("Allenamento", "Workout")}
             </div>
             <div className="shrink-0 text-xs text-muted-foreground">{when}</div>
           </div>
           <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {grouped.length} {grouped.length === 1 ? "esercizio" : "esercizi"}
+            {grouped.length} {grouped.length === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}
             {Number(session.total_volume) > 0 && (
               <> · {display(Number(session.total_volume), { digits: 0 })}</>
             )}
@@ -85,7 +86,7 @@ export function WorkoutCard({
         <div className="space-y-3 border-t border-border bg-background/50 px-4 py-3">
           {grouped.length === 0 ? (
             <p className="text-center text-xs text-muted-foreground">
-              Nessun dettaglio disponibile.
+              {t("Nessun dettaglio disponibile.", "No details available.")}
             </p>
           ) : (
             grouped.map((g) => (
@@ -99,7 +100,7 @@ export function WorkoutCard({
                       key={i}
                       className="flex justify-between rounded-lg bg-card px-3 py-1.5 text-xs"
                     >
-                      <span className="font-semibold">Set {i + 1}</span>
+                      <span className="font-semibold">{t("Set", "Set")} {i + 1}</span>
                       <span>
                         {s.reps} × {display(s.weight, { digits: 1 })}
                       </span>

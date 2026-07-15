@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Timer, Volume2, VolumeX } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 const SOUND_STORAGE_KEY = "gymbro_sound_enabled";
 
@@ -16,6 +17,7 @@ function readSoundPref(): boolean {
  * - Notification API al termine SOLO se l'app è in background e il permesso è concesso
  */
 export function RestTimer() {
+  const { t } = useLanguage();
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [target, setTarget] = useState(90);
@@ -55,13 +57,13 @@ export function RestTimer() {
     navigator.serviceWorker.ready
       .then((reg) => {
         reg.showNotification("GymBro", {
-          body: `Recupero: ${time}`,
+          body: t(`Recupero: ${time}`, `Rest: ${time}`),
           tag: "rest-timer",
         });
       })
       .catch(() => {
         try {
-          new Notification("GymBro", { body: `Recupero: ${time}` });
+          new Notification("GymBro", { body: t(`Recupero: ${time}`, `Rest: ${time}`) });
         } catch {}
       });
   }, [running]);
@@ -123,13 +125,13 @@ export function RestTimer() {
       try {
         navigator.serviceWorker.ready.then((reg) => {
           reg.showNotification("GymBro", {
-            body: "Riposo terminato! Prossima serie 💪",
+            body: t("Riposo terminato! Prossima serie 💪", "Rest over! Next set 💪"),
             tag: "rest-timer",
           });
         });
       } catch {
         try {
-          new Notification("GymBro", { body: "Riposo terminato! Prossima serie 💪" });
+          new Notification("GymBro", { body: t("Riposo terminato! Prossima serie 💪", "Rest over! Next set 💪") });
         } catch {}
       }
     }
@@ -141,7 +143,7 @@ export function RestTimer() {
     <div className="mt-8 rounded-3xl border border-border bg-card p-5">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          <Timer className="h-4 w-4" /> Recupero
+          <Timer className="h-4 w-4" /> {t("Recupero", "Rest")}
         </div>
         <div className="flex gap-1">
           {[60, 90, 120, 180].map((t) => (
@@ -168,9 +170,9 @@ export function RestTimer() {
             type="button"
             onClick={toggleSound}
             className="rounded-full border border-border px-3 py-2 text-xs font-semibold"
-            aria-label={soundOn ? "Disattiva suono" : "Attiva suono"}
+            aria-label={soundOn ? t("Disattiva suono", "Mute sound") : t("Attiva suono", "Enable sound")}
             aria-pressed={soundOn}
-            title={soundOn ? "Suono attivo" : "Suono disattivato"}
+            title={soundOn ? t("Suono attivo", "Sound on") : t("Suono disattivato", "Sound off")}
           >
             {soundOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </button>
@@ -182,14 +184,14 @@ export function RestTimer() {
             }}
             className="rounded-full border border-border px-4 py-2 text-xs font-semibold"
           >
-            Reset
+            {t("Reset", "Reset")}
           </button>
           <button
             type="button"
             onClick={() => setRunning((r) => !r)}
             className="rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground"
           >
-            {running ? "Pausa" : "Avvia"}
+            {running ? t("Pausa", "Pause") : t("Avvia", "Start")}
           </button>
         </div>
       </div>

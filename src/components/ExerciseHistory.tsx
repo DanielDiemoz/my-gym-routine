@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { History, ChevronDown } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
-import { it } from "date-fns/locale";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useExerciseHistory, type ExerciseHistoryEntry } from "@/hooks/useExerciseHistory";
+import { useLanguage } from "@/lib/i18n";
 
 export function ExerciseHistory({ exerciseName }: { exerciseName: string | undefined }) {
   const { display: fmtWeight } = useWeightUnit();
+  const { t, dateLocale } = useLanguage();
   const historyQ = useExerciseHistory(exerciseName);
   const [showMore, setShowMore] = useState(false);
 
@@ -19,7 +20,7 @@ export function ExerciseHistory({ exerciseName }: { exerciseName: string | undef
     <div className="mt-6 overflow-hidden rounded-2xl border border-primary/30 bg-primary/5">
       <div className="flex items-center gap-2 px-4 pt-3 text-xs font-bold uppercase tracking-widest text-primary">
         <History className="h-4 w-4" />
-        Le volte scorse
+        {t("Le volte scorse", "Last times")}
       </div>
 
       <div className="px-4 py-3">
@@ -41,7 +42,7 @@ export function ExerciseHistory({ exerciseName }: { exerciseName: string | undef
             className="flex w-full items-center justify-center gap-1 border-t border-primary/20 py-2.5 text-xs font-semibold text-primary"
             aria-expanded={showMore}
           >
-            {showMore ? "Nascondi" : `Vedi altre ${older.length} volte`}
+            {showMore ? t("Nascondi", "Hide") : t(`Vedi altre ${older.length} volte`, `See ${older.length} more times`)}
             <ChevronDown
               className={`h-4 w-4 transition-transform ${showMore ? "rotate-180" : ""}`}
             />
@@ -61,8 +62,9 @@ function HistoryEntry({
   fmtWeight: (kg: number | null | undefined, opts?: { digits?: number }) => string;
   highlight?: boolean;
 }) {
-  const when = formatDistanceToNow(new Date(entry.date), { addSuffix: true, locale: it });
-  const fullDate = format(new Date(entry.date), "d MMM yyyy", { locale: it });
+  const { dateLocale } = useLanguage();
+  const when = formatDistanceToNow(new Date(entry.date), { addSuffix: true, locale: dateLocale });
+  const fullDate = format(new Date(entry.date), "d MMM yyyy", { locale: dateLocale });
 
   return (
     <div>

@@ -20,7 +20,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Json } from "@/integrations/supabase/types";
-import { muscleColor } from "@/lib/muscleColors";
+import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/allena/$planId")({
   component: ActiveSession,
@@ -88,6 +89,8 @@ function ActiveSession() {
   const navigate = useNavigate();
 
   const { display: fmtWeight } = useWeightUnit();
+  const { t, language } = useLanguage();
+  const intlLocale = language === "en" ? "en-US" : "it-IT";
 
   const planQ = useQuery({
     queryKey: ["session-plan", planId],
@@ -264,7 +267,7 @@ function ActiveSession() {
         if (cancelled) return;
         // Rollback del lock: l'utente può ricaricare per riprovare.
         sessionCreated.current = false;
-        toast.error(err instanceof Error ? err.message : "Errore di sessione");
+        toast.error(err instanceof Error ? err.message : t("Errore di sessione", "Session error"));
       }
     })();
 
@@ -461,8 +464,8 @@ function ActiveSession() {
 
   async function cancelSession() {
     const ok = await confirmDialog(
-      "Annullare l'allenamento?",
-      "I dati non saranno salvati.",
+      t("Annullare l'allenamento?", "Cancel the workout?"),
+      t("I dati non saranno salvati.", "Your data won't be saved."),
     );
     if (!ok) return;
     if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
@@ -504,7 +507,7 @@ function ActiveSession() {
       });
     }
     if (rows.length === 0) {
-      toast.error("Nessuna serie completata");
+      toast.error(t("Nessuna serie completata", "No completed sets"));
       setFinishing(false);
       return;
     }
@@ -517,7 +520,7 @@ function ActiveSession() {
     sessionStorage.removeItem("gw_last");
     console.log("[CLEANUP] removing LS key");
     clearPersisted();
-    toast.success("Allenamento salvato!");
+    toast.success(t("Allenamento salvato!", "Workout saved!"));
     navigate({ to: "/" });
   }
 
@@ -578,30 +581,30 @@ function ActiveSession() {
     <AlertDialog open={showOrphanModal} onOpenChange={blockForcedClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Allenamento in corso</AlertDialogTitle>
+          <AlertDialogTitle>{t("Allenamento in corso", "Workout in progress")}</AlertDialogTitle>
           <AlertDialogDescription>
             {orphanQ.data ? (
               <>
-                Hai una sessione interrotta iniziata il{" "}
+                {t("Hai una sessione interrotta iniziata il", "You have a paused session started on")}{" "}
                 <strong>
-                  {new Date(orphanQ.data.started_at).toLocaleString("it-IT", {
+                  {new Date(orphanQ.data.started_at).toLocaleString(intlLocale, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
                 </strong>
-                . Vuoi riprenderla o iniziarne una nuova?
+                . {t("Vuoi riprenderla o iniziarne una nuova?", "Do you want to resume it or start a new one?")}
               </>
             ) : (
-              "Caricamento…"
+              t("Caricamento…", "Loading…")
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={decideStartNew} disabled={!orphanQ.data?.id}>
-            Inizia nuovo
+            {t("Inizia nuovo", "Start new")}
           </AlertDialogCancel>
           <AlertDialogAction onClick={decideResume} disabled={!orphanQ.data?.id}>
-            Riprendi
+            {t("Riprendi", "Resume")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -611,19 +614,19 @@ function ActiveSession() {
   if (!current) {
     return (
       <div className="container-app flex min-h-screen flex-col items-center justify-center text-center">
-        {planQ.data && exercises.length === 0 ? (
-          <>
-            <p className="text-sm text-muted-foreground">Questa scheda non ha esercizi.</p>
-            <button
-              onClick={() => navigate({ to: "/schede/$planId", params: { planId } })}
-              className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
-            >
-              Aggiungi esercizi
-            </button>
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">Caricamento…</p>
-        )}
+          {planQ.data && exercises.length === 0 ? (
+            <>
+              <p className="text-sm text-muted-foreground">{t("Questa scheda non ha esercizi.", "This plan has no exercises.")}</p>
+              <button
+                onClick={() => navigate({ to: "/schede/$planId", params: { planId } })}
+                className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+              >
+                {t("Aggiungi esercizi", "Add exercises")}
+              </button>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("Caricamento…", "Loading…")}</p>
+          )}
         {orphanDialog}
         {ConfirmDialog}
       </div>
@@ -689,7 +692,7 @@ function ActiveSession() {
             color: muscleColor(current.muscle_group),
           }}
         >
-          {current.muscle_group ?? "Esercizio"}
+          {current.muscle_group ? t(current.muscle_group, MUSCLE_EN[current.muscle_group] ?? current.muscle_group) : t("Esercizio", "Exercise")}
         </div>
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-black tracking-tight">{current.name}</h1>
@@ -697,8 +700,8 @@ function ActiveSession() {
             type="button"
             onClick={() => setShowReplace(true)}
             className="rounded-full border border-border p-2 text-muted-foreground"
-            aria-label="Sostituisci esercizio"
-            title="Sostituisci con un altro esercizio"
+            aria-label={t("Sostituisci esercizio", "Replace exercise")}
+            title={t("Sostituisci con un altro esercizio", "Replace with another exercise")}
           >
             <RotateCcw className="h-4 w-4" />
           </button>
@@ -708,8 +711,8 @@ function ActiveSession() {
               onClick={() => moveExercise("up")}
               disabled={currentIdx === 0}
               className="rounded-full border border-border p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
-              aria-label="Sposta su"
-              title="Sposta questo esercizio prima"
+              aria-label={t("Sposta su", "Move up")}
+              title={t("Sposta questo esercizio prima", "Move this exercise earlier")}
             >
               <ChevronUp className="h-4 w-4" />
             </button>
@@ -718,23 +721,23 @@ function ActiveSession() {
               onClick={() => moveExercise("down")}
               disabled={currentIdx === exercises.length - 1}
               className="rounded-full border border-border p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-20"
-              aria-label="Sposta giù"
-              title="Sposta questo esercizio dopo"
+              aria-label={t("Sposta giù", "Move down")}
+              title={t("Sposta questo esercizio dopo", "Move this exercise later")}
             >
               <ChevronDown className="h-4 w-4" />
             </button>
           </div>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          Target: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
+          {t("Target", "Target")}: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
         </p>
         {current.notes && <p className="mt-2 rounded-xl bg-muted p-3 text-sm">{current.notes}</p>}
 
         <div className="mt-6 space-y-2">
           <div className="grid grid-cols-[2.5rem_1fr_1fr_2.5rem_2rem] gap-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            <div>Set</div>
-            <div className="text-center">Rip.</div>
-            <div className="text-center">Kg</div>
+            <div>{t("Set", "Set")}</div>
+            <div className="text-center">{t("Rip.", "Reps")}</div>
+            <div className="text-center">{t("Kg", "Kg")}</div>
             <div />
             <div />
           </div>
@@ -763,8 +766,8 @@ function ActiveSession() {
               <button
                 onClick={() => removeSet(i)}
                 className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
-                aria-label="Rimuovi serie"
-                title="Rimuovi serie"
+                aria-label={t("Rimuovi serie", "Remove set")}
+                title={t("Rimuovi serie", "Remove set")}
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -786,7 +789,7 @@ function ActiveSession() {
             }}
             className="w-full rounded-2xl border-2 border-dashed border-border py-3 text-xs font-semibold text-muted-foreground"
           >
-            + Serie extra
+            + {t("Serie extra", "Extra set")}
           </button>
         </div>
 
@@ -808,9 +811,9 @@ function ActiveSession() {
                 setCurrentIdx(nextIdx);
               }}
               className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
-            >
-              Indietro
-            </button>
+              >
+                {t("Indietro", "Back")}
+              </button>
           )}
           {!isLast ? (
             <>
@@ -820,31 +823,31 @@ function ActiveSession() {
                   stageDraft(buildDraft({ currentIdx: nextIdx }));
                   setCurrentIdx(nextIdx);
                 }}
-                className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+                 className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
               >
-                Prossimo esercizio
+                {t("Prossimo esercizio", "Next exercise")}
               </button>
               <button
                 onClick={async () => {
                   const ok = await confirmDialog(
-                    "Salvare l'allenamento?",
-                    "Verranno salvate solo le serie completate.",
+                    t("Salvare l'allenamento?", "Save the workout?"),
+                    t("Verranno salvate solo le serie completate.", "Only completed sets will be saved."),
                   );
                   if (ok) finishWorkout();
                 }}
                 disabled={finishing}
                 className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
               >
-                {finishing ? "..." : "Termina"}
+                {finishing ? "..." : t("Termina", "Finish")}
               </button>
             </>
           ) : (
             <button
               onClick={finishWorkout}
               disabled={finishing}
-              className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+               className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
             >
-              {finishing ? "..." : "Termina allenamento"}
+              {finishing ? "..." : t("Termina allenamento", "Finish workout")}
             </button>
           )}
         </div>
@@ -856,9 +859,9 @@ function ActiveSession() {
       <AlertDialog open={showReplace} onOpenChange={setShowReplace}>
         <AlertDialogContent className="max-h-[80vh] overflow-y-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle>Sostituisci esercizio</AlertDialogTitle>
+            <AlertDialogTitle>{t("Sostituisci esercizio", "Replace exercise")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Cerca un esercizio dalla libreria per sostituire "{current.name}".
+              {t("Cerca un esercizio dalla libreria per sostituire", "Search the library to replace")} "{current.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="relative mb-1 mt-1">
@@ -867,28 +870,28 @@ function ActiveSession() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cerca esercizio…"
+              placeholder={t("Cerca esercizio…", "Search exercise…")}
               className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-4 text-sm outline-none focus:border-foreground"
               autoFocus
             />
           </div>
           <p className="mb-3 text-[10px] uppercase tracking-widest text-muted-foreground">
-            Non è obbligatorio scegliere dalla lista
+            {t("Non è obbligatorio scegliere dalla lista", "You don't have to pick from the list")}
           </p>
           <div className="space-y-1">
             {searchQuery.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Inizia a digitare per cercare</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("Inizia a digitare per cercare", "Start typing to search")}</p>
             ) : searchQ.isLoading ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">Ricerca…</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">{t("Ricerca…", "Searching…")}</p>
             ) : searchResults.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">Nessun esercizio trovato</p>
+                <p className="text-sm text-muted-foreground">{t("Nessun esercizio trovato", "No exercise found")}</p>
                 <button
                   type="button"
                   onClick={() => replaceExercise(searchQuery, null)}
                   className="mt-3 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground"
                 >
-                  Usa "{searchQuery}"
+                  {t("Usa", "Use")} "{searchQuery}"
                 </button>
               </div>
             ) : (
@@ -908,7 +911,7 @@ function ActiveSession() {
                         color: muscleColor(ex.muscle_group),
                       }}
                     >
-                      {ex.muscle_group}
+                      {ex.muscle_group ? t(ex.muscle_group, MUSCLE_EN[ex.muscle_group] ?? ex.muscle_group) : ex.muscle_group}
                     </span>
                   </div>
                   <RotateCcw className="h-4 w-4 shrink-0 text-muted-foreground" />

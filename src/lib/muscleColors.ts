@@ -13,3 +13,33 @@ export const MUSCLE_COLORS: Record<string, string> = {
 export function muscleColor(group?: string | null): string {
   return MUSCLE_COLORS[group?.trim() ?? "Altro"] ?? MUSCLE_COLORS.Altro;
 }
+
+// Traduzione IT→EN dei gruppi muscolari. I gruppi muscolari sono salvati in
+// italiano nel DB (testo libero), quindi mappiamo i valori più comuni.
+export const MUSCLE_EN: Record<string, string> = {
+  Petto: "Chest",
+  Schiena: "Back",
+  Dorsali: "Back",
+  Gambe: "Legs",
+  Quadricipiti: "Quads",
+  Femorali: "Hamstrings",
+  Polpacci: "Calves",
+  Spalle: "Shoulders",
+  Braccia: "Arms",
+  Bicipiti: "Biceps",
+  Tricipiti: "Triceps",
+  Avambracci: "Forearms",
+  Addome: "Abs",
+  Core: "Core",
+  Glutei: "Glutes",
+  Lombari: "Lower back",
+  Cardio: "Cardio",
+  "Full body": "Full body",
+  Altro: "Other",
+};
+
+export function muscleEn(it?: string | null): string {
+  if (!it) return "";
+  const key = it.trim();
+  return MUSCLE_EN[key] ?? key;
+}

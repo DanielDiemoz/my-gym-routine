@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/lib/i18n";
 
 /**
  * Bottone "Copia codice" usato sia nella card della cerchia appena creata
@@ -25,6 +26,7 @@ export function CopyCodeButton({
   /** Callback opzionale dopo la copia riuscita (es. analytics, focus shift). */
   onCopy?: () => void;
 }) {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const iconDim = size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5";
   const padding = size === "sm" ? "px-3 py-1.5 text-[10px]" : "px-4 py-2 text-xs";
@@ -36,11 +38,11 @@ export function CopyCodeButton({
           .writeText(text)
           .then(() => {
             setCopied(true);
-            toast.success("Codice copiato!");
+            toast.success(t("Codice copiato!", "Code copied!"));
             onCopy?.();
             setTimeout(() => setCopied(false), 1500);
           })
-          .catch(() => toast.error("Copia non riuscita"));
+          .catch(() => toast.error(t("Copia non riuscita", "Copy failed")));
       }}
       className={cn(
         "flex items-center gap-1.5 rounded-full border border-border bg-background font-bold uppercase tracking-widest hover:bg-muted",

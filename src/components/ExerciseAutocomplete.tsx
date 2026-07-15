@@ -9,6 +9,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useLanguage } from "@/lib/i18n";
+import { MUSCLE_EN } from "@/lib/muscleColors";
 
 export interface ExerciseLibraryEntry {
   id: string;
@@ -44,6 +46,7 @@ export function ExerciseAutocomplete({
   onBlur,
   placeholder,
 }: Props) {
+  const { t } = useLanguage();
   const [debounced, setDebounced] = useState(value.trim());
   const [open, setOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -135,7 +138,7 @@ export function ExerciseAutocomplete({
                     <div className="flex w-full items-center justify-between">
                       <span className="font-medium">{e.name}</span>
                       <span className="ml-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-                        {e.muscle_group}
+                        {t(e.muscle_group, MUSCLE_EN[e.muscle_group] ?? e.muscle_group)}
                       </span>
                     </div>
                   </CommandItem>

@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLanguage } from "@/lib/i18n";
 
 interface Props {
   /** Sessioni completate (almeno completed_at valorizzato). */
@@ -39,6 +40,7 @@ export function StreakCard({
   onChangeGoal,
   isLoading,
 }: Props) {
+  const { t } = useLanguage();
   const safeWeeklyGoal = Math.max(1, Math.min(7, weeklyGoal || 3));
   const completedAts = sessions
     .map((s) => s.completed_at)
@@ -51,7 +53,7 @@ export function StreakCard({
     <section className="mt-4 rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center justify-between">
         <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          Streak
+          {t("Streak", "Streak")}
         </h3>
         <Flame className={`h-4 w-4 ${current > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
       </div>
@@ -61,33 +63,33 @@ export function StreakCard({
           {isLoading ? "—" : current}
         </span>
         <span className="text-sm text-muted-foreground">
-          {current === 1 ? "giorno" : "giorni"}
+          {current === 1 ? t("giorno", "day") : t("giorni", "days")}
         </span>
       </div>
 
       <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
         <Trophy className="h-3 w-3" />
-        <span>
-          Record: <span className="font-semibold text-foreground">{isLoading ? "—" : record}</span>
+         <span>
+          {t("Record", "Record")}: <span className="font-semibold text-foreground">{isLoading ? "—" : record}</span>
         </span>
       </div>
 
       {/* Helper se lo streak è rotto ma esiste un record passato. */}
       {!isLoading && current === 0 && record > 0 && (
         <p className="mt-2 text-xs italic text-muted-foreground">
-          Allena oggi per ricostruire lo streak.
+          {t("Allena oggi per ricostruire lo streak.", "Train today to rebuild your streak.")}
         </p>
       )}
       {!isLoading && current > 0 && current === record && (
         <p className="mt-2 text-xs font-semibold text-[oklch(0.55_0.16_145)]">
-          🏆 Nuovo record!
+          🏆 {t("Nuovo record!", "New record!")}
         </p>
       )}
 
       <div className="mt-4">
         <div className="flex items-center justify-between text-xs">
           <span className="flex items-center gap-1.5 text-muted-foreground">
-            <Target className="h-3 w-3" /> Questa settimana
+            <Target className="h-3 w-3" /> {t("Questa settimana", "This week")}
           </span>
           <div className="flex items-center gap-2">
             <span
@@ -100,7 +102,7 @@ export function StreakCard({
               onValueChange={(v) => onChangeGoal(Number(v))}
             >
               <SelectTrigger
-                aria-label="Obiettivo settimanale"
+                aria-label={t("Obiettivo settimanale", "Weekly goal")}
                 className="h-7 w-auto rounded-full border px-2 text-xs font-semibold"
               >
                 <SelectValue />

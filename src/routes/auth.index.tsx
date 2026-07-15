@@ -6,6 +6,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Lock, ArrowRight, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useLanguage, tx } from "@/lib/i18n";
 
 function getEmailVerificationUrl(email: string) {
   const url = new URL("/auth/verify", window.location.origin);
@@ -20,27 +21,27 @@ export const Route = createFileRoute("/auth/")({
 
 // ── Schemas ────────────────────────────────────────────────────────────────
 const loginSchema = z.object({
-  email: z.string().trim().email("Inserisci un'email valida"),
-  password: z.string().min(1, "Password richiesta"),
+  email: z.string().trim().email(tx("Inserisci un'email valida", "Enter a valid email")),
+  password: z.string().min(1, tx("Password richiesta", "Password required")),
 });
 
 const signupSchema = z
   .object({
-    email: z.string().trim().email("Inserisci un'email valida"),
+    email: z.string().trim().email(tx("Inserisci un'email valida", "Enter a valid email")),
     password: z
       .string()
-      .min(6, "La password deve essere di almeno 6 caratteri")
-      .regex(/[0-9]/, "Deve contenere almeno un numero")
-      .regex(/[^A-Za-z0-9]/, "Deve contenere almeno un carattere speciale"),
-    confirmPassword: z.string().min(1, "Conferma la password"),
+      .min(6, tx("La password deve essere di almeno 6 caratteri", "Password must be at least 6 characters"))
+      .regex(/[0-9]/, tx("Deve contenere almeno un numero", "Must contain at least one number"))
+      .regex(/[^A-Za-z0-9]/, tx("Deve contenere almeno un carattere speciale", "Must contain at least one special character")),
+    confirmPassword: z.string().min(1, tx("Conferma la password", "Confirm the password")),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Le password non coincidono",
+    message: tx("Le password non coincidono", "Passwords do not match"),
     path: ["confirmPassword"],
   });
 
 const forgotSchema = z.object({
-  email: z.string().trim().email("Inserisci un'email valida"),
+  email: z.string().trim().email(tx("Inserisci un'email valida", "Enter a valid email")),
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -51,6 +52,7 @@ type AuthMode = "login" | "signup";
 
 function AuthIndexPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<AuthMode>("login");
   const [forgot, setForgot] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
@@ -78,11 +80,11 @@ function AuthIndexPage() {
       });
       if (error) throw error;
       
-      toast.success("Codice di conferma inviato nuovamente.");
+       toast.success(t("Codice di conferma inviato nuovamente.", "Confirmation code sent again."));
       navigate({ to: "/auth/verify", search: { email: unverifiedEmail } });
     } catch (err) {
       console.error("Resend error:", err);
-      toast.error("Impossibile inviare il codice. Riprova più tardi.");
+      toast.error(t("Impossibile inviare il codice. Riprova più tardi.", "Unable to send the code. Try again later."));
     } finally {
       setResendingUnverified(false);
     }
@@ -99,10 +101,10 @@ function AuthIndexPage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           {forgot
-            ? "Recupera la tua password inserendo la mail."
+            ? t("Recupera la tua password inserendo la mail.", "Recover your password by entering your email.")
             : mode === "login"
-              ? "Bentornato. Accedi per continuare i tuoi allenamenti."
-              : "Crea un account per iniziare a tracciare le tue schede."}
+              ? t("Bentornato. Accedi per continuare i tuoi allenamenti.", "Welcome back. Log in to continue your workouts.")
+              : t("Crea un account per iniziare a tracciare le tue schede.", "Create an account to start tracking your plans.")}
         </p>
       </div>
 
@@ -111,9 +113,9 @@ function AuthIndexPage() {
           <div className="flex gap-3">
             <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-destructive">Account non verificato</h4>
+              <h4 className="text-sm font-semibold text-destructive">{t("Account non verificato", "Account not verified")}</h4>
               <p className="text-xs text-muted-foreground">
-                Devi confermare la tua email con il codice OTP per poter accedere.
+                {t("Devi confermare la tua email con il codice OTP per poter accedere.", "You must confirm your email with the OTP code to log in.")}
               </p>
             </div>
           </div>
@@ -123,7 +125,7 @@ function AuthIndexPage() {
               onClick={() => setUnverifiedEmail(null)}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-muted transition"
             >
-              Annulla
+              {t("Annulla", "Cancel")}
             </button>
             <button
               type="button"
@@ -131,7 +133,7 @@ function AuthIndexPage() {
               onClick={handleResendUnverified}
               className="text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 active:scale-95 transition disabled:opacity-50"
             >
-              {resendingUnverified ? "Invio..." : "Reinvia codice OTP"}
+              {resendingUnverified ? t("Invio...", "Sending...") : t("Reinvia codice OTP", "Resend OTP code")}
             </button>
           </div>
         </div>
@@ -160,16 +162,16 @@ function AuthIndexPage() {
           >
             {mode === "login" ? (
               <>
-                Non hai un account?{" "}
+                {t("Non hai un account?", "No account?")}{" "}
                 <span className="font-semibold text-primary underline underline-offset-4">
-                  Registrati
+                  {t("Registrati", "Sign up")}
                 </span>
               </>
             ) : (
               <>
-                Hai già un account?{" "}
+                {t("Hai già un account?", "Already have an account?")}{" "}
                 <span className="font-semibold text-primary underline underline-offset-4">
-                  Accedi
+                  {t("Accedi", "Log in")}
                 </span>
               </>
             )}
@@ -188,6 +190,7 @@ interface LoginFormProps {
 }
 
 function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
+  const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const {
     register,
@@ -213,7 +216,7 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
           (error.status === 400 && error.message.toLowerCase().includes("confirm"))
         ) {
           onUnverified(email);
-          toast.error("Email non verificata. Conferma il tuo account prima di accedere.");
+          toast.error(t("Email non verificata. Conferma il tuo account prima di accedere.", "Email not verified. Confirm your account before logging in."));
           return;
         }
         throw error;
@@ -226,19 +229,19 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
       const errorMsg = err instanceof Error ? err.message : "";
       
       if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("rate limit")) {
-        toast.error("Troppi tentativi. Riprova più tardi.");
+        toast.error(t("Troppi tentativi. Riprova più tardi.", "Too many attempts. Try again later."));
         return;
       }
       
       // Generic message to prevent email harvesting
-      toast.error("Email o password non validi.");
+      toast.error(t("Email o password non validi.", "Invalid email or password."));
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormField
-        label="Email"
+        label={t("Email", "Email")}
         type="email"
         id="login-email"
         autoComplete="email"
@@ -248,7 +251,7 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
         icon={<Mail className="h-5 w-5 text-muted-foreground" />}
       />
       <FormField
-        label="Password"
+        label={t("Password", "Password")}
         type={showPassword ? "text" : "password"}
         id="login-password"
         autoComplete="current-password"
@@ -265,11 +268,11 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
           onClick={onForgot}
           className="text-xs font-semibold text-muted-foreground hover:text-foreground transition underline underline-offset-2"
         >
-          Password dimenticata?
+          {t("Password dimenticata?", "Forgot password?")}
         </button>
       </div>
 
-      <SubmitButton loading={isSubmitting}>Accedi</SubmitButton>
+      <SubmitButton loading={isSubmitting}>{t("Accedi", "Log in")}</SubmitButton>
     </form>
   );
 }
@@ -281,6 +284,7 @@ interface SignupFormProps {
 
 function SignupForm({ onSuccess }: SignupFormProps) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
   const {
     register,
@@ -314,7 +318,7 @@ function SignupForm({ onSuccess }: SignupFormProps) {
           error.message.toLowerCase().includes("already registered") ||
           error.message.toLowerCase().includes("already in use")
         ) {
-          toast.error("L'email è già in uso. Accedi o recupera la password.");
+          toast.error(t("L'email è già in uso. Accedi o recupera la password.", "Email already in use. Log in or recover your password."));
           return;
         }
         throw error;
@@ -322,28 +326,28 @@ function SignupForm({ onSuccess }: SignupFormProps) {
 
       // Check if identities is empty array (meaning email is already registered and verified in Supabase)
       if (data.user && data.user.identities && data.user.identities.length === 0) {
-        toast.error("L'email è già in uso. Accedi o recupera la password.");
+        toast.error(t("L'email è già in uso. Accedi o recupera la password.", "Email already in use. Log in or recover your password."));
         return;
       }
 
       if (!data.session) {
-        toast.success("Codice di conferma inviato alla tua email!");
+        toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
         navigate({ to: "/auth/verify", search: { email } });
       } else {
-        toast.success("Registrazione completata!");
+        toast.success(t("Registrazione completata!", "Registration complete!"));
         navigate({ to: "/" });
       }
     } catch (err) {
       console.error("Signup error:", err);
       // Suppress detailed technical messages to keep error generic and log silently
-      toast.error("Impossibile completare la registrazione. Riprova più tardi.");
+      toast.error(t("Impossibile completare la registrazione. Riprova più tardi.", "Unable to complete registration. Try again later."));
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormField
-        label="Email"
+        label={t("Email", "Email")}
         type="email"
         id="signup-email"
         autoComplete="email"
@@ -353,7 +357,7 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         icon={<Mail className="h-5 w-5 text-muted-foreground" />}
       />
       <FormField
-        label="Password"
+        label={t("Password", "Password")}
         type={showPassword ? "text" : "password"}
         id="signup-password"
         autoComplete="new-password"
@@ -367,26 +371,26 @@ function SignupForm({ onSuccess }: SignupFormProps) {
       {/* Real-time password feedback */}
       {passwordValue && (
         <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1.5 text-xs text-muted-foreground animate-in slide-in-from-top-1 duration-200">
-          <p className="font-semibold text-foreground">Requisiti password:</p>
+          <p className="font-semibold text-foreground">{t("Requisiti password:", "Password requirements:")}</p>
           <div className="grid grid-cols-1 gap-1">
             <div className="flex items-center gap-2">
               <span className={`h-1.5 w-1.5 rounded-full ${hasMinLength ? "bg-success" : "bg-muted-foreground"}`} />
-              <span className={hasMinLength ? "text-foreground font-medium" : ""}>Almeno 6 caratteri</span>
+              <span className={hasMinLength ? "text-foreground font-medium" : ""}>{t("Almeno 6 caratteri", "At least 6 characters")}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className={`h-1.5 w-1.5 rounded-full ${hasNumber ? "bg-success" : "bg-muted-foreground"}`} />
-              <span className={hasNumber ? "text-foreground font-medium" : ""}>Almeno un numero</span>
+              <span className={hasNumber ? "text-foreground font-medium" : ""}>{t("Almeno un numero", "At least one number")}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className={`h-1.5 w-1.5 rounded-full ${hasSpecial ? "bg-success" : "bg-muted-foreground"}`} />
-              <span className={hasSpecial ? "text-foreground font-medium" : ""}>Almeno un carattere speciale</span>
+              <span className={hasSpecial ? "text-foreground font-medium" : ""}>{t("Almeno un carattere speciale", "At least one special character")}</span>
             </div>
           </div>
         </div>
       )}
 
       <FormField
-        label="Conferma Password"
+        label={t("Conferma Password", "Confirm Password")}
         type={showPassword ? "text" : "password"}
         id="signup-confirm-password"
         autoComplete="new-password"
@@ -397,7 +401,7 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         trailing={<PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
       />
 
-      <SubmitButton loading={isSubmitting}>Registrati</SubmitButton>
+      <SubmitButton loading={isSubmitting}>{t("Registrati", "Sign up")}</SubmitButton>
     </form>
   );
 }
@@ -405,6 +409,7 @@ function SignupForm({ onSuccess }: SignupFormProps) {
 // ── Forgot Password Form ────────────────────────────────────────────────────
 function ForgotForm({ onBack }: { onBack: () => void }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const {
     register,
     handleSubmit,
@@ -418,18 +423,18 @@ function ForgotForm({ onBack }: { onBack: () => void }) {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(values.email);
       if (error) throw error;
-      toast.success("Codice di reset inviato alla tua email.");
+      toast.success(t("Codice di reset inviato alla tua email.", "Reset code sent to your email."));
       navigate({ to: "/auth/reset", search: { email: values.email } });
     } catch (err) {
       console.error(err);
-      toast.error("Errore nell'invio del codice di reset.");
+      toast.error(t("Errore nell'invio del codice di reset.", "Error sending reset code."));
     }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <FormField
-        label="Email"
+        label={t("Email", "Email")}
         type="email"
         id="forgot-email"
         autoComplete="email"
@@ -439,14 +444,14 @@ function ForgotForm({ onBack }: { onBack: () => void }) {
         icon={<Mail className="h-5 w-5 text-muted-foreground" />}
       />
 
-      <SubmitButton loading={isSubmitting}>Invia codice di reset</SubmitButton>
+      <SubmitButton loading={isSubmitting}>{t("Invia codice di reset", "Send reset code")}</SubmitButton>
 
       <button
         type="button"
         onClick={onBack}
         className="block w-full text-center text-xs font-semibold text-muted-foreground hover:text-foreground transition underline underline-offset-2"
       >
-        Torna al login
+        {t("Torna al login", "Back to login")}
       </button>
     </form>
   );
@@ -503,11 +508,12 @@ function FormField({
 }
 
 function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  const { t } = useLanguage();
   return (
     <button
       type="button"
       onClick={onToggle}
-      aria-label={show ? "Nascondi password" : "Mostra password"}
+      aria-label={show ? t("Nascondi password", "Hide password") : t("Mostra password", "Show password")}
       className="no-tap-highlight text-muted-foreground hover:text-foreground transition"
     >
       {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

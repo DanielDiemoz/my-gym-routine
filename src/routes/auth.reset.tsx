@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { OTP_LENGTH } from "@/lib/otp";
+import { useLanguage, tx } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth/reset")({
   ssr: false,
@@ -19,11 +20,11 @@ export const Route = createFileRoute("/auth/reset")({
 
 const resetSchema = z
   .object({
-    password: z.string().min(6, "Minimo 6 caratteri"),
+    password: z.string().min(6, tx("Minimo 6 caratteri", "At least 6 characters")),
     confirm: z.string(),
   })
   .refine((data) => data.password === data.confirm, {
-    message: "Le password non coincidono",
+    message: tx("Le password non coincidono", "Passwords do not match"),
     path: ["confirm"],
   });
 
@@ -32,6 +33,7 @@ type ResetForm = z.infer<typeof resetSchema>;
 function AuthResetPage() {
   const { email } = Route.useSearch();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [done, setDone] = useState(false);
@@ -47,7 +49,7 @@ function AuthResetPage() {
 
   async function onSubmit(values: ResetForm) {
     if (code.length < OTP_LENGTH) {
-      toast.error(`Inserisci il codice di ${OTP_LENGTH} cifre.`);
+      toast.error(t(`Inserisci il codice di ${OTP_LENGTH} cifre.`, `Enter the ${OTP_LENGTH}-digit code.`));
       return;
     }
     setVerifying(true);
@@ -74,7 +76,7 @@ function AuthResetPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Errore";
       toast.error(
-        msg.includes("Token") || msg.includes("otp") ? "Codice non valido o scaduto." : msg,
+        msg.includes("Token") || msg.includes("otp") ? t("Codice non valido o scaduto.", "Invalid or expired code.") : msg,
       );
     } finally {
       setVerifying(false);
@@ -87,15 +89,15 @@ function AuthResetPage() {
       toast.error(error.message);
       return;
     }
-    toast.success("Codice inviato di nuovo.");
+    toast.success(t("Codice inviato di nuovo.", "Code sent again."));
   }
 
   if (done) {
     return (
       <div className="w-full max-w-md mx-auto rounded-2xl border border-border bg-card p-6 text-center animate-in fade-in duration-300">
         <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
-        <p className="mt-4 text-sm font-semibold">Password aggiornata</p>
-        <p className="mt-1 text-xs text-muted-foreground">Verrai reindirizzato al login…</p>
+        <p className="mt-4 text-sm font-semibold">{t("Password aggiornata", "Password updated")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("Verrai reindirizzato al login…", "You will be redirected to login…")}</p>
       </div>
     );
   }
@@ -107,15 +109,14 @@ function AuthResetPage() {
         onClick={() => navigate({ to: "/auth" })}
         className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition"
       >
-        <ArrowLeft className="h-4 w-4" /> Login
+        <ArrowLeft className="h-4 w-4" /> {t("Login", "Login")}
       </button>
 
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight">Reset password</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">{t("Reset password", "Reset password")}</h1>
         <p className="text-sm text-muted-foreground">
-          Inserisci il codice ricevuto a{" "}
-          <span className="font-semibold text-foreground break-all">{email}</span> e scegli una nuova
-          password.
+          {t("Inserisci il codice ricevuto a", "Enter the code received at")}{" "}
+          <span className="font-semibold text-foreground break-all">{email}</span> {t("e scegli una nuova password.", "and choose a new password.")}
         </p>
       </div>
 
@@ -140,14 +141,14 @@ function AuthResetPage() {
         </div>
 
         <Field
-          label="Nuova password"
+          label={t("Nuova password", "New password")}
           type="password"
           registration={register("password")}
           error={errors.password?.message}
           autoComplete="new-password"
         />
         <Field
-          label="Conferma password"
+          label={t("Conferma password", "Confirm password")}
           type="password"
           registration={register("confirm")}
           error={errors.confirm?.message}
@@ -162,7 +163,7 @@ function AuthResetPage() {
           {isSubmitting || verifying ? (
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
           ) : (
-            "Aggiorna password"
+            t("Aggiorna password", "Update password")
           )}
         </button>
 
@@ -171,7 +172,7 @@ function AuthResetPage() {
           onClick={handleResend}
           className="block w-full text-center text-xs font-semibold text-muted-foreground hover:text-foreground transition underline underline-offset-2"
         >
-          Non hai ricevuto il codice? Inviane un altro
+          {t("Non hai ricevuto il codice? Inviane un altro", "Didn't get the code? Send another")}
         </button>
       </form>
     </div>

@@ -10,7 +10,6 @@ import {
   eachDayOfInterval,
   isSameDay,
 } from "date-fns";
-import { it } from "date-fns/locale";
 import {
   Flame,
   TrendingUp,
@@ -26,6 +25,8 @@ import { StreakCard } from "@/components/StreakCard";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { useLanguage } from "@/lib/i18n";
+import { MUSCLE_EN } from "@/lib/muscleColors";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ function Dashboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { display: fmtWeight } = useWeightUnit();
+  const { t, dateLocale } = useLanguage();
 
   const profileQ = useQuery({
     queryKey: ["profile", user.id],
@@ -196,10 +198,10 @@ function Dashboard() {
     },
     onSuccess: (_data, n) => {
       qc.invalidateQueries({ queryKey: ["weekly-goal", user.id] });
-      toast.success(`Obiettivo settimanale impostato a ${n}`);
+      toast.success(t(`Obiettivo settimanale impostato a ${n}`, `Weekly goal set to ${n}`));
     },
     onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Errore nel salvataggio");
+      toast.error(err instanceof Error ? err.message : t("Errore nel salvataggio", "Save error"));
     },
   });
 
@@ -221,14 +223,14 @@ function Dashboard() {
 
   async function deleteSession(id: string) {
     const ok = await confirmDialog(
-      "Eliminare questo allenamento?",
-      "I dati verranno rimossi definitivamente.",
+      t("Eliminare questo allenamento?", "Delete this workout?"),
+      t("I dati verranno rimossi definitivamente.", "The data will be permanently removed."),
     );
     if (!ok) return;
     await supabase.from("sessions").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["week-stats", user.id] });
     qc.invalidateQueries({ queryKey: ["streak", user.id] });
-    toast.success("Allenamento eliminato");
+    toast.success(t("Allenamento eliminato", "Workout deleted"));
   }
 
   return (
@@ -236,9 +238,9 @@ function Dashboard() {
       <header className="mb-8 flex items-start justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            {format(new Date(), "EEEE d MMM", { locale: it })}
+            {format(new Date(), "EEEE d MMM", { locale: dateLocale })}
           </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight">Ciao, {name.split(" ")[0]}</h1>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Ciao", "Hi")}, {name.split(" ")[0]}</h1>
         </div>
         <div className="flex items-center gap-2 pt-1">
           <PWAInstallButton />
@@ -248,7 +250,7 @@ function Dashboard() {
       {/* Week ring */}
       <section className="rounded-3xl bg-primary p-6 text-primary-foreground">
         <p className="text-xs font-semibold uppercase tracking-widest opacity-70">
-          Questa settimana
+          {t("Questa settimana", "This week")}
         </p>
         <div className="mt-2 flex items-end justify-between">
           <div className="text-6xl font-black tracking-tighter">{stats?.workouts ?? 0}</div>
@@ -263,7 +265,7 @@ function Dashboard() {
                 }`}
               />
               <span className="text-[10px] font-semibold uppercase opacity-60">
-                {format(d.date, "EEEEE", { locale: it })}
+                {format(d.date, "EEEEE", { locale: dateLocale })}
               </span>
             </div>
           ))}
@@ -273,8 +275,11 @@ function Dashboard() {
       {/* Stats */}
       <section className="mt-4 grid grid-cols-2 gap-3">
         <StatCard
-          label="Top muscolo"
-          value={stats?.topMuscle ?? "—"}
+          label={t("Top muscolo", "Top muscle")}
+          value={t(
+            stats?.topMuscle ?? "—",
+            MUSCLE_EN[stats?.topMuscle ?? ""] ?? stats?.topMuscle ?? "—",
+          )}
           subtitle={fmtWeight(stats?.volume ?? 0)}
           icon={<Flame className="h-4 w-4" />}
         />
@@ -296,9 +301,9 @@ function Dashboard() {
       {/* Quick start */}
       <section className="mt-8">
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 className="text-lg font-bold">Inizia un allenamento</h2>
+          <h2 className="text-lg font-bold">{t("Inizia un allenamento", "Start a workout")}</h2>
           <Link to="/schede" className="text-xs font-semibold text-muted-foreground">
-            Tutte →
+            {t("Tutte", "All")} →
           </Link>
         </div>
         {plansQ.data && plansQ.data.length === 0 ? (
@@ -307,7 +312,7 @@ function Dashboard() {
             className="block rounded-2xl border-2 border-dashed border-border p-6 text-center"
           >
             <Dumbbell className="mx-auto h-6 w-6 text-muted-foreground" />
-            <p className="mt-2 text-sm font-semibold">Crea la tua prima scheda</p>
+            <p className="mt-2 text-sm font-semibold">{t("Crea la tua prima scheda", "Create your first plan")}</p>
           </Link>
         ) : (
           <div className="space-y-2">
@@ -333,7 +338,7 @@ function Dashboard() {
 
       {stats && stats.recent.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-bold">Recenti</h2>
+          <h2 className="mb-3 text-lg font-bold">{t("Recenti", "Recent")}</h2>
           <div className="space-y-2">
             {stats.recent.map((s) => (
               <div
@@ -342,10 +347,10 @@ function Dashboard() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold truncate">
-                    {s.plan_name ?? "Allenamento"}
+                    {s.plan_name ?? t("Allenamento", "Workout")}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {format(new Date(s.started_at), "EEE d MMM", { locale: it })}
+                    {format(new Date(s.started_at), "EEE d MMM", { locale: dateLocale })}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -359,7 +364,7 @@ function Dashboard() {
                       <button
                         type="button"
                         className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                        aria-label="Azioni"
+                        aria-label={t("Azioni", "Actions")}
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
@@ -373,13 +378,13 @@ function Dashboard() {
                           })
                         }
                       >
-                        <Pencil className="mr-2 h-4 w-4" /> Modifica
+                        <Pencil className="mr-2 h-4 w-4" /> {t("Modifica", "Edit")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => deleteSession(s.id)}
                         className="text-destructive focus:text-destructive"
                       >
-                        <Trash2 className="mr-2 h-4 w-4" /> Elimina
+                        <Trash2 className="mr-2 h-4 w-4" /> {t("Elimina", "Delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -407,6 +412,7 @@ function StatCard({
   icon?: React.ReactNode;
   subtitle?: string;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="flex items-center justify-between">
@@ -425,7 +431,7 @@ function StatCard({
         >
           {trend >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {trend >= 0 ? "+" : ""}
-          {trend.toFixed(0)}% vs settimana scorsa
+          {trend.toFixed(0)}% {t("vs settimana scorsa", "vs last week")}
         </div>
       )}
     </div>

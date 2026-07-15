@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useLanguage } from "@/lib/i18n";
 
 interface DialogContent {
   title: string;
@@ -23,6 +24,7 @@ interface DialogContent {
  * - Se viene chiamato `confirm()` mentre un'altra dialog è aperta, chiude la precedente come annullata
  */
 export function useConfirmDialog() {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState<DialogContent | null>(null);
   const resolverRef = useRef<((value: boolean) => void) | null>(null);
@@ -68,8 +70,8 @@ export function useConfirmDialog() {
           )}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => finish(false)}>Annulla</AlertDialogCancel>
-          <AlertDialogAction onClick={() => finish(true)}>Conferma</AlertDialogAction>
+          <AlertDialogCancel onClick={() => finish(false)}>{t("Annulla", "Cancel")}</AlertDialogCancel>
+          <AlertDialogAction onClick={() => finish(true)}>{t("Conferma", "Confirm")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

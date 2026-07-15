@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Send, MessageCircle, X } from "lucide-react";
 import { useCircle, type CircleMessage } from "@/hooks/useCircle";
 import { format } from "date-fns";
-import { it } from "date-fns/locale/it";
+import { useLanguage } from "@/lib/i18n";
 
 interface CircleChatProps {
   circleId: string;
@@ -11,6 +11,7 @@ interface CircleChatProps {
 }
 
 export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
+  const { t, dateLocale } = useLanguage();
   const [open, setOpen] = useState(false);
   const { useMessages, sendMessage, isSending, useUnreadCount, markAsRead } =
     useCircle(userId);
@@ -63,14 +64,14 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
             <header className="flex items-center justify-between border-b border-border px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                  Chat
+                  {t("Chat", "Chat")}
                 </p>
                 <h2 className="truncate text-lg font-bold">{circleName}</h2>
               </div>
               <button
                 onClick={() => setOpen(false)}
                 className="ml-2 rounded-full p-1.5 text-muted-foreground hover:bg-muted"
-                aria-label="Chiudi chat"
+                aria-label={t("Chiudi chat", "Close chat")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -79,7 +80,7 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
             <div className="flex-1 overflow-y-auto px-4 py-3">
               {isLoading ? (
                 <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
-                  Caricamento...
+                  {t("Caricamento...", "Loading...")}
                 </div>
               ) : messages && messages.length > 0 ? (
                 <div className="space-y-3">
@@ -94,7 +95,7 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
-                  Nessun messaggio. Inizia tu!
+                  {t("Nessun messaggio. Inizia tu!", "No messages yet. Start the conversation!")}
                 </div>
               )}
             </div>
@@ -105,7 +106,7 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Scrivi un messaggio..."
+                  placeholder={t("Scrivi un messaggio...", "Type a message...")}
                   rows={1}
                   className="max-h-24 min-h-[40px] flex-1 resize-none rounded-2xl border border-border bg-card px-4 py-2.5 text-sm outline-none focus:border-foreground"
                 />
@@ -113,7 +114,7 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
                   onClick={handleSend}
                   disabled={!input.trim() || isSending}
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
-                  aria-label="Invia messaggio"
+                  aria-label={t("Invia messaggio", "Send message")}
                 >
                   <Send className="h-4 w-4" />
                 </button>
@@ -126,10 +127,10 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
       <button
         onClick={() => setOpen(true)}
         className="relative flex items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground shadow-lg active:scale-95"
-        aria-label="Apri chat"
+        aria-label={t("Apri chat", "Open chat")}
       >
         <MessageCircle className="h-4 w-4" />
-        Chat
+        {t("Chat", "Chat")}
         {(unreadCount ?? 0) > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold leading-none text-destructive-foreground">
             {unreadCount}
@@ -147,7 +148,8 @@ function MessageBubble({
   message: CircleMessage;
   isOwn: boolean;
 }) {
-  const time = format(new Date(message.created_at), "HH:mm", { locale: it });
+  const { dateLocale } = useLanguage();
+  const time = format(new Date(message.created_at), "HH:mm", { locale: dateLocale });
   const initials = (message.display_name ?? "?")
     .trim()
     .slice(0, 2)
@@ -190,6 +192,7 @@ export function ChatBubbleButton({
   userId: string;
   onClick?: () => void;
 }) {
+  const { t } = useLanguage();
   const { useUnreadCount } = useCircle(userId);
   const { data: unreadCount } = useUnreadCount(circleId);
 
@@ -197,7 +200,7 @@ export function ChatBubbleButton({
     <button
       onClick={onClick}
       className="relative flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground hover:bg-muted"
-      aria-label="Chat"
+      aria-label={t("Chat", "Chat")}
     >
       <MessageCircle className="h-4 w-4" />
       {(unreadCount ?? 0) > 0 && (

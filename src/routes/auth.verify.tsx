@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Mail, ArrowLeft, RefreshCw, KeyRound, Timer, ShieldX, AlertCircle } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { OTP_LENGTH } from "@/lib/otp";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/auth/verify")({
   ssr: false,
@@ -64,6 +65,7 @@ const getSavedLockoutCooldown = (): number => {
 function VerifyPage() {
   const { email: searchEmail } = Route.useSearch();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState(() => normalizeEmail(searchEmail));
   const [emailInput, setEmailInput] = useState(() => normalizeEmail(searchEmail));
@@ -140,7 +142,7 @@ function VerifyPage() {
         });
         if (cancelled) return;
         if (error) {
-          toast.error("Link di conferma non valido o scaduto.");
+          toast.error(t("Link di conferma non valido o scaduto.", "Confirmation link invalid or expired."));
           setCheckingLink(false);
           return;
         }
@@ -149,7 +151,7 @@ function VerifyPage() {
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       if (data.session) {
-        toast.success("Email confermata! Benvenuto su GymBro.");
+        toast.success(t("Email confermata! Benvenuto su GymBro.", "Email confirmed! Welcome to GymBro."));
         navigate({ to: "/" });
         return;
       }
@@ -161,7 +163,7 @@ function VerifyPage() {
 
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
-        toast.success("Accesso effettuato.");
+        toast.success(t("Accesso effettuato.", "Signed in."));
         navigate({ to: "/" });
       }
     });
@@ -174,13 +176,13 @@ function VerifyPage() {
 
   async function handleVerify() {
     if (!email) {
-      toast.error("Inserisci prima la tua email.");
+      toast.error(t("Inserisci prima la tua email.", "Enter your email first."));
       return;
     }
     if (code.length < OTP_LENGTH) return;
 
     if (lockoutTimer > 0) {
-      toast.error(`Troppi tentativi falliti. Riprova tra ${lockoutTimer} secondi.`);
+      toast.error(t(`Troppi tentativi falliti. Riprova tra ${lockoutTimer} secondi.`, `Too many failed attempts. Try again in ${lockoutTimer} seconds.`));
       return;
     }
 
@@ -202,7 +204,7 @@ function VerifyPage() {
       sessionStorage.removeItem("gymbro_otp_resend_time");
       sessionStorage.removeItem("gymbro_otp_lockout_time");
 
-      toast.success("Email confermata! Benvenuto.");
+      toast.success(t("Email confermata! Benvenuto.", "Email confirmed! Welcome."));
       navigate({ to: "/" });
     } catch (err) {
       console.error("Verification error:", err);
@@ -220,9 +222,9 @@ function VerifyPage() {
         setLockoutTimer(60);
         setFailedAttempts(0);
         sessionStorage.setItem("gymbro_otp_failed_attempts", "0");
-        toast.error("Troppi tentativi errati. Account temporaneamente bloccato per 60 secondi.");
+        toast.error(t("Troppi tentativi errati. Account temporaneamente bloccato per 60 secondi.", "Too many wrong attempts. Account temporarily locked for 60 seconds."));
       } else {
-        toast.error(`Codice errato. Rimangono ${5 - nextFailed} tentativi.`);
+        toast.error(t(`Codice errato. Rimangono ${5 - nextFailed} tentativi.`, `Wrong code. ${5 - nextFailed} attempts remaining.`));
       }
     } finally {
       setVerifying(false);
@@ -231,17 +233,17 @@ function VerifyPage() {
 
   async function handleResend() {
     if (!email) {
-      toast.error("Inserisci prima la tua email.");
+      toast.error(t("Inserisci prima la tua email.", "Enter your email first."));
       return;
     }
 
     if (resendCount >= 3) {
-      toast.error("Limite massimo di richieste OTP raggiunto per questa sessione.");
+      toast.error(t("Limite massimo di richieste OTP raggiunto per questa sessione.", "Maximum OTP requests reached for this session."));
       return;
     }
 
     if (cooldown > 0) {
-      toast.error(`Attendi altri ${cooldown} secondi prima di richiedere un nuovo codice.`);
+      toast.error(t(`Attendi altri ${cooldown} secondi prima di richiedere un nuovo codice.`, `Wait ${cooldown} more seconds before requesting a new code.`));
       return;
     }
 
@@ -256,7 +258,7 @@ function VerifyPage() {
       if (error) {
         const msg = error.message.toLowerCase();
         if (msg.includes("already confirmed") || msg.includes("already verified")) {
-          toast.info("Email già confermata. Accedi dal login.");
+          toast.info(t("Email già confermata. Accedi dal login.", "Email already confirmed. Log in."));
           navigate({ to: "/auth" });
           return;
         }
@@ -273,10 +275,10 @@ function VerifyPage() {
       setResendCount(nextCount);
       sessionStorage.setItem("gymbro_otp_resend_count", nextCount.toString());
 
-      toast.success("Codice inviato di nuovo.");
+      toast.success(t("Codice inviato di nuovo.", "Code sent again."));
     } catch (err) {
       console.error("Resend OTP error:", err);
-      toast.error("Impossibile inviare il codice. Riprova più tardi.");
+      toast.error(t("Impossibile inviare il codice. Riprova più tardi.", "Unable to send the code. Try again later."));
     } finally {
       setResending(false);
     }
@@ -286,7 +288,7 @@ function VerifyPage() {
     event.preventDefault();
     const nextEmail = normalizeEmail(emailInput);
     if (!isValidEmail(nextEmail)) {
-      toast.error("Inserisci un'email valida.");
+      toast.error(t("Inserisci un'email valida.", "Enter a valid email."));
       return;
     }
 
@@ -301,7 +303,7 @@ function VerifyPage() {
       if (error) {
         const msg = error.message.toLowerCase();
         if (msg.includes("already confirmed")) {
-          toast.info("Email già confermata. Accedi dal login.");
+          toast.info(t("Email già confermata. Accedi dal login.", "Email already confirmed. Log in."));
           navigate({ to: "/auth" });
           return;
         }
@@ -311,7 +313,7 @@ function VerifyPage() {
       setEmail(nextEmail);
       setEmailInput(nextEmail);
       navigate({ to: "/auth/verify", search: { email: nextEmail }, replace: true });
-      toast.success("Codice di conferma inviato alla tua email!");
+      toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
 
       // Start cooldown timer
       const nowStr = new Date().toISOString();
@@ -319,7 +321,7 @@ function VerifyPage() {
       setCooldown(60);
     } catch (err) {
       console.error("Email submission error:", err);
-      toast.error("Impossibile inviare il codice. Riprova più tardi.");
+      toast.error(t("Impossibile inviare il codice. Riprova più tardi.", "Unable to send the code. Try again later."));
     } finally {
       setResending(false);
     }
@@ -334,7 +336,7 @@ function VerifyPage() {
     return (
       <div className="w-full max-w-md mx-auto text-center space-y-4 py-8 animate-in fade-in duration-300">
         <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-muted-foreground font-medium">Verifica in corso...</p>
+        <p className="text-sm text-muted-foreground font-medium">{t("Verifica in corso...", "Verifying...")}</p>
       </div>
     );
   }
@@ -349,30 +351,30 @@ function VerifyPage() {
             <KeyRound className="h-6 w-6" />
           )}
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-          {lockoutTimer > 0 ? "Account Bloccato" : "Verifica il tuo account"}
-        </h1>
-        {email ? (
-          <div className="space-y-1">
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            {lockoutTimer > 0 ? t("Account Bloccato", "Account Locked") : t("Verifica il tuo account", "Verify your account")}
+          </h1>
+          {email ? (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {t("Inserisci il codice OTP di", "Enter the")} {OTP_LENGTH} {t("cifre inviato a:", "digit OTP code sent to:")}
+              </p>
+              <p className="font-semibold text-foreground break-all">{email}</p>
+            </div>
+          ) : (
             <p className="text-sm text-muted-foreground">
-              Inserisci il codice OTP di {OTP_LENGTH} cifre inviato a:
+              {t("Inserisci l'email per inviare un nuovo codice di verifica.", "Enter the email to send a new verification code.")}
             </p>
-            <p className="font-semibold text-foreground break-all">{email}</p>
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            Inserisci l'email per inviare un nuovo codice di verifica.
-          </p>
-        )}
+          )}
       </div>
 
       {lockoutTimer > 0 && (
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 flex gap-3 items-center animate-in zoom-in-95 duration-200">
           <Timer className="h-5 w-5 text-destructive shrink-0 animate-bounce" />
           <div className="space-y-0.5">
-            <p className="text-sm font-semibold text-destructive">Troppi tentativi falliti</p>
+            <p className="text-sm font-semibold text-destructive">{t("Troppi tentativi falliti", "Too many failed attempts")}</p>
             <p className="text-xs text-muted-foreground">
-              Potrai inserire il codice nuovamente tra <span className="font-bold text-foreground">{lockoutTimer}</span> secondi.
+              {t("Potrai inserire il codice nuovamente tra", "You can enter the code again in")} <span className="font-bold text-foreground">{lockoutTimer}</span> {t("secondi.", "seconds.")}
             </p>
           </div>
         </div>
@@ -382,9 +384,9 @@ function VerifyPage() {
         <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4 flex gap-3 items-center animate-in zoom-in-95 duration-200">
           <AlertCircle className="h-5 w-5 text-warning shrink-0" />
           <div className="space-y-0.5">
-            <p className="text-sm font-semibold text-warning">Richieste esaurite</p>
+            <p className="text-sm font-semibold text-warning">{t("Richieste esaurite", "Requests exhausted")}</p>
             <p className="text-xs text-muted-foreground">
-              Hai raggiunto il limite di invii OTP. Per riprovare, riavvia la sessione o contatta il supporto.
+              {t("Hai raggiunto il limite di invii OTP. Per riprovare, riavvia la sessione o contatta il supporto.", "You reached the OTP send limit. To retry, restart the session or contact support.")}
             </p>
           </div>
         </div>
@@ -395,7 +397,7 @@ function VerifyPage() {
           <form onSubmit={handleEmailSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Email
+                {t("Email", "Email")}
               </label>
               <div className="relative flex items-center">
                 <Mail className="absolute left-4 pointer-events-none h-5 w-5 text-muted-foreground" />
@@ -417,7 +419,7 @@ function VerifyPage() {
               {resending ? (
                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               ) : (
-                "Invia codice"
+                t("Invia codice", "Send code")
               )}
             </button>
           </form>
@@ -452,7 +454,7 @@ function VerifyPage() {
               {verifying ? (
                 <span className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               ) : (
-                "Conferma Codice"
+                t("Conferma Codice", "Confirm Code")
               )}
             </button>
 
@@ -465,10 +467,10 @@ function VerifyPage() {
               >
                 <RefreshCw className={`h-3 w-3 ${resending ? "animate-spin" : ""}`} />
                 {cooldown > 0
-                  ? `Attendi ${cooldown}s prima di reinviare`
+                  ? t(`Attendi ${cooldown}s prima di reinviare`, `Wait ${cooldown}s before resending`)
                   : resendCount >= 3
-                    ? "Limite invii OTP raggiunto"
-                    : "Non hai ricevuto il codice? Reinvia"}
+                    ? t("Limite invii OTP raggiunto", "OTP send limit reached")
+                    : t("Non hai ricevuto il codice? Reinvia", "Didn't get the code? Resend")}
               </button>
 
               <button
@@ -476,7 +478,7 @@ function VerifyPage() {
                 onClick={handleModifyEmail}
                 className="text-xs font-semibold text-primary underline underline-offset-4 hover:text-primary/80 transition"
               >
-                Hai sbagliato email? Modificala qui
+                {t("Hai sbagliato email? Modificala qui", "Wrong email? Change it here")}
               </button>
             </div>
           </div>
@@ -487,7 +489,7 @@ function VerifyPage() {
           onClick={() => navigate({ to: "/auth" })}
           className="flex w-full items-center justify-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground transition mt-4"
         >
-          <ArrowLeft className="h-4 w-4" /> Torna alla login
+          <ArrowLeft className="h-4 w-4" /> {t("Torna alla login", "Back to login")}
         </button>
       </div>
     </div>

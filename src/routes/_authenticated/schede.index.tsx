@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Plus, ChevronRight, Dumbbell, Play } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/schede/")({
   component: Schede,
@@ -14,6 +15,7 @@ function Schede() {
   const { user } = Route.useRouteContext();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
 
@@ -78,7 +80,7 @@ function Schede() {
           </div>
           <div className="flex-1">
             <div className="text-sm font-bold text-foreground">{activeQ.data.plan_name}</div>
-            <div className="text-xs text-muted-foreground">Allenamento in corso</div>
+            <div className="text-xs text-muted-foreground">{t("Allenamento in corso", "Workout in progress")}</div>
           </div>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
             <Play className="h-4 w-4 fill-current text-primary-foreground" />
@@ -87,8 +89,8 @@ function Schede() {
       )}
 
       <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Le tue</p>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">Schede</h1>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("Le tue", "Your")}</p>
+        <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Schede", "Plans")}</h1>
       </header>
 
       {creating ? (
@@ -98,12 +100,12 @@ function Schede() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && createPlan()}
-            placeholder="Inserisci il nome della scheda…"
+            placeholder={t("Inserisci il nome della scheda…", "Enter the plan name…")}
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus:border-foreground"
           />
           <div className="mt-3 flex gap-2">
-            <button onClick={() => { setCreating(false); setName(""); }} className="flex-1 rounded-full border border-border py-3 text-sm font-semibold">Annulla</button>
-            <button onClick={createPlan} className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground">Crea</button>
+            <button onClick={() => { setCreating(false); setName(""); }} className="flex-1 rounded-full border border-border py-3 text-sm font-semibold">{t("Annulla", "Cancel")}</button>
+            <button onClick={createPlan} className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground">{t("Crea", "Create")}</button>
           </div>
         </div>
       ) : (
@@ -111,7 +113,7 @@ function Schede() {
           onClick={() => setCreating(true)}
           className="no-tap-highlight mb-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
         >
-          <Plus className="h-4 w-4" /> Nuova scheda
+          <Plus className="h-4 w-4" /> {t("Nuova scheda", "New plan")}
         </button>
       )}
 
@@ -131,7 +133,7 @@ function Schede() {
                 </div>
                 <div>
                   <div className="font-semibold">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">{count} {count === 1 ? "esercizio" : "esercizi"}</div>
+                  <div className="text-xs text-muted-foreground">{count} {count === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}</div>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -139,7 +141,7 @@ function Schede() {
           );
         })}
         {plansQ.data?.length === 0 && !creating && (
-          <p className="py-12 text-center text-sm text-muted-foreground">Nessuna scheda. Creane una per iniziare.</p>
+          <p className="py-12 text-center text-sm text-muted-foreground">{t("Nessuna scheda. Creane una per iniziare.", "No plans. Create one to get started.")}</p>
         )}
       </div>
     </div>

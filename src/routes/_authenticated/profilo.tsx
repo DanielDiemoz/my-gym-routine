@@ -12,8 +12,11 @@ import {
   Apple,
   CheckCircle2,
   Download,
+  Languages,
 } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { useLanguage } from "@/lib/i18n";
 import { toast } from "sonner";
 import { isLegacyEmail } from "@/lib/legacy-email";
 
@@ -24,12 +27,13 @@ export const Route = createFileRoute("/_authenticated/profilo")({
 function ProfilePage() {
   const { user, profile } = Route.useRouteContext();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [addingEmail, setAddingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
-  const name = profile?.display_name || "Atleta";
+  const name = profile?.display_name || t("Atleta", "Athlete");
   const apkUrl = "/apk/gymbro.apk";
 
   useEffect(() => {
@@ -47,7 +51,7 @@ function ProfilePage() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Email aggiunta! Controlla la posta per verificarla.");
+      toast.success(t("Email aggiunta! Controlla la posta per verificarla.", "Email added! Check your inbox to verify."));
       setAddingEmail(false);
       setNewEmail("");
     }
@@ -65,7 +69,7 @@ function ProfilePage() {
           to="/"
           className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
         >
-          <ChevronLeft className="h-5 w-5" /> Dashboard
+          <ChevronLeft className="h-5 w-5" /> {t("Dashboard", "Dashboard")}
         </Link>
       </header>
 
@@ -80,7 +84,7 @@ function ProfilePage() {
             {user.email ? (
               <p className="text-sm text-muted-foreground truncate">{user.email}</p>
             ) : (
-              <p className="text-sm text-muted-foreground">Nessuna email</p>
+              <p className="text-sm text-muted-foreground">{t("Nessuna email", "No email")}</p>
             )}
           </div>
         </div>
@@ -99,7 +103,7 @@ function ProfilePage() {
               disabled={saving || !newEmail.trim()}
               className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
-              {saving ? "Salvataggio…" : "Salva"}
+              {saving ? t("Salvataggio…", "Saving…") : t("Salva", "Save")}
             </button>
             <button
               onClick={() => {
@@ -108,7 +112,7 @@ function ProfilePage() {
               }}
               className="text-sm text-muted-foreground font-semibold"
             >
-              Annulla
+              {t("Annulla", "Cancel")}
             </button>
           </div>
         ) : (
@@ -117,35 +121,46 @@ function ProfilePage() {
             className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
           >
             <Plus className="h-4 w-4" />
-            Aggiungi una email
+            {t("Aggiungi una email", "Add an email")}
           </button>
         )}
 
-        <div className="mt-6 pt-4 border-t border-border">
+        <div className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <Languages className="h-4 w-4" />
+            {t("Lingua", "Language")}
+          </div>
+          <LanguageToggle />
+        </div>
+
+        <div className="mt-6 border-t border-border pt-4">
           <button
             onClick={handleLogout}
             className="flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-destructive/5 px-4 py-2.5 text-sm font-semibold text-destructive transition-all active:scale-[0.98]"
           >
             <LogOut className="h-4 w-4" />
-            Esci
+            {t("Esci", "Log out")}
           </button>
         </div>
       </div>
 
       {/* Download section */}
       <div className="mb-8">
-        <h2 className="mb-4 text-lg font-bold">Scarica GymBro</h2>
+        <h2 className="mb-4 text-lg font-bold">{t("Scarica GymBro", "Download GymBro")}</h2>
         <p className="mb-4 text-sm text-muted-foreground">
-          Porta il tuo allenamento sempre con te.
+          {t("Porta il tuo allenamento sempre con te.", "Take your workout with you anywhere.")}
         </p>
 
         {isStandalone && (
           <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
             <CheckCircle2 className="h-8 w-8 shrink-0 text-green-500" />
             <div>
-              <p className="font-semibold">GymBro è già installata</p>
+              <p className="font-semibold">{t("GymBro è già installata", "GymBro is already installed")}</p>
               <p className="text-xs text-muted-foreground">
-                Stai usando la versione app. Apri dal tuo dispositivo per usarla sempre.
+                {t(
+                  "Stai usando la versione app. Apri dal tuo dispositivo per usarla sempre.",
+                  "You're using the app version. Open it from your device to use it anytime.",
+                )}
               </p>
             </div>
           </div>
@@ -158,7 +173,7 @@ function ProfilePage() {
           <ChevronDown
             className={`h-4 w-4 transition-transform ${showInstructions ? "rotate-180" : ""}`}
           />
-          {showInstructions ? "Nascondi istruzioni" : "Istruzioni installazione"}
+          {showInstructions ? t("Nascondi istruzioni", "Hide instructions") : t("Istruzioni installazione", "Installation instructions")}
         </button>
 
         {showInstructions && (
@@ -180,11 +195,11 @@ function ProfilePage() {
                 className="mt-3 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
               >
                 <Download className="h-4 w-4" />
-                Scarica APK (Android)
+                {t("Scarica APK (Android)", "Download APK (Android)")}
               </a>
               <details className="group mt-3">
                 <summary className="cursor-pointer text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground">
-                  Installazione manuale
+                  {t("Installazione manuale", "Manual install")}
                 </summary>
                 <ol className="mt-3 space-y-3 text-sm">
                   <li className="flex gap-3">
@@ -192,8 +207,9 @@ function ProfilePage() {
                       1
                     </span>
                     <span>
-                      Apri il menu di Chrome{" "}
-                      <span className="text-muted-foreground">(⁝ tre punti)</span> in alto a destra
+                      {t("Apri il menu di Chrome", "Open the Chrome menu")}{" "}
+                      <span className="text-muted-foreground">(⁝ tre punti)</span>{" "}
+                      {t("in alto a destra", "top right")}
                     </span>
                   </li>
                   <li className="flex gap-3">
@@ -201,7 +217,7 @@ function ProfilePage() {
                       2
                     </span>
                     <span>
-                      Tocca <strong>Aggiungi a Home</strong>
+                      {t("Tocca", "Tap")} <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
                     </span>
                   </li>
                   <li className="flex gap-3">
@@ -209,7 +225,8 @@ function ProfilePage() {
                       3
                     </span>
                     <span>
-                      Tocca <strong>Aggiungi</strong> in basso a destra
+                      {t("Tocca", "Tap")} <strong>{t("Aggiungi", "Add")}</strong>{" "}
+                      {t("in basso a destra", "bottom right")}
                     </span>
                   </li>
                 </ol>
@@ -231,15 +248,16 @@ function ProfilePage() {
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
                     1
                   </span>
-                  <span>Apri Safari (non Chrome o altri browser)</span>
+                  <span>{t("Apri Safari (non Chrome o altri browser)", "Open Safari (not Chrome or other browsers)")}</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
                     2
                   </span>
                   <span>
-                    Tocca il bottone <strong>Condividi</strong>{" "}
-                    <span className="text-muted-foreground">(rettangolo con freccia)</span> in basso
+                    {t("Tocca il bottone", "Tap the")} <strong>{t("Condividi", "Share")}</strong>{" "}
+                    <span className="text-muted-foreground">(rettangolo con freccia)</span>{" "}
+                    {t("in basso", "at the bottom")}
                   </span>
                 </li>
                 <li className="flex gap-3">
@@ -247,7 +265,7 @@ function ProfilePage() {
                     3
                   </span>
                   <span>
-                    Scorri e tocca <strong>Aggiungi a Home</strong>
+                    {t("Scorri e tocca", "Scroll and tap")} <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
                   </span>
                 </li>
                 <li className="flex gap-3">
@@ -255,7 +273,8 @@ function ProfilePage() {
                     4
                   </span>
                   <span>
-                    Tocca <strong>Aggiungi</strong> in alto a destra
+                    {t("Tocca", "Tap")} <strong>{t("Aggiungi", "Add")}</strong>{" "}
+                    {t("in alto a destra", "top right")}
                   </span>
                 </li>
               </ol>

@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemo, useState } from "react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { it } from "date-fns/locale";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { WorkoutCard, type WorkoutLog } from "@/components/WorkoutCard";
 import { StoricoSkeleton } from "@/components/skeletons/StoricoSkeleton";
+import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/storico")({
   component: Storico,
@@ -22,6 +22,7 @@ type Session = {
 
 function Storico() {
   const { user } = Route.useRouteContext();
+  const { t, dateLocale } = useLanguage();
   const [monthOffset, setMonthOffset] = useState(0);
   const [openId, setOpenId] = useState<string | null>(null);
   const month = subMonths(new Date(), monthOffset);
@@ -80,7 +81,7 @@ function Storico() {
     return (
       <div className="container-app flex min-h-screen flex-col items-center justify-center text-center">
         <p className="text-sm text-muted-foreground">
-          Impossibile caricare lo storico. Controlla la connessione e riprova.
+          {t("Impossibile caricare lo storico. Controlla la connessione e riprova.", "Unable to load history. Check your connection and try again.")}
         </p>
         <button
           onClick={() => {
@@ -88,7 +89,7 @@ function Storico() {
           }}
           className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
         >
-          Riprova
+          {t("Riprova", "Retry")}
         </button>
       </div>
     );
@@ -100,33 +101,33 @@ function Storico() {
     <div className="container-app pt-10">
       <header className="mb-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Cronologia
+          {t("Cronologia", "History")}
         </p>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">Storico</h1>
+        <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Storico", "History")}</h1>
       </header>
 
       <div className="mb-6 flex items-center justify-between rounded-2xl border border-border bg-card p-4">
         <button
           onClick={() => setMonthOffset((m) => m + 1)}
           className="rounded-full p-2 text-muted-foreground"
-          aria-label="Mese precedente"
+          aria-label={t("Mese precedente", "Previous month")}
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
         <div className="text-center">
           <div className="flex items-center justify-center gap-2 text-sm font-bold capitalize">
             <Calendar className="h-4 w-4" />
-            {format(month, "MMMM yyyy", { locale: it })}
+            {format(month, "MMMM yyyy", { locale: dateLocale })}
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {q.data?.length ?? 0} allenamenti
+            {q.data?.length ?? 0} {q.data?.length === 1 ? t("allenamento", "workout") : t("allenamenti", "workouts")}
           </div>
         </div>
         <button
           onClick={() => setMonthOffset((m) => Math.max(0, m - 1))}
           disabled={monthOffset === 0}
           className="rounded-full p-2 text-muted-foreground disabled:opacity-30"
-          aria-label="Mese successivo"
+          aria-label={t("Mese successivo", "Next month")}
         >
           <ChevronRight className="h-5 w-5" />
         </button>
@@ -147,7 +148,7 @@ function Storico() {
         ))}
         {sessionsWithLogs.length === 0 && (
           <p className="py-12 text-center text-sm text-muted-foreground">
-            Nessun allenamento in questo mese.
+            {t("Nessun allenamento in questo mese.", "No workouts this month.")}
           </p>
         )}
       </section>
