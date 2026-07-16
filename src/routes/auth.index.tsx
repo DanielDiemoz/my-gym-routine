@@ -16,6 +16,9 @@ function getEmailVerificationUrl(email: string) {
 
 export const Route = createFileRoute("/auth/")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { mode?: string } => ({
+    mode: typeof search.mode === "string" ? search.mode : undefined,
+  }),
   component: AuthIndexPage,
 });
 
@@ -53,7 +56,10 @@ type AuthMode = "login" | "signup";
 function AuthIndexPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const [mode, setMode] = useState<AuthMode>("login");
+  const { mode: initialMode } = Route.useSearch();
+  const [mode, setMode] = useState<AuthMode>(
+    initialMode === "signup" ? "signup" : "login",
+  );
   const [forgot, setForgot] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resendingUnverified, setResendingUnverified] = useState(false);
