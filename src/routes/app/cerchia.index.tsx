@@ -251,7 +251,7 @@ function CircleCard({
   const isOwner = circle.owner_id === selfId;
   return (
     <Link
-      to="/cerchia/$circleId"
+      to="/app/cerchia/$circleId"
       params={{ circleId: circle.id }}
       search={{ user: undefined }}
       className="no-tap-highlight flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 active:scale-[0.99]"

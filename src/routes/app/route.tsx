@@ -51,7 +51,7 @@ function AuthLayout() {
   const needsOnboarding =
     effectiveProfile !== null &&
     !effectiveProfile.onboarded &&
-    !loc.pathname.startsWith("/onboarding");
+    !loc.pathname.startsWith("/app/onboarding");
 
   useEffect(() => {
     if (isFromOnboarding) resetOnboardingFlag();
@@ -71,7 +71,7 @@ function AuthLayout() {
     return null;
   }
 
-  const showNav = !loc.pathname.startsWith("/onboarding");
+  const showNav = !loc.pathname.startsWith("/app/onboarding");
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -98,7 +98,7 @@ function BottomNav({ pathname }: { pathname: string }) {
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="container-app flex h-16 items-center justify-around pb-[env(safe-area-inset-bottom)]">
         {items.map((it) => {
-          const active = it.to === "/" ? pathname === "/" : pathname.startsWith(it.to);
+          const active = it.to === "/app" ? pathname === "/app" : pathname.startsWith(it.to);
           const Icon = it.icon;
           return (
             <Link

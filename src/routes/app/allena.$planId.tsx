@@ -618,7 +618,7 @@ function ActiveSession() {
             <>
               <p className="text-sm text-muted-foreground">{t("Questa scheda non ha esercizi.", "This plan has no exercises.")}</p>
               <button
-                onClick={() => navigate({ to: "/schede/$planId", params: { planId } })}
+                onClick={() => navigate({ to: "/app/schede/$planId", params: { planId } })}
                 className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
               >
                 {t("Aggiungi esercizi", "Add exercises")}

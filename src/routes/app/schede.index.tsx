@@ -59,7 +59,7 @@ function Schede() {
     setName(""); setCreating(false);
     qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
     qc.invalidateQueries({ queryKey: ["plans", user.id] });
-    navigate({ to: "/schede/$planId", params: { planId: data.id } });
+    navigate({ to: "/app/schede/$planId", params: { planId: data.id } });
   }
 
   // TASK 4 — skeleton gate.
@@ -71,7 +71,7 @@ function Schede() {
     <div className="container-app pt-10">
       {!!activeQ.data?.plan_id && (
         <Link
-          to="/allena/$planId"
+          to="/app/allena/$planId"
           params={{ planId: activeQ.data.plan_id }}
           className="no-tap-highlight mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 active:scale-[0.99]"
         >
@@ -123,7 +123,7 @@ function Schede() {
           return (
             <Link
               key={p.id}
-              to="/schede/$planId"
+              to="/app/schede/$planId"
               params={{ planId: p.id }}
               className="no-tap-highlight flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 active:scale-[0.99]"
             >

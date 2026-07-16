@@ -155,13 +155,13 @@ function PlanEditor() {
     await supabase.from("plans").delete().eq("id", planId);
     qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
     qc.invalidateQueries({ queryKey: ["plans", user.id] });
-    navigate({ to: "/schede" });
+    navigate({ to: "/app/schede" });
   }
 
   return (
     <div className="container-app pt-6">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/schede" className="flex items-center gap-1 text-sm font-semibold text-muted-foreground">
+        <Link to="/app/schede" className="flex items-center gap-1 text-sm font-semibold text-muted-foreground">
           <ChevronLeft className="h-5 w-5" /> {t("Schede", "Plans")}
         </Link>
         <button onClick={deletePlan} className="text-xs font-semibold text-destructive">{t("Elimina", "Delete")}</button>
@@ -188,7 +188,7 @@ function PlanEditor() {
 
       {items.length > 0 && (
         <Link
-          to="/allena/$planId"
+          to="/app/allena/$planId"
           params={{ planId }}
           className="no-tap-highlight mb-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
         >

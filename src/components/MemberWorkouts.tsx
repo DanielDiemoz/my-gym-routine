@@ -86,7 +86,7 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
     <div className="container-app pt-6">
       <div className="mb-6">
         <Link
-          to="/cerchia/$circleId"
+          to="/app/cerchia/$circleId"
           params={{ circleId }}
           search={{ user: undefined }}
           className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"

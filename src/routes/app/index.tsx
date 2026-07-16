@@ -302,13 +302,13 @@ function Dashboard() {
       <section className="mt-8">
         <div className="mb-3 flex items-baseline justify-between">
           <h2 className="text-lg font-bold">{t("Inizia un allenamento", "Start a workout")}</h2>
-          <Link to="/schede" className="text-xs font-semibold text-muted-foreground">
+          <Link to="/app/schede" className="text-xs font-semibold text-muted-foreground">
             {t("Tutte", "All")} →
           </Link>
         </div>
         {plansQ.data && plansQ.data.length === 0 ? (
           <Link
-            to="/schede"
+            to="/app/schede"
             className="block rounded-2xl border-2 border-dashed border-border p-6 text-center"
           >
             <Dumbbell className="mx-auto h-6 w-6 text-muted-foreground" />
@@ -319,7 +319,7 @@ function Dashboard() {
             {plansQ.data?.map((p) => (
               <Link
                 key={p.id}
-                to="/allena/$planId"
+                to="/app/allena/$planId"
                 params={{ planId: p.id }}
                 className="no-tap-highlight flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 transition active:scale-[0.99]"
               >
@@ -373,7 +373,7 @@ function Dashboard() {
                       <DropdownMenuItem
                         onClick={() =>
                           navigate({
-                            to: s.plan_id ? "/schede/$planId" : "/",
+                            to: s.plan_id ? "/app/schede/$planId" : "/",
                             params: s.plan_id ? { planId: s.plan_id } : {},
                           })
                         }

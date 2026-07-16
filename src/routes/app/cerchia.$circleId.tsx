@@ -135,7 +135,7 @@ function CircleDetailPage() {
   useEffect(() => {
     if (detailQ.isError) {
       toast.error(detailQ.error instanceof Error ? detailQ.error.message : t("Errore", "Error"));
-      navigate({ to: "/cerchia" });
+      navigate({ to: "/app/cerchia" });
     }
   }, [detailQ.isError, detailQ.error, navigate]);
 
@@ -244,7 +244,7 @@ function CircleDetailPage() {
     <div className="container-app pt-6">
       <header className="mb-6 flex items-center justify-between">
         <Link
-          to="/cerchia"
+          to="/app/cerchia"
           className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
         >
           <ChevronLeft className="h-5 w-5" /> {t("Cerchie", "Circles")}
@@ -262,7 +262,7 @@ function CircleDetailPage() {
                 try {
                   await deleteCircle(circle.id);
                   toast.success(t("Cerchia eliminata.", "Circle deleted."));
-                  navigate({ to: "/cerchia" });
+                  navigate({ to: "/app/cerchia" });
                 } catch {
                   /* toast gestito da hook */
                 }
@@ -284,7 +284,7 @@ function CircleDetailPage() {
                 try {
                   await leaveCircle(circle.id);
                   toast.success(t("Hai lasciato la cerchia.", "You left the circle."));
-                  navigate({ to: "/cerchia" });
+                  navigate({ to: "/app/cerchia" });
                 } catch {
                   /* toast gestito da hook */
                 }
@@ -365,7 +365,7 @@ function CircleDetailPage() {
             return (
               <Link
                 key={p.id}
-                to="/cerchia/$circleId"
+                to="/app/cerchia/$circleId"
                 search={{ user: p.id }}
                 params={{ circleId }}
                 className="flex items-center gap-3 rounded-2xl border-[0.5px] border-neutral-200 bg-card px-4 py-3"
