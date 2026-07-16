@@ -65,7 +65,7 @@ function AuthIndexPage() {
   }, [mode]);
 
   function onLoginSuccess() {
-    navigate({ to: "/" });
+    navigate({ to: "/app" });
   }
 
   async function handleResendUnverified() {
@@ -335,7 +335,7 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         navigate({ to: "/auth/verify", search: { email } });
       } else {
         toast.success(t("Registrazione completata!", "Registration complete!"));
-        navigate({ to: "/" });
+        navigate({ to: "/app" });
       }
     } catch (err) {
       console.error("Signup error:", err);

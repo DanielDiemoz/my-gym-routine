@@ -14,7 +14,7 @@ export const Route = createFileRoute("/auth/verify")({
   }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/" });
+    if (data.user) throw redirect({ to: "/app" });
   },
   component: VerifyPage,
 });
@@ -152,7 +152,7 @@ function VerifyPage() {
       if (cancelled) return;
       if (data.session) {
         toast.success(t("Email confermata! Benvenuto su GymBro.", "Email confirmed! Welcome to GymBro."));
-        navigate({ to: "/" });
+        navigate({ to: "/app" });
         return;
       }
 
@@ -164,7 +164,7 @@ function VerifyPage() {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
         toast.success(t("Accesso effettuato.", "Signed in."));
-        navigate({ to: "/" });
+        navigate({ to: "/app" });
       }
     });
 
@@ -205,7 +205,7 @@ function VerifyPage() {
       sessionStorage.removeItem("gymbro_otp_lockout_time");
 
       toast.success(t("Email confermata! Benvenuto.", "Email confirmed! Welcome."));
-      navigate({ to: "/" });
+      navigate({ to: "/app" });
     } catch (err) {
       console.error("Verification error:", err);
       setCode(""); // Clear the input field for security

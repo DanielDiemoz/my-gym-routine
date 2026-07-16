@@ -25,7 +25,7 @@ import { CircleChat, ChatBubbleButton } from "@/components/CircleChat";
 import { formatVolume } from "@/lib/calories";
 import { useLanguage } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/cerchia/$circleId")({
+export const Route = createFileRoute("/app/cerchia/$circleId")({
   component: CircleDetailPage,
   validateSearch: (search: Record<string, unknown>) => ({
     user: search.user as string | undefined,

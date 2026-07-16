@@ -8,7 +8,7 @@ import { WorkoutCard, type WorkoutLog } from "@/components/WorkoutCard";
 import { StoricoSkeleton } from "@/components/skeletons/StoricoSkeleton";
 import { useLanguage } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/storico")({
+export const Route = createFileRoute("/app/storico")({
   component: Storico,
 });
 

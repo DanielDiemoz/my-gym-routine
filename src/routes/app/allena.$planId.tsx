@@ -23,7 +23,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
 import { useLanguage } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/allena/$planId")({
+export const Route = createFileRoute("/app/allena/$planId")({
   component: ActiveSession,
 });
 
@@ -473,7 +473,7 @@ function ActiveSession() {
     sessionStorage.removeItem("gw_last");
     console.log("[CLEANUP] removing LS key");
     clearPersisted();
-    navigate({ to: "/" });
+    navigate({ to: "/app" });
   }
 
   async function finishWorkout() {
@@ -521,7 +521,7 @@ function ActiveSession() {
     console.log("[CLEANUP] removing LS key");
     clearPersisted();
     toast.success(t("Allenamento salvato!", "Workout saved!"));
-    navigate({ to: "/" });
+    navigate({ to: "/app" });
   }
 
   function moveExercise(dir: "up" | "down") {

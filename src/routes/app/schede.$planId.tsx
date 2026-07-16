@@ -24,7 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-export const Route = createFileRoute("/_authenticated/schede/$planId")({
+export const Route = createFileRoute("/app/schede/$planId")({
   component: PlanEditor,
 });
 

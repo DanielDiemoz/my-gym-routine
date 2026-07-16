@@ -16,7 +16,7 @@ import { EmailMigrationGate } from "@/components/EmailMigrationGate";
 import { isLegacyEmail } from "@/lib/legacy-email";
 import { useLanguage } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated")({
+export const Route = createFileRoute("/app")({
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
@@ -58,7 +58,7 @@ function AuthLayout() {
   }, [isFromOnboarding]);
 
   useEffect(() => {
-    if (needsOnboarding) navigate({ to: "/onboarding" });
+    if (needsOnboarding) navigate({ to: "/app/onboarding" });
   }, [needsOnboarding, navigate]);
 
   // Gli account legacy (solo username, email @gymbro.local) non possono usare
@@ -88,11 +88,11 @@ function AuthLayout() {
 function BottomNav({ pathname }: { pathname: string }) {
   const { t } = useLanguage();
   const items = [
-    { to: "/", icon: Home, label: t("Home", "Home") },
-    { to: "/schede", icon: Dumbbell, label: t("Schede", "Plans") },
-    { to: "/storico", icon: HistoryIcon, label: t("Storico", "History") },
-    { to: "/cerchia", icon: Users, label: t("Cerchia", "Circle") },
-    { to: "/profilo", icon: User, label: t("Profilo", "Profile") },
+    { to: "/app", icon: Home, label: t("Home", "Home") },
+    { to: "/app/schede", icon: Dumbbell, label: t("Schede", "Plans") },
+    { to: "/app/storico", icon: HistoryIcon, label: t("Storico", "History") },
+    { to: "/app/cerchia", icon: Users, label: t("Cerchia", "Circle") },
+    { to: "/app/profilo", icon: User, label: t("Profilo", "Profile") },
   ] as const;
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">

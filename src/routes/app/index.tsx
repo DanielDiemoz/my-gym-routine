@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/app/")({
   component: Dashboard,
 });
 

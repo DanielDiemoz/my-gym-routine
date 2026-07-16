@@ -20,7 +20,7 @@ import { useLanguage } from "@/lib/i18n";
 import { toast } from "sonner";
 import { isLegacyEmail } from "@/lib/legacy-email";
 
-export const Route = createFileRoute("/_authenticated/profilo")({
+export const Route = createFileRoute("/app/profilo")({
   component: ProfilePage,
 });
 

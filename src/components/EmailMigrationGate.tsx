@@ -26,7 +26,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "USER_UPDATED" && session?.user) {
         if (!isLegacyEmail(session.user.email)) {
-          navigate({ to: "/" }).catch(() => {});
+          navigate({ to: "/app" }).catch(() => {});
         }
       }
     });
@@ -62,7 +62,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
       return;
     }
     toast.success(t("Email confermata!", "Email confirmed!"));
-    navigate({ to: "/" }).catch(() => {});
+    navigate({ to: "/app" }).catch(() => {});
   }
 
   async function handleResend() {

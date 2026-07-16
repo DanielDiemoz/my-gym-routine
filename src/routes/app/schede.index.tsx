@@ -7,7 +7,7 @@ import { Plus, ChevronRight, Dumbbell, Play } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
 import { useLanguage } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/schede/")({
+export const Route = createFileRoute("/app/schede/")({
   component: Schede,
 });
 

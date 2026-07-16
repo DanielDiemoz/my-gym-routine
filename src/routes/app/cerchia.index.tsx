@@ -7,7 +7,7 @@ import { CopyCodeButton } from "@/components/CopyCodeButton";
 import { useCircle, type Circle } from "@/hooks/useCircle";
 import { useLanguage } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/cerchia/")({
+export const Route = createFileRoute("/app/cerchia/")({
   component: CerchiePage,
 });
 

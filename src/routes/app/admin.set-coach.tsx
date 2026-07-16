@@ -18,7 +18,7 @@ import { Link } from "@tanstack/react-router";
  * autenticazione admin robusto). L'uso della secret in chiaro nell'URL e
  * dell'update client-side NON È SICURO e NON scala.
  */
-export const Route = createFileRoute("/_authenticated/admin/set-coach")({
+export const Route = createFileRoute("/app/admin/set-coach")({
   ssr: false,
   component: SetCoachPage,
 });
@@ -42,7 +42,7 @@ function SetCoachPage() {
       // piccolo toast prima del redirect
       // eslint-disable-next-line no-console
       console.warn("[admin] secret non valida → redirect /");
-      navigate({ to: "/" });
+      navigate({ to: "/app" });
     }
   }, [secret, navigate]);
 

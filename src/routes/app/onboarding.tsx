@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { markOnboardingComplete } from "@/lib/onboarding-flag";
 import { useLanguage } from "@/lib/i18n";
 
-export const Route = createFileRoute("/_authenticated/onboarding")({
+export const Route = createFileRoute("/app/onboarding")({
   component: Onboarding,
 });
 
@@ -33,7 +33,7 @@ function Onboarding() {
         return;
       }
       markOnboardingComplete();
-      await navigate({ to: "/" });
+      await navigate({ to: "/app" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("Qualcosa è andato storto", "Something went wrong"));
     } finally {
