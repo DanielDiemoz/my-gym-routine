@@ -29,7 +29,10 @@ function FeatureShot({
           <img
             src={src}
             alt={title}
+            width={520}
+            height={1120}
             loading="lazy"
+            decoding="async"
             className="aspect-[9/19] w-full object-cover"
           />
         </div>
@@ -47,7 +50,7 @@ function LandingPage() {
 
   const shots = [
     {
-      src: "/landing/home.png",
+      src: "/landing/home.webp",
       title: t("La tua settimana in un colpo d'occhio", "Your week at a glance"),
       description: t(
         "Dashboard con streak, obiettivo settimanale e giorni allenati. La costanza diventa un gioco.",
@@ -55,7 +58,7 @@ function LandingPage() {
       ),
     },
     {
-      src: "/landing/scheda1.png",
+      src: "/landing/scheda1.webp",
       title: t("Schede in pochi tap", "Plans in a few taps"),
       description: t(
         "Pochi clic per creare, avviabile in qualsiasi momento, con un grande catalogo di esercizi pronti.",
@@ -63,7 +66,7 @@ function LandingPage() {
       ),
     },
     {
-      src: "/landing/schede.png",
+      src: "/landing/schede.webp",
       title: t("Dettaglio esercizio", "Exercise detail"),
       description: t(
         "Ogni esercizio con serie, ripetizioni e peso: la scheda che usa in palestra, sempre a portata di mano.",
@@ -71,7 +74,7 @@ function LandingPage() {
       ),
     },
     {
-      src: "/landing/storico.png",
+      src: "/landing/storico.webp",
       title: t("Il tuo diario, per sempre", "Your diary, forever"),
       description: t(
         "Storico mensile con il dettaglio di ogni serie, ripetizione e carico. Rivivi i tuoi progressi.",
@@ -79,7 +82,7 @@ function LandingPage() {
       ),
     },
     {
-      src: "/landing/cerchie.png",
+      src: "/landing/cerchie.webp",
       title: t("Allenati in gruppo", "Train together"),
       description: t(
         "Le Cerchie: classifiche per volume settimanale e statistiche del gruppo. Sana competizione.",
@@ -87,7 +90,7 @@ function LandingPage() {
       ),
     },
     {
-      src: "/landing/cerchia.png",
+      src: "/landing/cerchia.webp",
       title: t("Dentro la cerchia", "Inside the circle"),
       description: t(
         "Nella cerchia c'è la classifica, puoi vedere gli allenamenti degli altri e vivere una sana competizione.",
