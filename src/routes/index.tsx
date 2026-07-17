@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
   Dumbbell,
   ArrowRight,
@@ -8,8 +8,18 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage, tx } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
+  ssr: false,
+  beforeLoad: async () => {
+    // Se l'utente ha già una sessione attiva, va direttamente all'app
+    // invece di mostrare la landing page. ssr:false è necessario perché
+    // sul server la sessione Supabase non è disponibile (cookie non letti),
+    // quindi il redirect deve avvenire solo lato client.
+    const { data } = await supabase.auth.getUser();
+    if (data.user) throw redirect({ to: "/app" });
+  },
   component: LandingPage,
 });
 
