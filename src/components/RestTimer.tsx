@@ -3,6 +3,16 @@ import { Timer, Volume2, VolumeX } from "lucide-react";
 import { useLanguage } from "@/lib/i18n";
 
 const SOUND_STORAGE_KEY = "gymbro_sound_enabled";
+const TIMER_STORAGE_KEY = "gymbro_rest_timer";
+
+type PersistedTimer = {
+  running: boolean;
+  target: number;
+  // Se in esecuzione: timestamp di avvio (epoch ms).
+  // Se in pausa: secondi già trascorsi.
+  startTimestamp: number;
+  pausedSeconds: number;
+};
 
 function readSoundPref(): boolean {
   if (typeof window === "undefined") return true;
@@ -10,18 +20,50 @@ function readSoundPref(): boolean {
   return v === null ? true : v === "true";
 }
 
+function readPersistedTimer(): PersistedTimer | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as PersistedTimer;
+    if (
+      typeof parsed.running !== "boolean" ||
+      typeof parsed.target !== "number" ||
+      typeof parsed.startTimestamp !== "number" ||
+      typeof parsed.pausedSeconds !== "number"
+    ) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Rest timer con:
+ * - Calcolo basato su timestamp (Date.now) invece che su tick incrementali:
+ *   il tempo restante è sempre accurato anche dopo standby/chiusura del sito.
+ * - Persistenza in localStorage: riaprendo il sito il timer si riallinea al
+ *   tempo reale trascorso.
  * - Vibrazione al termine (`navigator.vibrate`) se supportata
  * - Audio finale (`/sounds/beep.mp3`) — toggle persistito in localStorage
  * - Notification API al termine SOLO se l'app è in background e il permesso è concesso
  */
 export function RestTimer() {
   const { t } = useLanguage();
+  const [soundOn, setSoundOn] = useState(readSoundPref);
+
+  // Stato derivato da timestamp. `seconds` è il tempo trascorso calcolato
+  // live; `running` indica se il countdown è attivo.
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [target, setTarget] = useState(90);
-  const [soundOn, setSoundOn] = useState(readSoundPref);
+
+  // startTimestamp: epoch ms dell'avvio (valido solo quando running).
+  // pausedSeconds: secondi già trascorsi quando il timer è in pausa.
+  const startTimestampRef = useRef<number>(0);
+  const pausedSecondsRef = useRef<number>(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishedRef = useRef(false);
 
@@ -46,6 +88,39 @@ export function RestTimer() {
     navigator.serviceWorker.register("/sw.js").catch(() => {});
   }, []);
 
+  const persist = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const data: PersistedTimer = {
+        running,
+        target,
+        startTimestamp: startTimestampRef.current,
+        pausedSeconds: pausedSecondsRef.current,
+      };
+      window.localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // ignoriamo errori di scrittura (privata/quota)
+    }
+  }, [running, target]);
+
+  // Al mount: ripristina lo stato persistito e ricalcola il tempo reale.
+  useEffect(() => {
+    const saved = readPersistedTimer();
+    if (!saved) return;
+    setTarget(saved.target);
+    if (saved.running) {
+      startTimestampRef.current = saved.startTimestamp;
+      const elapsed = Math.floor((Date.now() - startTimestampRef.current) / 1000);
+      setSeconds(elapsed);
+      setRunning(true);
+    } else {
+      pausedSecondsRef.current = saved.pausedSeconds;
+      setSeconds(saved.pausedSeconds);
+      setRunning(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Richiede il permesso notifiche e mostra la notifica all'avvio del timer.
   useEffect(() => {
     if (!running || typeof window === "undefined" || typeof Notification === "undefined") return;
@@ -68,12 +143,17 @@ export function RestTimer() {
       });
   }, [running]);
 
-  // Tick del timer.
+  // Tick del timer: ricalcola il tempo trascorso da startTimestamp.
+  // L'intervallo serve solo a ridisegnare l'UI, non a contare il tempo.
   useEffect(() => {
     if (running) {
-      // Resetta il flag di "già terminato" quando il timer riparte o cambia preset.
       finishedRef.current = false;
-      tickRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+      const update = () => {
+        const elapsed = Math.floor((Date.now() - startTimestampRef.current) / 1000);
+        setSeconds(elapsed);
+      };
+      update();
+      tickRef.current = setInterval(update, 250);
     } else if (tickRef.current) {
       clearInterval(tickRef.current);
       tickRef.current = null;
@@ -92,11 +172,24 @@ export function RestTimer() {
     finishedRef.current = false;
   }, [target]);
 
+  // Persisti ad ogni cambio di stato rilevante.
+  useEffect(() => {
+    persist();
+  }, [persist]);
+
   // Side effects al termine del countdown.
   useEffect(() => {
     if (!running || seconds < target || finishedRef.current) return;
     finishedRef.current = true;
     setRunning(false);
+    pausedSecondsRef.current = target;
+
+    // Pulisce la persistenza: il recupero è completato.
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(TIMER_STORAGE_KEY);
+      } catch {}
+    }
 
     // Vibrazione (feature detection safe)
     if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -139,6 +232,40 @@ export function RestTimer() {
 
   const toggleSound = useCallback(() => setSoundOn((v) => !v), []);
 
+  const handleStartPause = useCallback(() => {
+    if (running) {
+      // Pausa: congela i secondi trascorsi.
+      const elapsed = Math.floor((Date.now() - startTimestampRef.current) / 1000);
+      pausedSecondsRef.current = elapsed;
+      setRunning(false);
+    } else {
+      // Avvia/riprendi: ricalcola startTimestamp a partire dai secondi in pausa.
+      startTimestampRef.current = Date.now() - pausedSecondsRef.current * 1000;
+      finishedRef.current = false;
+      setRunning(true);
+    }
+  }, [running]);
+
+  const handleReset = useCallback(() => {
+    pausedSecondsRef.current = 0;
+    startTimestampRef.current = 0;
+    setSeconds(0);
+    setRunning(false);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(TIMER_STORAGE_KEY);
+      } catch {}
+    }
+  }, []);
+
+  const handleTargetChange = useCallback((value: number) => {
+    setTarget(value);
+    // Il tempo trascorso va resettato per coerenza col nuovo target.
+    pausedSecondsRef.current = 0;
+    startTimestampRef.current = running ? Date.now() : 0;
+    setSeconds(0);
+  }, [running]);
+
   return (
     <div className="mt-8 rounded-3xl border border-border bg-card p-5">
       <div className="flex items-center justify-between">
@@ -150,10 +277,7 @@ export function RestTimer() {
             <button
               key={t}
               type="button"
-              onClick={() => {
-                setTarget(t);
-                setSeconds(0);
-              }}
+              onClick={() => handleTargetChange(t)}
               className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
                 target === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
@@ -178,17 +302,14 @@ export function RestTimer() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setSeconds(0);
-              setRunning(false);
-            }}
+            onClick={handleReset}
             className="rounded-full border border-border px-4 py-2 text-xs font-semibold"
           >
             {t("Reset", "Reset")}
           </button>
           <button
             type="button"
-            onClick={() => setRunning((r) => !r)}
+            onClick={handleStartPause}
             className="rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground"
           >
             {running ? t("Pausa", "Pause") : t("Avvia", "Start")}
