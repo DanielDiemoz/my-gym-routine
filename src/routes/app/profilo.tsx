@@ -13,10 +13,13 @@ import {
   CheckCircle2,
   Download,
   Languages,
+  Lock,
 } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useLanguage } from "@/lib/i18n";
+import { getRank, rankName, nextRankName, RANK_TIERS } from "@/lib/ranks";
+import { useTotalWorkouts } from "@/hooks/useTotalWorkouts";
 import { toast } from "sonner";
 import { isLegacyEmail } from "@/lib/legacy-email";
 
@@ -27,14 +30,17 @@ export const Route = createFileRoute("/app/profilo")({
 function ProfilePage() {
   const { user, profile } = Route.useRouteContext();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [addingEmail, setAddingEmail] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [saving, setSaving] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
+  const [showRanks, setShowRanks] = useState(false);
   const name = profile?.display_name || t("Atleta", "Athlete");
   const apkUrl = "/apk/gymbro.apk";
+  const totalWorkoutsQ = useTotalWorkouts(user.id);
+  const rank = getRank(totalWorkoutsQ.data ?? 0);
 
   useEffect(() => {
     setIsStandalone(
@@ -51,7 +57,12 @@ function ProfilePage() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success(t("Email aggiunta! Controlla la posta per verificarla.", "Email added! Check your inbox to verify."));
+      toast.success(
+        t(
+          "Email aggiunta! Controlla la posta per verificarla.",
+          "Email added! Check your inbox to verify.",
+        ),
+      );
       setAddingEmail(false);
       setNewEmail("");
     }
@@ -144,6 +155,101 @@ function ProfilePage() {
         </div>
       </div>
 
+      {/* Rank section */}
+      <div className="mb-8 rounded-2xl border border-border bg-card p-5">
+        <div className="flex flex-col items-center text-center">
+          <img
+            src={rank.tier.image}
+            alt={rankName(rank.tier, language)}
+            className="h-28 w-28 rounded-2xl object-contain"
+          />
+          <p className="mt-3 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            {t("Rank", "Rank")}
+          </p>
+          <h2 className="text-xl font-bold">{rankName(rank.tier, language)}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            <span className="text-2xl font-bold text-foreground">{rank.totalWorkouts}</span>{" "}
+            {t("allenamenti", "workouts")}
+          </p>
+        </div>
+
+        <div className="mt-4">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${Math.round(rank.progress * 100)}%` }}
+            />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {rank.nextThreshold === null ? (
+              t("Hai raggiunto il rank massimo!", "You reached the max rank!")
+            ) : (
+              <>
+                {t("Mancano", "Need")} {rank.workoutsToNext}{" "}
+                {t("allenamenti a", "workouts to reach")} {nextRankName(rank.tier.level, language)}
+              </>
+            )}
+          </p>
+        </div>
+      </div>
+
+      {/* Tutti i rank */}
+      <div className="mb-8 rounded-2xl border border-border bg-card p-5">
+        <button
+          type="button"
+          onClick={() => setShowRanks((v) => !v)}
+          className="flex w-full items-center justify-between text-left"
+        >
+          <span className="text-base font-bold">{t("Vedi ranks", "View ranks")}</span>
+          <ChevronDown
+            className={`h-5 w-5 text-muted-foreground transition-transform ${showRanks ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {showRanks && (
+          <ul className="mt-4 space-y-2">
+            {RANK_TIERS.map((tier) => {
+              const isCurrent = tier.level === rank.tier.level;
+              const isUnlocked = rank.totalWorkouts >= tier.threshold;
+              return (
+                <li
+                  key={tier.level}
+                  className={`flex items-center gap-3 rounded-xl border border-border px-3 py-2 ${
+                    isCurrent ? "bg-primary/5 border-primary/30" : ""
+                  }`}
+                >
+                  <img
+                    src={tier.image}
+                    alt={rankName(tier, language)}
+                    className={`h-9 w-9 rounded-full object-cover ${isUnlocked ? "" : "opacity-40 grayscale"}`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold">
+                      {rankName(tier, language)}
+                      {isCurrent && (
+                        <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                          {t("attuale", "current")}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {tier.threshold === 0
+                        ? t("Rank iniziale", "Starting rank")
+                        : `${tier.threshold} ${t("allenamenti", "workouts")}`}
+                    </p>
+                  </div>
+                  {isUnlocked ? (
+                    <CheckCircle2 className="h-5 w-5 shrink-0 text-green-500" />
+                  ) : (
+                    <Lock className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       {/* Download section */}
       <div className="mb-8">
         <h2 className="mb-4 text-lg font-bold">{t("Scarica GymBro", "Download GymBro")}</h2>
@@ -155,7 +261,9 @@ function ProfilePage() {
           <div className="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
             <CheckCircle2 className="h-8 w-8 shrink-0 text-green-500" />
             <div>
-              <p className="font-semibold">{t("GymBro è già installata", "GymBro is already installed")}</p>
+              <p className="font-semibold">
+                {t("GymBro è già installata", "GymBro is already installed")}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {t(
                   "Stai usando la versione app. Apri dal tuo dispositivo per usarla sempre.",
@@ -173,7 +281,9 @@ function ProfilePage() {
           <ChevronDown
             className={`h-4 w-4 transition-transform ${showInstructions ? "rotate-180" : ""}`}
           />
-          {showInstructions ? t("Nascondi istruzioni", "Hide instructions") : t("Istruzioni installazione", "Installation instructions")}
+          {showInstructions
+            ? t("Nascondi istruzioni", "Hide instructions")
+            : t("Istruzioni installazione", "Installation instructions")}
         </button>
 
         {showInstructions && (
@@ -217,7 +327,8 @@ function ProfilePage() {
                       2
                     </span>
                     <span>
-                      {t("Tocca", "Tap")} <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
+                      {t("Tocca", "Tap")}{" "}
+                      <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
                     </span>
                   </li>
                   <li className="flex gap-3">
@@ -248,7 +359,12 @@ function ProfilePage() {
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
                     1
                   </span>
-                  <span>{t("Apri Safari (non Chrome o altri browser)", "Open Safari (not Chrome or other browsers)")}</span>
+                  <span>
+                    {t(
+                      "Apri Safari (non Chrome o altri browser)",
+                      "Open Safari (not Chrome or other browsers)",
+                    )}
+                  </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
@@ -265,7 +381,8 @@ function ProfilePage() {
                     3
                   </span>
                   <span>
-                    {t("Scorri e tocca", "Scroll and tap")} <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
+                    {t("Scorri e tocca", "Scroll and tap")}{" "}
+                    <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
                   </span>
                 </li>
                 <li className="flex gap-3">

@@ -24,6 +24,7 @@ import { MemberWorkouts } from "@/components/MemberWorkouts";
 import { CircleChat, ChatBubbleButton } from "@/components/CircleChat";
 import { formatVolume } from "@/lib/calories";
 import { useLanguage } from "@/lib/i18n";
+import { getRank, rankName } from "@/lib/ranks";
 
 export const Route = createFileRoute("/app/cerchia/$circleId")({
   component: CircleDetailPage,
@@ -96,6 +97,18 @@ function CircleDetailPage() {
         members.map((m) => [m.user_id, m.nickname]),
       );
 
+      // 2b. Conteggio TOTALE di allenamenti completati per membro (per il rank).
+      const { data: rawCounts, error: cCountErr } = await supabase
+        .from("sessions")
+        .select("user_id", { count: "exact" })
+        .in("user_id", userIds)
+        .not("completed_at", "is", null);
+      if (cCountErr) throw cCountErr;
+      const totalWorkoutsMap = new Map<string, number>();
+      for (const row of (rawCounts ?? []) as { user_id: string }[]) {
+        totalWorkoutsMap.set(row.user_id, (totalWorkoutsMap.get(row.user_id) ?? 0) + 1);
+      }
+
       // 3. Profili dei membri (display_name, avatar_url)
       const profRes = await supabase
         .from("profiles")
@@ -125,7 +138,7 @@ function CircleDetailPage() {
         total_volume: number;
       }[];
 
-      return { circle: circle as Circle, profiles, sessions, nicknameMap };
+      return { circle: circle as Circle, profiles, sessions, nicknameMap, totalWorkoutsMap };
     },
     staleTime: 1000 * 30,
     refetchInterval: 15_000,
@@ -256,7 +269,10 @@ function CircleDetailPage() {
               onClick={async () => {
                 const ok = await confirmDialog(
                   t("Eliminare questa cerchia?", "Delete this circle?"),
-                  t("L'azione è irreversibile. Tutti i membri verranno rimossi.", "This action is irreversible. All members will be removed."),
+                  t(
+                    "L'azione è irreversibile. Tutti i membri verranno rimossi.",
+                    "This action is irreversible. All members will be removed.",
+                  ),
                 );
                 if (!ok) return;
                 try {
@@ -278,7 +294,10 @@ function CircleDetailPage() {
               onClick={async () => {
                 const ok = await confirmDialog(
                   t("Uscire da questa cerchia?", "Leave this circle?"),
-                  t("Potrai rientrare in qualsiasi momento con il codice.", "You can rejoin anytime with the code."),
+                  t(
+                    "Potrai rientrare in qualsiasi momento con il codice.",
+                    "You can rejoin anytime with the code.",
+                  ),
                 );
                 if (!ok) return;
                 try {
@@ -310,7 +329,8 @@ function CircleDetailPage() {
       {/* Riga informativa membri */}
       <p className="mb-2 flex items-center gap-1.5 text-sm text-muted-foreground">
         <Users className="h-4 w-4" />
-        {detailQ.data.profiles.length} {detailQ.data.profiles.length === 1 ? t("membro", "member") : t("membri", "members")}
+        {detailQ.data.profiles.length}{" "}
+        {detailQ.data.profiles.length === 1 ? t("membro", "member") : t("membri", "members")}
         {isOwner && " · owner"}
       </p>
 
@@ -375,7 +395,7 @@ function CircleDetailPage() {
                   {idx + 1}
                 </span>
 
-                {/* Avatar con anello di progresso */}
+                {/* Immagine rank con anello di progresso settimanale */}
                 <div className="relative h-12 w-12 shrink-0">
                   <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48" aria-hidden="true">
                     <circle cx="24" cy="24" r="22" fill="none" stroke="#E5E5E5" strokeWidth="3" />
@@ -391,8 +411,19 @@ function CircleDetailPage() {
                       strokeDashoffset={ringCirc * (1 - progress)}
                     />
                   </svg>
-                  <div className="absolute inset-[3px] flex items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
-                    {resolveInitials(p.id, p.display_name)}
+                  <div className="absolute inset-[3px] flex items-center justify-center overflow-hidden rounded-full bg-muted">
+                    {(() => {
+                      const total = detailQ.data?.totalWorkoutsMap?.get(p.id) ?? 0;
+                      const r = getRank(total);
+                      return (
+                        <img
+                          src={r.tier.image}
+                          alt={rankName(r.tier, language)}
+                          className="h-full w-full object-cover"
+                          title={`${rankName(r.tier, language)} · ${total} ${t("allenamenti", "workouts")}`}
+                        />
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -417,8 +448,7 @@ function CircleDetailPage() {
                     )}
                   </div>
                   <p className="mt-1 font-mono text-xs text-foreground/80">
-                    {formatVolume(s.weeklyVolume)} · {s.weeklySessions}/
-                    {s.weeklyGoal}
+                    {formatVolume(s.weeklyVolume)} · {s.weeklySessions}/{s.weeklyGoal}
                   </p>
                 </div>
 
@@ -431,7 +461,10 @@ function CircleDetailPage() {
                         e.stopPropagation();
                         const ok = await confirmDialog(
                           t("Rimuovere questo membro?", "Remove this member?"),
-                          t(`${resolveName(p.id, p.display_name)} non farà più parte della cerchia.`, `${resolveName(p.id, p.display_name)} will no longer be part of the circle.`),
+                          t(
+                            `${resolveName(p.id, p.display_name)} non farà più parte della cerchia.`,
+                            `${resolveName(p.id, p.display_name)} will no longer be part of the circle.`,
+                          ),
                         );
                         if (!ok) return;
                         try {
@@ -534,7 +567,10 @@ function NicknameModal({
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border sm:hidden" />
         <h3 className="text-xl font-bold">{t("Modifica nome", "Edit name")}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          {t("Il nickname sarà visibile a tutti i membri della cerchia.", "The nickname will be visible to all circle members.")}
+          {t(
+            "Il nickname sarà visibile a tutti i membri della cerchia.",
+            "The nickname will be visible to all circle members.",
+          )}
         </p>
 
         <input
@@ -549,7 +585,10 @@ function NicknameModal({
           className="mt-5 w-full rounded-2xl border border-border bg-card px-4 py-3 text-base outline-none focus:border-foreground"
         />
         <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-          {t("max 30 caratteri · lascia vuoto per usare il nome originale", "max 30 chars · leave empty to use the original name")}
+          {t(
+            "max 30 caratteri · lascia vuoto per usare il nome originale",
+            "max 30 chars · leave empty to use the original name",
+          )}
         </p>
 
         <div className="mt-5 flex gap-2">
