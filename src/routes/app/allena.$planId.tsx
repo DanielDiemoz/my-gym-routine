@@ -664,6 +664,16 @@ function ActiveSession() {
     });
   }
 
+  if (!current) {
+    return (
+      <div className="min-h-screen bg-background pb-32">
+        <div className="container-app pt-6">
+          <p className="text-sm text-muted-foreground">{t("Caricamento…", "Loading…")}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-32">
       <div className="container-app pt-6">

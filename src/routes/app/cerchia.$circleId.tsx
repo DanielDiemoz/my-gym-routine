@@ -340,9 +340,9 @@ function CircleDetailPage() {
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {t("Codice invito", "Invite code")}
           </p>
-          <p className="mt-1 font-mono text-base tracking-[0.25em] text-foreground/80">
-            •••• •••• ••••
-          </p>
+            <p className="mt-1 font-mono text-base tracking-[0.25em] text-foreground/80">
+              ••••••
+            </p>
         </div>
         <CopyCodeButton text={circle.code} label={t("Copia", "Copy")} size="sm" />
       </div>

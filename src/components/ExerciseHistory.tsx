@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { History, ChevronDown } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useExerciseHistory, type ExerciseHistoryEntry } from "@/hooks/useExerciseHistory";
 import { useLanguage } from "@/lib/i18n";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ExerciseHistory({ exerciseName }: { exerciseName: string | undefined }) {
   const { display: fmtWeight } = useWeightUnit();
@@ -11,8 +12,44 @@ export function ExerciseHistory({ exerciseName }: { exerciseName: string | undef
   const historyQ = useExerciseHistory(exerciseName);
   const [showMore, setShowMore] = useState(false);
 
+  // Reset dello stato "mostra altre" quando cambia l'esercizio (il componente
+  // rimane montato e riuserebbe lo stato vecchio altrimenti).
+  useEffect(() => {
+    setShowMore(false);
+  }, [exerciseName]);
+
+  if (!exerciseName) return null;
+
+  // Skeleton durante il caricamento per evitare lo sfarfallio del banner.
+  if (historyQ.isLoading) {
+    return (
+      <div className="mt-6 overflow-hidden rounded-2xl border border-primary/30 bg-primary/5">
+        <div className="flex items-center gap-2 px-4 pt-3 text-xs font-bold uppercase tracking-widest text-primary">
+          <History className="h-4 w-4" />
+          {t("Le volte scorse", "Last times")}
+        </div>
+        <div className="space-y-2 px-4 py-3">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-7 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   const entries = historyQ.data ?? [];
-  if (historyQ.isLoading || entries.length === 0) return null;
+  if (entries.length === 0) {
+    return (
+      <div className="mt-6 overflow-hidden rounded-2xl border border-primary/30 bg-primary/5">
+        <div className="flex items-center gap-2 px-4 pt-3 text-xs font-bold uppercase tracking-widest text-primary">
+          <History className="h-4 w-4" />
+          {t("Le volte scorse", "Last times")}
+        </div>
+        <p className="px-4 py-3 text-sm text-muted-foreground">
+          {t("Prima volta che fai questo esercizio.", "First time doing this exercise.")}
+        </p>
+      </div>
+    );
+  }
 
   const [last, ...older] = entries;
 
