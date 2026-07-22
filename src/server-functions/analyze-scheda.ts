@@ -51,7 +51,7 @@ const VALID_MUSCLES = ["Petto", "Schiena", "Gambe", "Spalle", "Braccia", "Core",
 export const analyzeScheda = createServerFn({ method: "POST" })
   .validator((data: { imageBase64: string; mimeType: string }) => data)
   .handler(async ({ data }) => {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY non configurata. Aggiungila nel file .env");
     }
