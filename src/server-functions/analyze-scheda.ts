@@ -56,6 +56,13 @@ export const analyzeScheda = createServerFn({ method: "POST" })
       throw new Error("GEMINI_API_KEY non configurata. Aggiungila nel file .env");
     }
 
+    console.log(
+      "[analyze-scheda] Calling Gemini, mimeType:",
+      data.mimeType,
+      "imageSize:",
+      data.imageBase64.length,
+    );
+
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -83,16 +90,18 @@ export const analyzeScheda = createServerFn({ method: "POST" })
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("[Gemini API]", response.status, errorText);
-      throw new Error(`Errore dall'API Gemini: ${response.status}`);
+      console.error("[analyze-scheda] Gemini API error:", response.status, errorText);
+      throw new Error(`Errore dall'API Gemini: ${response.status} - ${errorText}`);
     }
 
     const json = await response.json();
     const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) {
+      console.error("[analyze-scheda] Empty response:", JSON.stringify(json).slice(0, 500));
       throw new Error("Risposta vuota dall'API Gemini");
     }
 
+    console.log("[analyze-scheda] Success, exercises:", text.slice(0, 200));
     return parseAiResponse(text);
   });
 

@@ -40,30 +40,25 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setPreview(dataUrl);
-      setStep("loading");
+    setStep("loading");
 
-      const base64 = dataUrl.split(",")[1];
-      try {
-        const result = await analyzeScheda({
-          data: { imageBase64: base64, mimeType: file.type },
-        });
+    compressImage(file)
+      .then(({ dataUrl, base64, mimeType }) => {
+        setPreview(dataUrl);
+        return analyzeScheda({ data: { imageBase64: base64, mimeType } });
+      })
+      .then((result) => {
         setPlanName(result.plan_name);
         setExercises(result.exercises);
         setStep("preview");
-      } catch (err) {
-        console.error(err);
-        toast.error(
-          t("Errore nell'analisi della foto. Riprova.", "Error analyzing the photo. Try again."),
-        );
+      })
+      .catch((err) => {
+        console.error("[ScanPreviewDialog]", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error(t("Errore: ", "Error: ") + msg);
         setStep("upload");
         setPreview(null);
-      }
-    };
-    reader.readAsDataURL(file);
+      });
   }
 
   function updateExercise(idx: number, patch: Partial<Exercise>) {
@@ -353,4 +348,35 @@ function MiniNumInput({
       />
     </div>
   );
+}
+
+function compressImage(file: File): Promise<{ dataUrl: string; base64: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1024;
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          const ratio = Math.min(maxDim / width, maxDim / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0, width, height);
+        const mimeType = "image/jpeg";
+        const dataUrl = canvas.toDataURL(mimeType, 0.8);
+        const base64 = dataUrl.split(",")[1];
+        resolve({ dataUrl, base64, mimeType });
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
