@@ -176,7 +176,6 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={handleFileChange}
                 className="hidden"
               />
