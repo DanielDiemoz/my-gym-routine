@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, ChevronRight, Dumbbell, Play, Camera } from "lucide-react";
+import { Plus, ChevronRight, Dumbbell, Play, Sparkles } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
 import { ScanPreviewDialog } from "@/components/ScanPreviewDialog";
 import { useLanguage } from "@/lib/i18n";
@@ -143,7 +143,7 @@ function Schede() {
             onClick={() => setScanning(true)}
             className="no-tap-highlight flex items-center justify-center gap-2 rounded-full border-2 border-dashed border-border px-5 py-4 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground active:scale-[0.98]"
           >
-            <Camera className="h-4 w-4" /> {t("Foto", "Photo")}
+            <Sparkles className="h-4 w-4" /> {t("Crea con AI", "AI")}
           </button>
         </div>
       )}

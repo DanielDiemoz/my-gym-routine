@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, X, Trash2, Plus, Loader2, ImageIcon, Check, ChevronLeft } from "lucide-react";
+import { Camera, X, Trash2, Plus, Loader2, ChevronLeft, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
+import { muscleColor } from "@/lib/muscleColors";
 import { useLanguage } from "@/lib/i18n";
 import { analyzeScheda, type AnalyzeSchedaResult } from "@/server-functions/analyze-scheda";
 
@@ -15,6 +15,7 @@ type Props = {
 };
 
 type Step = "upload" | "loading" | "preview";
+type InputMode = "image" | "text";
 
 const MUSCLES: [string, string][] = [
   ["Petto", "Chest"],
@@ -31,7 +32,9 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
   const { t } = useLanguage();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<Step>("upload");
+  const [inputMode, setInputMode] = useState<InputMode>("image");
   const [preview, setPreview] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState("");
   const [planName, setPlanName] = useState("Scheda importata");
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [saving, setSaving] = useState(false);
@@ -45,7 +48,7 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
     compressImage(file)
       .then(({ dataUrl, base64, mimeType }) => {
         setPreview(dataUrl);
-        return analyzeScheda({ data: { imageBase64: base64, mimeType } });
+        return analyzeScheda({ data: { mode: "image", imageBase64: base64, mimeType } });
       })
       .then((result) => {
         setPlanName(result.plan_name);
@@ -58,6 +61,24 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
         toast.error(t("Errore: ", "Error: ") + msg);
         setStep("upload");
         setPreview(null);
+      });
+  }
+
+  function handleTextSubmit() {
+    if (!textInput.trim()) return;
+    setStep("loading");
+
+    analyzeScheda({ data: { mode: "text", text: textInput.trim() } })
+      .then((result) => {
+        setPlanName(result.plan_name);
+        setExercises(result.exercises);
+        setStep("preview");
+      })
+      .catch((err) => {
+        console.error("[ScanPreviewDialog]", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        toast.error(t("Errore: ", "Error: ") + msg);
+        setStep("upload");
       });
   }
 
@@ -138,7 +159,7 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
           )}
           <h3 className="flex-1 text-center text-lg font-bold">
             {step === "upload"
-              ? t("Importa da foto", "Import from photo")
+              ? t("Crea con AI", "Create with AI")
               : step === "loading"
                 ? t("Analisi in corso...", "Analyzing...")
                 : t("Anteprima scheda", "Plan preview")}
@@ -158,41 +179,92 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
         {/* Content */}
         <div className="p-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
           {step === "upload" && (
-            <div className="space-y-3">
-              {preview && (
-                <img
-                  src={preview}
-                  alt="Anteprima"
-                  className="w-full rounded-2xl object-contain"
-                  style={{ maxHeight: 300 }}
-                />
-              )}
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border py-10 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-              >
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                  <Camera className="h-6 w-6" />
+            <div className="space-y-4">
+              {/* Tab switcher */}
+              <div className="flex rounded-full border border-border bg-muted p-1">
+                <button
+                  onClick={() => setInputMode("image")}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold transition-colors ${
+                    inputMode === "image"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <Camera className="h-4 w-4" />
+                  {t("Foto", "Photo")}
+                </button>
+                <button
+                  onClick={() => setInputMode("text")}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold transition-colors ${
+                    inputMode === "text"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <FileText className="h-4 w-4" />
+                  {t("Testo", "Text")}
+                </button>
+              </div>
+
+              {inputMode === "image" ? (
+                <div className="space-y-3">
+                  {preview && (
+                    <img
+                      src={preview}
+                      alt="Anteprima"
+                      className="w-full rounded-2xl object-contain"
+                      style={{ maxHeight: 300 }}
+                    />
+                  )}
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-border py-10 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                  >
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                      <Camera className="h-6 w-6" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold">
+                        {t("Scatta foto o carica immagine", "Take photo or upload image")}
+                      </p>
+                      <p className="mt-1 text-xs">
+                        {t(
+                          "La foto viene analizzata dall'AI per creare la scheda",
+                          "The photo is analyzed by AI to create the plan",
+                        )}
+                      </p>
+                    </div>
+                  </button>
                 </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold">
-                    {t("Scatta foto o carica immagine", "Take photo or upload image")}
-                  </p>
-                  <p className="mt-1 text-xs">
-                    {t(
-                      "La foto viene analizzata dall'AI per creare la scheda",
-                      "The photo is analyzed by AI to create the plan",
+              ) : (
+                <div className="space-y-3">
+                  <textarea
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    rows={8}
+                    placeholder={t(
+                      "Descrivi la tua scheda di allenamento...\n\nEsempio:\n- Panca piana 4x8 80kg\n- Croci con manubri 3x12 14kg\n- Shoulder press 3x10 20kg\n\nOppure descrivi il tuo obiettivo e l'AI creera' la scheda per te.",
+                      "Describe your workout plan...\n\nExample:\n- Bench press 4x8 80kg\n- Dumbbell flyes 3x12 14kg\n- Shoulder press 3x10 20kg\n\nOr describe your goal and AI will create the plan for you.",
                     )}
-                  </p>
+                    className="w-full resize-none rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-foreground"
+                  />
+                  <button
+                    onClick={handleTextSubmit}
+                    disabled={!textInput.trim()}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground disabled:opacity-60 active:scale-[0.98]"
+                  >
+                    <FileText className="h-4 w-4" />
+                    {t("Genera scheda", "Generate plan")}
+                  </button>
                 </div>
-              </button>
+              )}
             </div>
           )}
 

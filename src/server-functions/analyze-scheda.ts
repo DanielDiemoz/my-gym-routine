@@ -17,12 +17,7 @@ export type AnalyzeSchedaResult = {
   exercises: ExtractedExercise[];
 };
 
-const SYSTEM_PROMPT = `Sei un assistente specializzato nell'analisi di schede di allenamento per palestra.
-
-Analizza l'immagine fornita e estrai tutti gli esercizi presenti nella scheda.
-
-Restituisci un JSON valido con questa struttura esatta:
-{
+const JSON_SCHEMA = `{
   "plan_name": "Nome della scheda se visibile, altrimenti 'Scheda importata'",
   "exercises": [
     {
@@ -34,9 +29,9 @@ Restituisci un JSON valido con questa struttura esatta:
       "notes": null
     }
   ]
-}
+}`;
 
-Regole:
+const RULES = `Regole:
 - Il campo "notes" puo' essere null se non ci sono note
 - Se il peso non e' indicato, usa 0
 - Se le serie o ripetizioni non sono chiare, usa 3x10 come default
@@ -46,40 +41,60 @@ Regole:
 - Ignora elementi non esercizi (intestazioni, date, firme, logo)
 - Ignora il numero della serie se c'e' gia' un numero accanto (es. "1. Panca piana" -> solo "Panca piana")`;
 
+const IMAGE_PROMPT = `Sei un assistente specializzato nell'analisi di schede di allenamento per palestra.
+
+Analizza l'immagine fornita e estrai tutti gli esercizi presenti nella scheda.
+
+Restituisci un JSON valido con questa struttura esatta:
+${JSON_SCHEMA}
+
+${RULES}`;
+
+const TEXT_PROMPT = `Sei un personal trainer esperto. L'utente ti descrive una scheda di allenamento in testo libero (puo' essere un elenco, una descrizione, copia-incollato da un app, ecc.).
+
+Analizza il testo e crea una scheda di allenamento strutturata.
+
+Restituisci un JSON valido con questa struttura esatta:
+${JSON_SCHEMA}
+
+${RULES}
+
+- Se l'utente fornisce solo nomi degli esercizi senza dettagli, usa valori di default ragionevoli (3x10, peso 0)
+- Se l'utente descrive un obiettivo (es. "massa per le gambe"), crea una scheda appropriata
+- Puoi aggiungere esercizi complementari se la scheda sembra incompleta`;
+
 const VALID_MUSCLES = ["Petto", "Schiena", "Gambe", "Spalle", "Braccia", "Core", "Glutei", "Altro"];
 
 export const analyzeScheda = createServerFn({ method: "POST" })
-  .validator((data: { imageBase64: string; mimeType: string }) => data)
+  .validator(
+    (
+      data:
+        | { mode: "image"; imageBase64: string; mimeType: string }
+        | { mode: "text"; text: string },
+    ) => data,
+  )
   .handler(async ({ data }) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
     if (!apiKey) {
       throw new Error("GEMINI_API_KEY non configurata. Aggiungila nel file .env");
     }
 
-    console.log(
-      "[analyze-scheda] Calling Gemini, mimeType:",
-      data.mimeType,
-      "imageSize:",
-      data.imageBase64.length,
-    );
+    const parts: Array<Record<string, unknown>> = [];
+
+    if (data.mode === "image") {
+      parts.push({ text: IMAGE_PROMPT });
+      parts.push({
+        inline_data: { mime_type: data.mimeType, data: data.imageBase64 },
+      });
+    } else {
+      parts.push({ text: `${TEXT_PROMPT}\n\nDescrizione dell'utente:\n"${data.text}"` });
+    }
 
     const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: SYSTEM_PROMPT },
-              {
-                inline_data: {
-                  mime_type: data.mimeType,
-                  data: data.imageBase64,
-                },
-              },
-            ],
-          },
-        ],
+        contents: [{ parts }],
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 4096,
@@ -101,7 +116,6 @@ export const analyzeScheda = createServerFn({ method: "POST" })
       throw new Error("Risposta vuota dall'API Gemini");
     }
 
-    console.log("[analyze-scheda] Success, exercises:", text.slice(0, 200));
     return parseAiResponse(text);
   });
 
