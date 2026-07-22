@@ -45,6 +45,9 @@ const IMAGE_PROMPT = `Sei un assistente specializzato nell'analisi di schede di 
 
 Analizza l'immagine fornita e estrai tutti gli esercizi presenti nella scheda.
 
+Se l'immagine NON contiene una scheda di allenamento (es. e' un selfie, un paesaggio, un oggetto non pertinente), restituisci:
+{ "plan_name": "", "exercises": [] }
+
 Restituisci un JSON valido con questa struttura esatta:
 ${JSON_SCHEMA}
 
@@ -53,6 +56,9 @@ ${RULES}`;
 const TEXT_PROMPT = `Sei un personal trainer esperto. L'utente ti descrive una scheda di allenamento in testo libero (puo' essere un elenco, una descrizione, copia-incollato da un app, ecc.).
 
 Analizza il testo e crea una scheda di allenamento strutturata.
+
+Se il testo non descrive una scheda di allenamento (es. e' una frase random, una domanda, ecc.), restituisci:
+{ "plan_name": "", "exercises": [] }
 
 Restituisci un JSON valido con questa struttura esatta:
 ${JSON_SCHEMA}
@@ -65,6 +71,33 @@ ${RULES}
 
 const VALID_MUSCLES = ["Petto", "Schiena", "Gambe", "Spalle", "Braccia", "Core", "Glutei", "Altro"];
 
+const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
+
+function humanizeGeminiError(status: number, body: string): string {
+  if (status === 429) {
+    return "Troppe richieste. Attendi qualche secondo e riprova.";
+  }
+  if (status === 403) {
+    return "Chiave API non valida o disabilitata. Verifica la chiave su Google AI Studio.";
+  }
+  if (status === 400) {
+    if (body.includes("invalid image")) {
+      return "Immagine non valida. Prova con un'altra foto in formato JPEG o PNG.";
+    }
+    if (body.includes("payload")) {
+      return "L'immagine e' troppo grande. Prova con una foto di qualita' inferiore.";
+    }
+    return "Richiesta non valida. Riprova con un'altra foto.";
+  }
+  if (status === 404) {
+    return "Modello AI non disponibile. Riprova tra qualche minuto.";
+  }
+  if (status >= 500) {
+    return "Errore del servizio AI. Riprova tra qualche minuto.";
+  }
+  return `Errore sconosciuto dall'API (${status}). Riprova.`;
+}
+
 export const analyzeScheda = createServerFn({ method: "POST" })
   .validator(
     (
@@ -76,7 +109,22 @@ export const analyzeScheda = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
     if (!apiKey) {
-      throw new Error("GEMINI_API_KEY non configurata. Aggiungila nel file .env");
+      throw new Error("Chiave API AI non configurata. Contatta l'amministratore.");
+    }
+
+    if (data.mode === "image") {
+      if (!ALLOWED_MIME.has(data.mimeType)) {
+        throw new Error("Formato immagine non supportato. Usa JPEG, PNG o WebP.");
+      }
+      if (data.imageBase64.length > 20_000_000) {
+        throw new Error(
+          "L'immagine e' troppo grande (max ~15MB). Prova a scattare una foto con risoluzione inferiore.",
+        );
+      }
+    }
+
+    if (data.mode === "text" && !data.text.trim()) {
+      throw new Error("Inserisci una descrizione della scheda di allenamento.");
     }
 
     const parts: Array<Record<string, unknown>> = [];
@@ -87,53 +135,94 @@ export const analyzeScheda = createServerFn({ method: "POST" })
         inline_data: { mime_type: data.mimeType, data: data.imageBase64 },
       });
     } else {
-      parts.push({ text: `${TEXT_PROMPT}\n\nDescrizione dell'utente:\n"${data.text}"` });
+      parts.push({
+        text: `${TEXT_PROMPT}\n\nDescrizione dell'utente:\n"${data.text}"`,
+      });
     }
 
-    const response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: {
-          temperature: 0.1,
-          maxOutputTokens: 4096,
-          responseMimeType: "application/json",
-        },
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 4096,
+            responseMimeType: "application/json",
+          },
+        }),
+      });
+    } catch (err) {
+      console.error("[analyze-scheda] Network error:", err);
+      throw new Error(
+        "Impossibile contattare il servizio AI. Controlla la connessione a internet e riprova.",
+      );
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[analyze-scheda] Gemini API error:", response.status, errorText);
-      throw new Error(`Errore dall'API Gemini: ${response.status} - ${errorText}`);
+      throw new Error(humanizeGeminiError(response.status, errorText));
     }
 
-    const json = await response.json();
-    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    let json: Record<string, unknown>;
+    try {
+      json = await response.json();
+    } catch {
+      console.error("[analyze-scheda] Failed to parse response as JSON");
+      throw new Error("Risposta non valida dal servizio AI. Riprova.");
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const candidates = json.candidates as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const feedback = json.promptFeedback as any;
+    const text = candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) {
+      const blockReason = feedback?.blockReason;
+      if (blockReason === "SAFETY") {
+        throw new Error(
+          "L'immagine e' stata bloccata dai filtri di sicurezza. Prova con un'altra foto.",
+        );
+      }
       console.error("[analyze-scheda] Empty response:", JSON.stringify(json).slice(0, 500));
-      throw new Error("Risposta vuota dall'API Gemini");
+      throw new Error(
+        "Il servizio AI non ha prodotto una risposta valida. Riprova con un'altra foto o descrizione.",
+      );
     }
 
     return parseAiResponse(text);
   });
 
 function parseAiResponse(content: string): AnalyzeSchedaResult {
-  const parsed = JSON.parse(content);
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    console.error("[analyze-scheda] Invalid JSON from AI:", content.slice(0, 300));
+    throw new Error("Il servizio AI ha restituito un formato non valido. Riprova.");
+  }
 
-  const exercises: ExtractedExercise[] = (parsed.exercises ?? []).map(
-    (ex: Record<string, unknown>) => ({
-      name: String(ex.name ?? "Esercizio sconosciuto"),
-      muscle_group: VALID_MUSCLES.includes(String(ex.muscle_group))
-        ? String(ex.muscle_group)
-        : "Altro",
-      sets: Math.max(1, Number(ex.sets) || 3),
-      reps: Math.max(1, Number(ex.reps) || 10),
-      weight: Math.max(0, Number(ex.weight) || 0),
-      notes: ex.notes ? String(ex.notes) : null,
-    }),
-  );
+  const exercises: ExtractedExercise[] = (
+    Array.isArray(parsed.exercises) ? parsed.exercises : []
+  ).map((ex: Record<string, unknown>) => ({
+    name: String(ex.name ?? "Esercizio sconosciuto"),
+    muscle_group: VALID_MUSCLES.includes(String(ex.muscle_group))
+      ? String(ex.muscle_group)
+      : "Altro",
+    sets: Math.max(1, Number(ex.sets) || 3),
+    reps: Math.max(1, Number(ex.reps) || 10),
+    weight: Math.max(0, Number(ex.weight) || 0),
+    notes: ex.notes ? String(ex.notes) : null,
+  }));
+
+  if (exercises.length === 0) {
+    throw new Error(
+      "Nessun esercizio trovato. Assicurati che la foto mostri una scheda di allenamento o descrivi gli esercizi nel testo.",
+    );
+  }
 
   return {
     plan_name: String(parsed.plan_name ?? "Scheda importata"),

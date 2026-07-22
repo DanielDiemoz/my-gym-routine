@@ -1,6 +1,16 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, X, Trash2, Plus, Loader2, ChevronLeft, FileText } from "lucide-react";
+import {
+  Camera,
+  X,
+  Trash2,
+  Plus,
+  Loader2,
+  ChevronLeft,
+  FileText,
+  AlertTriangle,
+  ImageIcon,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { muscleColor } from "@/lib/muscleColors";
 import { useLanguage } from "@/lib/i18n";
@@ -38,11 +48,13 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
   const [planName, setPlanName] = useState("Scheda importata");
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setError(null);
     setStep("loading");
 
     compressImage(file)
@@ -57,15 +69,15 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
       })
       .catch((err) => {
         console.error("[ScanPreviewDialog]", err);
-        const msg = err instanceof Error ? err.message : String(err);
-        toast.error(t("Errore: ", "Error: ") + msg);
+        setError(err instanceof Error ? err.message : String(err));
         setStep("upload");
-        setPreview(null);
       });
   }
 
   function handleTextSubmit() {
     if (!textInput.trim()) return;
+
+    setError(null);
     setStep("loading");
 
     analyzeScheda({ data: { mode: "text", text: textInput.trim() } })
@@ -76,8 +88,7 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
       })
       .catch((err) => {
         console.error("[ScanPreviewDialog]", err);
-        const msg = err instanceof Error ? err.message : String(err);
-        toast.error(t("Errore: ", "Error: ") + msg);
+        setError(err instanceof Error ? err.message : String(err));
         setStep("upload");
       });
   }
@@ -205,6 +216,22 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
                   {t("Testo", "Text")}
                 </button>
               </div>
+
+              {error && (
+                <div className="flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-destructive">{t("Errore", "Error")}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="shrink-0 p-1 text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
 
               {inputMode === "image" ? (
                 <div className="space-y-3">
