@@ -3,8 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, ChevronRight, Dumbbell, Play } from "lucide-react";
+import { Plus, ChevronRight, Dumbbell, Play, Camera } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
+import { ScanPreviewDialog } from "@/components/ScanPreviewDialog";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/schede/")({
@@ -18,6 +19,7 @@ function Schede() {
   const { t } = useLanguage();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+  const [scanning, setScanning] = useState(false);
 
   const activeQ = useQuery({
     queryKey: ["active-session", user.id],
@@ -55,8 +57,12 @@ function Schede() {
       .insert({ user_id: user.id, name: name.trim() })
       .select("id")
       .single();
-    if (error) { toast.error(error.message); return; }
-    setName(""); setCreating(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setName("");
+    setCreating(false);
     qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
     qc.invalidateQueries({ queryKey: ["plans", user.id] });
     navigate({ to: "/app/schede/$planId", params: { planId: data.id } });
@@ -80,7 +86,9 @@ function Schede() {
           </div>
           <div className="flex-1">
             <div className="text-sm font-bold text-foreground">{activeQ.data.plan_name}</div>
-            <div className="text-xs text-muted-foreground">{t("Allenamento in corso", "Workout in progress")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("Allenamento in corso", "Workout in progress")}
+            </div>
           </div>
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
             <Play className="h-4 w-4 fill-current text-primary-foreground" />
@@ -89,7 +97,9 @@ function Schede() {
       )}
 
       <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("Le tue", "Your")}</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          {t("Le tue", "Your")}
+        </p>
         <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Schede", "Plans")}</h1>
       </header>
 
@@ -104,17 +114,38 @@ function Schede() {
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus:border-foreground"
           />
           <div className="mt-3 flex gap-2">
-            <button onClick={() => { setCreating(false); setName(""); }} className="flex-1 rounded-full border border-border py-3 text-sm font-semibold">{t("Annulla", "Cancel")}</button>
-            <button onClick={createPlan} className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground">{t("Crea", "Create")}</button>
+            <button
+              onClick={() => {
+                setCreating(false);
+                setName("");
+              }}
+              className="flex-1 rounded-full border border-border py-3 text-sm font-semibold"
+            >
+              {t("Annulla", "Cancel")}
+            </button>
+            <button
+              onClick={createPlan}
+              className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground"
+            >
+              {t("Crea", "Create")}
+            </button>
           </div>
         </div>
       ) : (
-        <button
-          onClick={() => setCreating(true)}
-          className="no-tap-highlight mb-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
-        >
-          <Plus className="h-4 w-4" /> {t("Nuova scheda", "New plan")}
-        </button>
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={() => setCreating(true)}
+            className="no-tap-highlight flex-1 flex items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+          >
+            <Plus className="h-4 w-4" /> {t("Nuova scheda", "New plan")}
+          </button>
+          <button
+            onClick={() => setScanning(true)}
+            className="no-tap-highlight flex items-center justify-center gap-2 rounded-full border-2 border-dashed border-border px-5 py-4 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground active:scale-[0.98]"
+          >
+            <Camera className="h-4 w-4" /> {t("Foto", "Photo")}
+          </button>
+        </div>
       )}
 
       <div className="space-y-2">
@@ -133,7 +164,9 @@ function Schede() {
                 </div>
                 <div>
                   <div className="font-semibold">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">{count} {count === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {count} {count === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}
+                  </div>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -141,9 +174,24 @@ function Schede() {
           );
         })}
         {plansQ.data?.length === 0 && !creating && (
-          <p className="py-12 text-center text-sm text-muted-foreground">{t("Nessuna scheda. Creane una per iniziare.", "No plans. Create one to get started.")}</p>
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            {t("Nessuna scheda. Creane una per iniziare.", "No plans. Create one to get started.")}
+          </p>
         )}
       </div>
+
+      {scanning && (
+        <ScanPreviewDialog
+          userId={user.id}
+          onClose={() => setScanning(false)}
+          onSaved={(planId) => {
+            setScanning(false);
+            qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
+            qc.invalidateQueries({ queryKey: ["plans", user.id] });
+            navigate({ to: "/app/schede/$planId", params: { planId } });
+          }}
+        />
+      )}
     </div>
   );
 }
