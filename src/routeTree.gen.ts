@@ -21,13 +21,9 @@ import { Route as AppProfiloRouteImport } from './routes/app/profilo'
 import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
 import { Route as AppSchedeIndexRouteImport } from './routes/app/schede.index'
 import { Route as AppCerchiaIndexRouteImport } from './routes/app/cerchia.index'
-import { Route as AppAdminIndexRouteImport } from './routes/app/admin.index'
 import { Route as AppSchedePlanIdRouteImport } from './routes/app/schede.$planId'
 import { Route as AppCerchiaCircleIdRouteImport } from './routes/app/cerchia.$circleId'
 import { Route as AppAllenaPlanIdRouteImport } from './routes/app/allena.$planId'
-import { Route as AppAdminUserStoricoRouteImport } from './routes/app/admin.user-storico'
-import { Route as AppAdminSetCoachRouteImport } from './routes/app/admin.set-coach'
-import { Route as AppAdminUserUserIdRouteImport } from './routes/app/admin.user.$userId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -89,11 +85,6 @@ const AppCerchiaIndexRoute = AppCerchiaIndexRouteImport.update({
   path: '/cerchia/',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 const AppSchedePlanIdRoute = AppSchedePlanIdRouteImport.update({
   id: '/schede/$planId',
   path: '/schede/$planId',
@@ -109,21 +100,6 @@ const AppAllenaPlanIdRoute = AppAllenaPlanIdRouteImport.update({
   path: '/allena/$planId',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppAdminUserStoricoRoute = AppAdminUserStoricoRouteImport.update({
-  id: '/admin/user-storico',
-  path: '/admin/user-storico',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppAdminSetCoachRoute = AppAdminSetCoachRouteImport.update({
-  id: '/admin/set-coach',
-  path: '/admin/set-coach',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppAdminUserUserIdRoute = AppAdminUserUserIdRouteImport.update({
-  id: '/admin/user/$userId',
-  path: '/admin/user/$userId',
-  getParentRoute: () => AppRouteRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -136,15 +112,11 @@ export interface FileRoutesByFullPath {
   '/auth/verify': typeof AuthVerifyRoute
   '/app/': typeof AppIndexRoute
   '/auth/': typeof AuthIndexRoute
-  '/app/admin/set-coach': typeof AppAdminSetCoachRoute
-  '/app/admin/user-storico': typeof AppAdminUserStoricoRoute
   '/app/allena/$planId': typeof AppAllenaPlanIdRoute
   '/app/cerchia/$circleId': typeof AppCerchiaCircleIdRoute
   '/app/schede/$planId': typeof AppSchedePlanIdRoute
-  '/app/admin/': typeof AppAdminIndexRoute
   '/app/cerchia/': typeof AppCerchiaIndexRoute
   '/app/schede/': typeof AppSchedeIndexRoute
-  '/app/admin/user/$userId': typeof AppAdminUserUserIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -155,15 +127,11 @@ export interface FileRoutesByTo {
   '/auth/verify': typeof AuthVerifyRoute
   '/app': typeof AppIndexRoute
   '/auth': typeof AuthIndexRoute
-  '/app/admin/set-coach': typeof AppAdminSetCoachRoute
-  '/app/admin/user-storico': typeof AppAdminUserStoricoRoute
   '/app/allena/$planId': typeof AppAllenaPlanIdRoute
   '/app/cerchia/$circleId': typeof AppCerchiaCircleIdRoute
   '/app/schede/$planId': typeof AppSchedePlanIdRoute
-  '/app/admin': typeof AppAdminIndexRoute
   '/app/cerchia': typeof AppCerchiaIndexRoute
   '/app/schede': typeof AppSchedeIndexRoute
-  '/app/admin/user/$userId': typeof AppAdminUserUserIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -177,15 +145,11 @@ export interface FileRoutesById {
   '/auth/verify': typeof AuthVerifyRoute
   '/app/': typeof AppIndexRoute
   '/auth/': typeof AuthIndexRoute
-  '/app/admin/set-coach': typeof AppAdminSetCoachRoute
-  '/app/admin/user-storico': typeof AppAdminUserStoricoRoute
   '/app/allena/$planId': typeof AppAllenaPlanIdRoute
   '/app/cerchia/$circleId': typeof AppCerchiaCircleIdRoute
   '/app/schede/$planId': typeof AppSchedePlanIdRoute
-  '/app/admin/': typeof AppAdminIndexRoute
   '/app/cerchia/': typeof AppCerchiaIndexRoute
   '/app/schede/': typeof AppSchedeIndexRoute
-  '/app/admin/user/$userId': typeof AppAdminUserUserIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -200,15 +164,11 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/app/'
     | '/auth/'
-    | '/app/admin/set-coach'
-    | '/app/admin/user-storico'
     | '/app/allena/$planId'
     | '/app/cerchia/$circleId'
     | '/app/schede/$planId'
-    | '/app/admin/'
     | '/app/cerchia/'
     | '/app/schede/'
-    | '/app/admin/user/$userId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -219,15 +179,11 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/app'
     | '/auth'
-    | '/app/admin/set-coach'
-    | '/app/admin/user-storico'
     | '/app/allena/$planId'
     | '/app/cerchia/$circleId'
     | '/app/schede/$planId'
-    | '/app/admin'
     | '/app/cerchia'
     | '/app/schede'
-    | '/app/admin/user/$userId'
   id:
     | '__root__'
     | '/'
@@ -240,15 +196,11 @@ export interface FileRouteTypes {
     | '/auth/verify'
     | '/app/'
     | '/auth/'
-    | '/app/admin/set-coach'
-    | '/app/admin/user-storico'
     | '/app/allena/$planId'
     | '/app/cerchia/$circleId'
     | '/app/schede/$planId'
-    | '/app/admin/'
     | '/app/cerchia/'
     | '/app/schede/'
-    | '/app/admin/user/$userId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -343,13 +295,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCerchiaIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/admin/': {
-      id: '/app/admin/'
-      path: '/admin'
-      fullPath: '/app/admin/'
-      preLoaderRoute: typeof AppAdminIndexRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
     '/app/schede/$planId': {
       id: '/app/schede/$planId'
       path: '/schede/$planId'
@@ -371,27 +316,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAllenaPlanIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/admin/user-storico': {
-      id: '/app/admin/user-storico'
-      path: '/admin/user-storico'
-      fullPath: '/app/admin/user-storico'
-      preLoaderRoute: typeof AppAdminUserStoricoRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/app/admin/set-coach': {
-      id: '/app/admin/set-coach'
-      path: '/admin/set-coach'
-      fullPath: '/app/admin/set-coach'
-      preLoaderRoute: typeof AppAdminSetCoachRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/app/admin/user/$userId': {
-      id: '/app/admin/user/$userId'
-      path: '/admin/user/$userId'
-      fullPath: '/app/admin/user/$userId'
-      preLoaderRoute: typeof AppAdminUserUserIdRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
   }
 }
 
@@ -400,15 +324,11 @@ interface AppRouteRouteChildren {
   AppProfiloRoute: typeof AppProfiloRoute
   AppStoricoRoute: typeof AppStoricoRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppAdminSetCoachRoute: typeof AppAdminSetCoachRoute
-  AppAdminUserStoricoRoute: typeof AppAdminUserStoricoRoute
   AppAllenaPlanIdRoute: typeof AppAllenaPlanIdRoute
   AppCerchiaCircleIdRoute: typeof AppCerchiaCircleIdRoute
   AppSchedePlanIdRoute: typeof AppSchedePlanIdRoute
-  AppAdminIndexRoute: typeof AppAdminIndexRoute
   AppCerchiaIndexRoute: typeof AppCerchiaIndexRoute
   AppSchedeIndexRoute: typeof AppSchedeIndexRoute
-  AppAdminUserUserIdRoute: typeof AppAdminUserUserIdRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -416,15 +336,11 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProfiloRoute: AppProfiloRoute,
   AppStoricoRoute: AppStoricoRoute,
   AppIndexRoute: AppIndexRoute,
-  AppAdminSetCoachRoute: AppAdminSetCoachRoute,
-  AppAdminUserStoricoRoute: AppAdminUserStoricoRoute,
   AppAllenaPlanIdRoute: AppAllenaPlanIdRoute,
   AppCerchiaCircleIdRoute: AppCerchiaCircleIdRoute,
   AppSchedePlanIdRoute: AppSchedePlanIdRoute,
-  AppAdminIndexRoute: AppAdminIndexRoute,
   AppCerchiaIndexRoute: AppCerchiaIndexRoute,
   AppSchedeIndexRoute: AppSchedeIndexRoute,
-  AppAdminUserUserIdRoute: AppAdminUserUserIdRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
