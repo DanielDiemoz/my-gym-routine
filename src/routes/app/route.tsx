@@ -71,10 +71,10 @@ function AuthLayout() {
     return null;
   }
 
-  const showNav = !loc.pathname.startsWith("/app/onboarding");
+  const showNav = !loc.pathname.startsWith("/app/onboarding") && !loc.pathname.startsWith("/app/profilo");
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-28">
       <WorkoutProvider>
         <WeightUnitProvider>
           <Outlet />
@@ -92,11 +92,10 @@ function BottomNav({ pathname }: { pathname: string }) {
     { to: "/app/schede", icon: Dumbbell, label: t("Schede", "Plans") },
     { to: "/app/storico", icon: HistoryIcon, label: t("Storico", "History") },
     { to: "/app/cerchia", icon: Users, label: t("Cerchia", "Circle") },
-    { to: "/app/profilo", icon: User, label: t("Profilo", "Profile") },
   ] as const;
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="container-app flex h-16 items-center justify-around pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-3 inset-x-0 mx-3 z-40 rounded-2xl border border-white/5 bg-white/15 dark:bg-white/1 backdrop-blur-xl shadow-md">
+      <div className="flex h-16 items-center justify-around px-4 pb-[env(safe-area-inset-bottom)]">
         {items.map((it) => {
           const active = it.to === "/app" ? pathname === "/app" : pathname.startsWith(it.to);
           const Icon = it.icon;

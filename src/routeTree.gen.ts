@@ -18,10 +18,14 @@ import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AppStoricoRouteImport } from './routes/app/storico'
 import { Route as AppProfiloRouteImport } from './routes/app/profilo'
+import { Route as AppPrRouteImport } from './routes/app/pr'
 import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
 import { Route as AppSchedeIndexRouteImport } from './routes/app/schede.index'
 import { Route as AppCerchiaIndexRouteImport } from './routes/app/cerchia.index'
 import { Route as AppSchedePlanIdRouteImport } from './routes/app/schede.$planId'
+import { Route as AppProfiloImpostazioniRouteImport } from './routes/app/profilo.impostazioni'
+import { Route as AppProfiloDownloadRouteImport } from './routes/app/profilo.download'
+import { Route as AppProfiloAccountRouteImport } from './routes/app/profilo.account'
 import { Route as AppCerchiaCircleIdRouteImport } from './routes/app/cerchia.$circleId'
 import { Route as AppAllenaPlanIdRouteImport } from './routes/app/allena.$planId'
 
@@ -70,6 +74,11 @@ const AppProfiloRoute = AppProfiloRouteImport.update({
   path: '/profilo',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppPrRoute = AppPrRouteImport.update({
+  id: '/pr',
+  path: '/pr',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppOnboardingRoute = AppOnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -90,6 +99,21 @@ const AppSchedePlanIdRoute = AppSchedePlanIdRouteImport.update({
   path: '/schede/$planId',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppProfiloImpostazioniRoute = AppProfiloImpostazioniRouteImport.update({
+  id: '/impostazioni',
+  path: '/impostazioni',
+  getParentRoute: () => AppProfiloRoute,
+} as any)
+const AppProfiloDownloadRoute = AppProfiloDownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
+  getParentRoute: () => AppProfiloRoute,
+} as any)
+const AppProfiloAccountRoute = AppProfiloAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppProfiloRoute,
+} as any)
 const AppCerchiaCircleIdRoute = AppCerchiaCircleIdRouteImport.update({
   id: '/cerchia/$circleId',
   path: '/cerchia/$circleId',
@@ -106,7 +130,8 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
-  '/app/profilo': typeof AppProfiloRoute
+  '/app/pr': typeof AppPrRoute
+  '/app/profilo': typeof AppProfiloRouteWithChildren
   '/app/storico': typeof AppStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -114,6 +139,9 @@ export interface FileRoutesByFullPath {
   '/auth/': typeof AuthIndexRoute
   '/app/allena/$planId': typeof AppAllenaPlanIdRoute
   '/app/cerchia/$circleId': typeof AppCerchiaCircleIdRoute
+  '/app/profilo/account': typeof AppProfiloAccountRoute
+  '/app/profilo/download': typeof AppProfiloDownloadRoute
+  '/app/profilo/impostazioni': typeof AppProfiloImpostazioniRoute
   '/app/schede/$planId': typeof AppSchedePlanIdRoute
   '/app/cerchia/': typeof AppCerchiaIndexRoute
   '/app/schede/': typeof AppSchedeIndexRoute
@@ -121,7 +149,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/onboarding': typeof AppOnboardingRoute
-  '/app/profilo': typeof AppProfiloRoute
+  '/app/pr': typeof AppPrRoute
+  '/app/profilo': typeof AppProfiloRouteWithChildren
   '/app/storico': typeof AppStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -129,6 +158,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthIndexRoute
   '/app/allena/$planId': typeof AppAllenaPlanIdRoute
   '/app/cerchia/$circleId': typeof AppCerchiaCircleIdRoute
+  '/app/profilo/account': typeof AppProfiloAccountRoute
+  '/app/profilo/download': typeof AppProfiloDownloadRoute
+  '/app/profilo/impostazioni': typeof AppProfiloImpostazioniRoute
   '/app/schede/$planId': typeof AppSchedePlanIdRoute
   '/app/cerchia': typeof AppCerchiaIndexRoute
   '/app/schede': typeof AppSchedeIndexRoute
@@ -139,7 +171,8 @@ export interface FileRoutesById {
   '/app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/app/onboarding': typeof AppOnboardingRoute
-  '/app/profilo': typeof AppProfiloRoute
+  '/app/pr': typeof AppPrRoute
+  '/app/profilo': typeof AppProfiloRouteWithChildren
   '/app/storico': typeof AppStoricoRoute
   '/auth/reset': typeof AuthResetRoute
   '/auth/verify': typeof AuthVerifyRoute
@@ -147,6 +180,9 @@ export interface FileRoutesById {
   '/auth/': typeof AuthIndexRoute
   '/app/allena/$planId': typeof AppAllenaPlanIdRoute
   '/app/cerchia/$circleId': typeof AppCerchiaCircleIdRoute
+  '/app/profilo/account': typeof AppProfiloAccountRoute
+  '/app/profilo/download': typeof AppProfiloDownloadRoute
+  '/app/profilo/impostazioni': typeof AppProfiloImpostazioniRoute
   '/app/schede/$planId': typeof AppSchedePlanIdRoute
   '/app/cerchia/': typeof AppCerchiaIndexRoute
   '/app/schede/': typeof AppSchedeIndexRoute
@@ -158,6 +194,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/onboarding'
+    | '/app/pr'
     | '/app/profilo'
     | '/app/storico'
     | '/auth/reset'
@@ -166,6 +203,9 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/app/allena/$planId'
     | '/app/cerchia/$circleId'
+    | '/app/profilo/account'
+    | '/app/profilo/download'
+    | '/app/profilo/impostazioni'
     | '/app/schede/$planId'
     | '/app/cerchia/'
     | '/app/schede/'
@@ -173,6 +213,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app/onboarding'
+    | '/app/pr'
     | '/app/profilo'
     | '/app/storico'
     | '/auth/reset'
@@ -181,6 +222,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/allena/$planId'
     | '/app/cerchia/$circleId'
+    | '/app/profilo/account'
+    | '/app/profilo/download'
+    | '/app/profilo/impostazioni'
     | '/app/schede/$planId'
     | '/app/cerchia'
     | '/app/schede'
@@ -190,6 +234,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/onboarding'
+    | '/app/pr'
     | '/app/profilo'
     | '/app/storico'
     | '/auth/reset'
@@ -198,6 +243,9 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/app/allena/$planId'
     | '/app/cerchia/$circleId'
+    | '/app/profilo/account'
+    | '/app/profilo/download'
+    | '/app/profilo/impostazioni'
     | '/app/schede/$planId'
     | '/app/cerchia/'
     | '/app/schede/'
@@ -274,6 +322,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfiloRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/pr': {
+      id: '/app/pr'
+      path: '/pr'
+      fullPath: '/app/pr'
+      preLoaderRoute: typeof AppPrRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/onboarding': {
       id: '/app/onboarding'
       path: '/onboarding'
@@ -302,6 +357,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSchedePlanIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/profilo/impostazioni': {
+      id: '/app/profilo/impostazioni'
+      path: '/impostazioni'
+      fullPath: '/app/profilo/impostazioni'
+      preLoaderRoute: typeof AppProfiloImpostazioniRouteImport
+      parentRoute: typeof AppProfiloRoute
+    }
+    '/app/profilo/download': {
+      id: '/app/profilo/download'
+      path: '/download'
+      fullPath: '/app/profilo/download'
+      preLoaderRoute: typeof AppProfiloDownloadRouteImport
+      parentRoute: typeof AppProfiloRoute
+    }
+    '/app/profilo/account': {
+      id: '/app/profilo/account'
+      path: '/account'
+      fullPath: '/app/profilo/account'
+      preLoaderRoute: typeof AppProfiloAccountRouteImport
+      parentRoute: typeof AppProfiloRoute
+    }
     '/app/cerchia/$circleId': {
       id: '/app/cerchia/$circleId'
       path: '/cerchia/$circleId'
@@ -319,9 +395,26 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppProfiloRouteChildren {
+  AppProfiloAccountRoute: typeof AppProfiloAccountRoute
+  AppProfiloDownloadRoute: typeof AppProfiloDownloadRoute
+  AppProfiloImpostazioniRoute: typeof AppProfiloImpostazioniRoute
+}
+
+const AppProfiloRouteChildren: AppProfiloRouteChildren = {
+  AppProfiloAccountRoute: AppProfiloAccountRoute,
+  AppProfiloDownloadRoute: AppProfiloDownloadRoute,
+  AppProfiloImpostazioniRoute: AppProfiloImpostazioniRoute,
+}
+
+const AppProfiloRouteWithChildren = AppProfiloRoute._addFileChildren(
+  AppProfiloRouteChildren,
+)
+
 interface AppRouteRouteChildren {
   AppOnboardingRoute: typeof AppOnboardingRoute
-  AppProfiloRoute: typeof AppProfiloRoute
+  AppPrRoute: typeof AppPrRoute
+  AppProfiloRoute: typeof AppProfiloRouteWithChildren
   AppStoricoRoute: typeof AppStoricoRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAllenaPlanIdRoute: typeof AppAllenaPlanIdRoute
@@ -333,7 +426,8 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppOnboardingRoute: AppOnboardingRoute,
-  AppProfiloRoute: AppProfiloRoute,
+  AppPrRoute: AppPrRoute,
+  AppProfiloRoute: AppProfiloRouteWithChildren,
   AppStoricoRoute: AppStoricoRoute,
   AppIndexRoute: AppIndexRoute,
   AppAllenaPlanIdRoute: AppAllenaPlanIdRoute,

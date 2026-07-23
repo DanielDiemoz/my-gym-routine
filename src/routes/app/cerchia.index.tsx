@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
 import { useCircle, type Circle } from "@/hooks/useCircle";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/cerchia/")({
@@ -66,11 +67,14 @@ function CerchiePage() {
 
   return (
     <div className="container-app pt-10">
-      <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          {t("Insieme", "Together")}
-        </p>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Cerchie", "Circles")}</h1>
+      <header className="mb-6 flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("Insieme", "Together")}
+          </p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Cerchie", "Circles")}</h1>
+        </div>
+        <ProfileMenu />
       </header>
 
       {!hasCircles ? (
