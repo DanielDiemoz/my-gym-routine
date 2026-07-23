@@ -75,6 +75,11 @@ function AuthLayout() {
 
   return (
     <div className="min-h-screen bg-background pb-28">
+      {user.id === "cd06408e-8bf4-4536-870f-6182143212ef" && (
+        <div className="bg-destructive px-4 py-3 text-center text-sm font-bold text-destructive-foreground">
+          basta di fare cayo perico
+        </div>
+      )}
       <WorkoutProvider>
         <WeightUnitProvider>
           <Outlet />
