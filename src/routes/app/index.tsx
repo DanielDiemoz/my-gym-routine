@@ -19,6 +19,7 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
+  Trophy,
 } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { ProfileMenu } from "@/components/ProfileMenu";
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { WorkoutCalendar } from "@/components/WorkoutCalendar";
+import { usePersonalRecords } from "@/hooks/usePersonalRecords";
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
@@ -288,6 +290,9 @@ function Dashboard() {
         />
       </section>
 
+      {/* Personal Records quick link */}
+      <PersonalRecordsCard userId={user.id} />
+
       {/* TASK 3 — Streak card */}
       <StreakCard
         sessions={
@@ -449,5 +454,38 @@ function StatCard({
         </div>
       )}
     </div>
+  );
+}
+
+function PersonalRecordsCard({ userId }: { userId: string }) {
+  const { t } = useLanguage();
+  const { display: fmtWeight } = useWeightUnit();
+  const prsQ = usePersonalRecords(userId);
+
+  if (!prsQ.data || prsQ.data.length === 0) return null;
+
+  const top3 = prsQ.data.slice(0, 3);
+
+  return (
+    <Link
+      to="/app/pr"
+      className="no-tap-highlight mt-4 block rounded-2xl border border-border bg-card p-4 active:scale-[0.99]"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Trophy className="h-4 w-4 text-yellow-500" />
+          <span className="text-sm font-bold">{t("Record Personali", "Personal Records")}</span>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="space-y-1.5">
+        {top3.map((pr) => (
+          <div key={pr.exercise} className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground truncate">{pr.exercise}</span>
+            <span className="text-xs font-bold text-primary">{fmtWeight(pr.maxWeight, { digits: 1 })}</span>
+          </div>
+        ))}
+      </div>
+    </Link>
   );
 }

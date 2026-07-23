@@ -520,6 +520,42 @@ function ActiveSession() {
     sessionStorage.removeItem("gw_last");
     console.log("[CLEANUP] removing LS key");
     clearPersisted();
+
+    // Check for new PRs
+    try {
+      const { data: existingLogs } = await supabase
+        .from("session_logs")
+        .select("exercise_name, weight")
+        .eq("user_id", user.id)
+        .not("session_id", "eq", sessionId);
+
+      const prMap = new Map<string, number>();
+      for (const log of existingLogs ?? []) {
+        const name = log.exercise_name.trim().toLowerCase();
+        const current = prMap.get(name) ?? 0;
+        if (log.weight > current) prMap.set(name, log.weight);
+      }
+
+      const newPRs: string[] = [];
+      for (const row of rows) {
+        const name = row.exercise_name.trim().toLowerCase();
+        const oldPR = prMap.get(name) ?? 0;
+        if (row.weight > oldPR) {
+          newPRs.push(row.exercise_name);
+          prMap.set(name, row.weight);
+        }
+      }
+
+      if (newPRs.length > 0) {
+        const unique = [...new Set(newPRs)];
+        for (const ex of unique) {
+          toast.success(t(`🏆 Nuovo PR! ${ex}`, `🏆 New PR! ${ex}`), { duration: 5000 });
+        }
+      }
+    } catch {
+      // PR check is best-effort, don't block workout save
+    }
+
     toast.success(t("Allenamento salvato!", "Workout saved!"));
     navigate({ to: "/app" });
   }
