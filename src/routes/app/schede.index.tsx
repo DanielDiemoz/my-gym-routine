@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, ChevronRight, Dumbbell, Play, Sparkles } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
 import { ScanPreviewDialog } from "@/components/ScanPreviewDialog";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/schede/")({
@@ -44,7 +45,7 @@ function Schede() {
         .from("plans")
         .select("id, name, exercises(count)")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
+        .order("name", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
@@ -96,11 +97,14 @@ function Schede() {
         </Link>
       )}
 
-      <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          {t("Le tue", "Your")}
-        </p>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Schede", "Plans")}</h1>
+      <header className="mb-6 flex items-start justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            {t("Le tue", "Your")}
+          </p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Schede", "Plans")}</h1>
+        </div>
+        <ProfileMenu />
       </header>
 
       {creating ? (
