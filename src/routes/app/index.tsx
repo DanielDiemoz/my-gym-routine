@@ -21,6 +21,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { StreakCard } from "@/components/StreakCard";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
@@ -34,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { WorkoutCalendar } from "@/components/WorkoutCalendar";
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
@@ -244,6 +246,7 @@ function Dashboard() {
         </div>
         <div className="flex items-center gap-2 pt-1">
           <PWAInstallButton />
+          <ProfileMenu />
         </div>
       </header>
 
@@ -297,6 +300,17 @@ function Dashboard() {
         weeklyCount={stats?.workouts ?? 0}
         onChangeGoal={(n) => setGoal.mutate(n)}
       />
+
+      {/* Workout calendar */}
+      <div className="mt-4">
+        <WorkoutCalendar
+          workoutDays={
+            ((streakQ.data ?? []) as Array<{ completed_at: string | null }>)
+              .filter((s) => s.completed_at !== null)
+              .map((s) => new Date(s.completed_at!))
+          }
+        />
+      </div>
 
       {/* Quick start */}
       <section className="mt-8">
