@@ -320,10 +320,10 @@ function CircleDetailPage() {
 
       {/* Header icona + titolo */}
       <div className="mb-2 flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-neutral-900">
-          <Dumbbell className="h-6 w-6 text-white" strokeWidth={2} />
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary">
+          <Dumbbell className="h-6 w-6 text-primary-foreground" strokeWidth={2} />
         </div>
-        <h1 className="text-4xl font-semibold tracking-tight text-black">{circle.name}</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-foreground">{circle.name}</h1>
       </div>
 
       {/* Riga informativa membri */}
@@ -335,7 +335,7 @@ function CircleDetailPage() {
       </p>
 
       {/* Codice invito: tutti i membri possono copiarlo */}
-      <div className="mb-6 flex items-center justify-between rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
+      <div className="mb-6 flex items-center justify-between rounded-xl border-[0.5px] border-border bg-muted px-4 py-3">
         <div>
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {t("Codice invito", "Invite code")}
@@ -349,19 +349,19 @@ function CircleDetailPage() {
 
       {/* Statistiche aggregate cerchia */}
       <div className="mb-6 grid grid-cols-2 gap-3">
-        <div className="rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
+        <div className="rounded-xl border-[0.5px] border-border bg-muted px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {t("kg totali cerchia", "circle total kg")}
           </p>
-          <p className="mt-1 text-2xl font-bold text-black">
+          <p className="mt-1 text-2xl font-bold text-foreground">
             {Math.round(aggregate.weeklyKg).toLocaleString(intlLocale)}
           </p>
         </div>
-        <div className="rounded-xl border-[0.5px] border-neutral-200 bg-[#F0F0F0] px-4 py-3">
+        <div className="rounded-xl border-[0.5px] border-border bg-muted px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {t("allenamenti sett.", "weekly workouts")}
           </p>
-          <p className="mt-1 text-2xl font-bold text-black">
+          <p className="mt-1 text-2xl font-bold text-foreground">
             {aggregate.weekSessions}/{aggregate.weekGoal}
           </p>
         </div>
@@ -388,7 +388,7 @@ function CircleDetailPage() {
                 to="/app/cerchia/$circleId"
                 search={{ user: p.id }}
                 params={{ circleId }}
-                className="flex items-center gap-3 rounded-2xl border-[0.5px] border-neutral-200 bg-card px-4 py-3"
+                className="flex items-center gap-3 rounded-2xl border-[0.5px] border-border bg-card px-4 py-3"
               >
                 {/* Rango */}
                 <span className="w-5 text-center text-sm font-semibold text-muted-foreground">
@@ -398,7 +398,7 @@ function CircleDetailPage() {
                 {/* Immagine rank con anello di progresso settimanale */}
                 <div className="relative h-12 w-12 shrink-0">
                   <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48" aria-hidden="true">
-                    <circle cx="24" cy="24" r="22" fill="none" stroke="#E5E5E5" strokeWidth="3" />
+                    <circle cx="24" cy="24" r="22" fill="none" stroke="var(--color-border)" strokeWidth="3" />
                     <circle
                       cx="24"
                       cy="24"
@@ -432,17 +432,17 @@ function CircleDetailPage() {
                   <div className="flex items-center gap-1.5 truncate text-sm font-semibold">
                     <span className="truncate">{resolveName(p.id, p.display_name)}</span>
                     {isThisUser && isCircleOwner && (
-                      <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-semibold text-black">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground">
                         tu · owner
                       </span>
                     )}
                     {isThisUser && !isCircleOwner && (
-                      <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-semibold text-black">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground">
                         tu
                       </span>
                     )}
                     {!isThisUser && isCircleOwner && (
-                      <span className="rounded-full bg-[#F0F0F0] px-2 py-0.5 text-[10px] font-semibold text-black">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-foreground">
                         owner
                       </span>
                     )}

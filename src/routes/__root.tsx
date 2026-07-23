@@ -106,11 +106,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const THEME_INIT_SCRIPT = `
+(function(){
+  try {
+    var t = localStorage.getItem("gymbro.theme");
+    var dk = t === "dark" || (t !== "light" && matchMedia("(prefers-color-scheme:dark)").matches);
+    if (dk) document.documentElement.classList.add("dark");
+  } catch(e) {}
+})();
+`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="it">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
         {children}

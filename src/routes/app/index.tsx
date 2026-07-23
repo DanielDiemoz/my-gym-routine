@@ -85,8 +85,7 @@ function Dashboard() {
         .from("plans")
         .select("id, name")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(3);
+        .order("name", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
