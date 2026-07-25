@@ -94,8 +94,8 @@ function BottomNav({ pathname }: { pathname: string }) {
     { to: "/app/cerchia", icon: Users, label: t("Cerchia", "Circle") },
   ] as const;
   return (
-    <nav className="fixed bottom-3 inset-x-0 mx-3 z-40 rounded-2xl border border-white/5 bg-white/15 dark:bg-white/1 backdrop-blur-xl shadow-md">
-      <div className="flex h-16 items-center justify-around px-4 pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed inset-x-0 mx-3 z-40 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] rounded-2xl border border-white/5 bg-white/15 dark:bg-white/1 backdrop-blur-xl shadow-md">
+      <div className="flex h-16 items-center justify-around px-4">
         {items.map((it) => {
           const active = it.to === "/app" ? pathname === "/app" : pathname.startsWith(it.to);
           const Icon = it.icon;
