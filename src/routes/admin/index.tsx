@@ -2,18 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { Fragment } from "react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { it } from "date-fns/locale";
 import {
   Users,
   Dumbbell,
-  Activity,
   Brain,
   Calendar,
   Search,
   ChevronDown,
   ChevronUp,
-  ExternalLink,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,6 +55,39 @@ type Session = {
   total_volume: number;
 };
 
+type Plan = {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type Exercise = {
+  id: string;
+  plan_id: string;
+  user_id: string;
+  name: string;
+  muscle_group: string | null;
+  sets: number;
+  reps: number;
+  weight: number;
+  position: number | null;
+  notes: string | null;
+};
+
+type SessionLog = {
+  id: string;
+  session_id: string;
+  user_id: string;
+  exercise_name: string;
+  muscle_group: string | null;
+  set_number: number;
+  reps: number;
+  weight: number;
+  created_at: string;
+};
+
 type GeminiUsage = {
   id: string;
   user_id: string;
@@ -71,6 +103,8 @@ function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [expandedSession, setExpandedSession] = useState<string | null>(null);
+  const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
 
   const dateFilter = (() => {
     const now = new Date();
@@ -134,12 +168,68 @@ function AdminDashboard() {
   const sessions = sessionsQuery.data ?? [];
   const geminiUsage = geminiQuery.data ?? [];
 
+  // Fetch session logs for expanded user
+  const sessionIdsForExpanded = expandedUser
+    ? sessions.filter((s) => s.user_id === expandedUser).map((s) => s.id)
+    : [];
+
+  const sessionLogsQuery = useQuery({
+    queryKey: ["admin", "session-logs", expandedUser],
+    queryFn: async () => {
+      if (sessionIdsForExpanded.length === 0) return [] as SessionLog[];
+      const { data, error } = await supabase
+        .from("session_logs")
+        .select("*")
+        .in("session_id", sessionIdsForExpanded)
+        .order("set_number", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as SessionLog[];
+    },
+    enabled: sessionIdsForExpanded.length > 0,
+  });
+
+  // Fetch plans for expanded user
+  const plansQuery = useQuery({
+    queryKey: ["admin", "plans", expandedUser],
+    queryFn: async () => {
+      if (!expandedUser) return [] as Plan[];
+      const { data, error } = await supabase
+        .from("plans")
+        .select("*")
+        .eq("user_id", expandedUser)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Plan[];
+    },
+    enabled: !!expandedUser,
+  });
+
+  // Fetch exercises for plans of expanded user
+  const planIds = (plansQuery.data ?? []).map((p) => p.id);
+  const exercisesQuery = useQuery({
+    queryKey: ["admin", "exercises", expandedUser],
+    queryFn: async () => {
+      if (planIds.length === 0) return [] as Exercise[];
+      const { data, error } = await supabase
+        .from("exercises")
+        .select("*")
+        .in("plan_id", planIds)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Exercise[];
+    },
+    enabled: planIds.length > 0,
+  });
+
+  const sessionLogs = sessionLogsQuery.data ?? [];
+  const plans = plansQuery.data ?? [];
+  const exercises = exercisesQuery.data ?? [];
+
   // Calculate KPIs
   const totalUsers = users.length;
   const onboardedUsers = users.filter((u) => u.onboarded).length;
   const totalSessions = sessions.length;
   const completedSessions = sessions.filter((s) => s.completed_at).length;
-  const totalVolume = sessions.reduce((sum, s) => sum + (s.total_volume ?? 0), 0);
   const activeUsersThisWeek = new Set(
     sessions
       .filter((s) => subDays(new Date(), 7) <= new Date(s.started_at))
@@ -163,7 +253,6 @@ function AdminDashboard() {
     return {
       sessions: userSessions.length,
       completedSessions: userSessions.filter((s) => s.completed_at).length,
-      totalVolume: userSessions.reduce((sum, s) => sum + (s.total_volume ?? 0), 0),
       geminiCalls: userGemini.length,
       lastSession: userSessions[0]?.started_at,
     };
@@ -172,7 +261,7 @@ function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Utenti Totali</CardTitle>
@@ -195,21 +284,6 @@ function AdminDashboard() {
             <div className="text-2xl font-bold">{totalSessions}</div>
             <p className="text-xs text-muted-foreground">
               {completedSessions} completati · {activeUsersThisWeek} utenti attivi (7gg)
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Volume Totale</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {totalVolume.toLocaleString("it-IT")} kg
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {dateRange === "all" ? "Totale" : `Ultimi ${dateRange}`}
             </p>
           </CardContent>
         </Card>
@@ -274,7 +348,6 @@ function AdminDashboard() {
                   <TableHead>Utente</TableHead>
                   <TableHead className="text-center">Allenamenti</TableHead>
                   <TableHead className="text-center">Completati</TableHead>
-                  <TableHead className="text-center">Volume</TableHead>
                   <TableHead className="text-center">Gemini</TableHead>
                   <TableHead>Registrato</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
@@ -285,8 +358,8 @@ function AdminDashboard() {
                   const stats = getUserStats(user.id);
                   const isExpanded = expandedUser === user.id;
                   return (
-                    <>
-                      <TableRow key={user.id}>
+                    <Fragment key={user.id}>
+                      <TableRow>
                         <TableCell>
                           <div className="font-medium">{user.display_name ?? "Senza nome"}</div>
                           <div className="text-xs text-muted-foreground font-mono">{user.id.slice(0, 8)}...</div>
@@ -297,9 +370,6 @@ function AdminDashboard() {
                             {stats.completedSessions}/{stats.sessions}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-center">
-                          {stats.totalVolume.toLocaleString("it-IT")} kg
-                        </TableCell>
                         <TableCell className="text-center">{stats.geminiCalls}</TableCell>
                         <TableCell>
                           {format(new Date(user.created_at), "dd MMM yyyy", { locale: it })}
@@ -308,7 +378,11 @@ function AdminDashboard() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => setExpandedUser(isExpanded ? null : user.id)}
+                            onClick={() => {
+                              setExpandedUser(isExpanded ? null : user.id);
+                              setExpandedSession(null);
+                              setExpandedPlan(null);
+                            }}
                           >
                             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                           </Button>
@@ -316,29 +390,169 @@ function AdminDashboard() {
                       </TableRow>
                       {isExpanded && (
                         <TableRow key={`${user.id}-details`}>
-                          <TableCell colSpan={7} className="bg-muted/50">
-                            <div className="space-y-2 text-sm">
+                          <TableCell colSpan={6} className="bg-muted/50">
+                            <div className="space-y-3 text-sm">
                               <div className="flex items-center gap-4">
                                 <span className="text-muted-foreground">ID:</span>
                                 <code className="font-mono text-xs">{user.id}</code>
                               </div>
-                              {stats.lastSession && (
-                                <div className="flex items-center gap-4">
-                                  <span className="text-muted-foreground">Ultimo allenamento:</span>
-                                  <span>{format(new Date(stats.lastSession), "dd MMM yyyy HH:mm", { locale: it })}</span>
-                                </div>
-                              )}
                               <div className="flex items-center gap-4">
                                 <span className="text-muted-foreground">Onboarding:</span>
                                 <Badge variant={user.onboarded ? "default" : "destructive"}>
                                   {user.onboarded ? "Completato" : "Non completato"}
                                 </Badge>
                               </div>
+                              {(() => {
+                                const sessionsForUser = sessions
+                                  .filter((s) => s.user_id === user.id)
+                                  .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+                                return (
+                                  <div className="space-y-4">
+                                    {/* Schede */}
+                                    <div>
+                                      <p className="font-semibold text-sm mb-2">Schede ({plans.length})</p>
+                                      {plans.length === 0 ? (
+                                        <p className="text-muted-foreground text-xs">Nessuna scheda.</p>
+                                      ) : (
+                                        <div className="space-y-1.5">
+                                          {plans.map((plan) => {
+                                            const isPlanExpanded = expandedPlan === plan.id;
+                                            const planExercises = exercises
+                                              .filter((e) => e.plan_id === plan.id)
+                                              .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+                                            return (
+                                              <div key={plan.id} className="rounded-lg border bg-background">
+                                                <button
+                                                  onClick={() => setExpandedPlan(isPlanExpanded ? null : plan.id)}
+                                                  className="flex w-full items-center justify-between px-3 py-2 text-left"
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-medium">{plan.name}</span>
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                      {planExercises.length} esercizi
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                      {format(new Date(plan.created_at), "dd MMM", { locale: it })}
+                                                    </span>
+                                                    {isPlanExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                                  </div>
+                                                </button>
+                                                {isPlanExpanded && (
+                                                  <div className="border-t px-3 py-2">
+                                                    {planExercises.length === 0 ? (
+                                                      <p className="text-xs text-muted-foreground py-1">Nessun esercizio.</p>
+                                                    ) : (
+                                                      <div className="space-y-1.5">
+                                                        {planExercises.map((ex) => (
+                                                          <div key={ex.id} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5">
+                                                            <div className="flex items-center gap-2">
+                                                              <span className="text-sm font-semibold">{ex.name}</span>
+                                                              {ex.muscle_group && (
+                                                                <Badge variant="outline" className="text-[10px]">
+                                                                  {ex.muscle_group}
+                                                                </Badge>
+                                                              )}
+                                                            </div>
+                                                            <span className="text-xs font-mono text-muted-foreground">
+                                                              {ex.sets}×{ex.reps} @ {ex.weight}kg
+                                                            </span>
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Allenamenti */}
+                                    <div>
+                                      <p className="font-semibold text-sm mb-2">Allenamenti ({sessionsForUser.length})</p>
+                                      {sessionsForUser.length === 0 ? (
+                                        <p className="text-muted-foreground text-xs">Nessuna sessione.</p>
+                                      ) : (
+                                        <div className="space-y-1.5">
+                                          {sessionsForUser.map((s) => {
+                                            const isSessionExpanded = expandedSession === s.id;
+                                            const logs = sessionLogs.filter((l) => l.session_id === s.id);
+                                            const exercisesByName = new Map<string, SessionLog[]>();
+                                            for (const log of logs) {
+                                              const existing = exercisesByName.get(log.exercise_name) ?? [];
+                                              existing.push(log);
+                                              exercisesByName.set(log.exercise_name, existing);
+                                            }
+                                            return (
+                                              <div key={s.id} className="rounded-lg border bg-background">
+                                                <button
+                                                  onClick={() => setExpandedSession(isSessionExpanded ? null : s.id)}
+                                                  className="flex w-full items-center justify-between px-3 py-2 text-left"
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    {s.completed_at ? (
+                                                      <Badge variant="default" className="text-[10px]">Completata</Badge>
+                                                    ) : (
+                                                      <Badge variant="secondary" className="text-[10px]">In corso</Badge>
+                                                    )}
+                                                    <span className="font-medium text-sm">{s.plan_name ?? "Sessione"}</span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <span className="text-xs text-muted-foreground">
+                                                      {format(new Date(s.started_at), "dd MMM HH:mm", { locale: it })}
+                                                    </span>
+                                                    {isSessionExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                                  </div>
+                                                </button>
+                                                {isSessionExpanded && (
+                                                  <div className="border-t px-3 py-2">
+                                                    {exercisesByName.size === 0 ? (
+                                                      <p className="text-xs text-muted-foreground py-1">Nessun log esercizi.</p>
+                                                    ) : (
+                                                      <div className="space-y-2">
+                                                        {Array.from(exercisesByName.entries()).map(([name, exerciseLogs]) => (
+                                                          <div key={name} className="rounded-md bg-muted/50 px-3 py-2">
+                                                            <div className="flex items-center justify-between">
+                                                              <span className="text-sm font-semibold">{name}</span>
+                                                              {exerciseLogs[0]?.muscle_group && (
+                                                                <Badge variant="outline" className="text-[10px]">
+                                                                  {exerciseLogs[0].muscle_group}
+                                                                </Badge>
+                                                              )}
+                                                            </div>
+                                                            <div className="mt-1 flex flex-wrap gap-1.5">
+                                                              {exerciseLogs.map((log) => (
+                                                                <span key={log.id} className="rounded bg-background px-2 py-0.5 text-xs font-mono">
+                                                                  {log.set_number}×{log.reps} @ {log.weight}kg
+                                                                </span>
+                                                              ))}
+                                                            </div>
+                                                          </div>
+                                                        ))}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
+
+
                   );
                 })}
               </TableBody>
