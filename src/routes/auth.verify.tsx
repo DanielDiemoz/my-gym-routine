@@ -6,6 +6,7 @@ import { Mail, ArrowLeft, RefreshCw, KeyRound, Timer, ShieldX, AlertCircle } fro
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { OTP_LENGTH } from "@/lib/otp";
 import { useLanguage } from "@/lib/i18n";
+import { notifyNewUser } from "@/server-functions/notify-telegram";
 
 export const Route = createFileRoute("/auth/verify")({
   ssr: false,
@@ -27,6 +28,18 @@ function getEmailVerificationUrl(email: string) {
 
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
+}
+
+function sendSignupNotification() {
+  try {
+    const raw = sessionStorage.getItem("gymbro_pending_signup");
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    sessionStorage.removeItem("gymbro_pending_signup");
+    notifyNewUser({ data }).catch(() => {});
+  } catch {
+    sessionStorage.removeItem("gymbro_pending_signup");
+  }
 }
 
 function isValidEmail(value: string) {
@@ -152,6 +165,7 @@ function VerifyPage() {
       if (cancelled) return;
       if (data.session) {
         toast.success(t("Email confermata! Benvenuto su GymBro.", "Email confirmed! Welcome to GymBro."));
+        sendSignupNotification();
         navigate({ to: "/app" });
         return;
       }
@@ -205,6 +219,7 @@ function VerifyPage() {
       sessionStorage.removeItem("gymbro_otp_lockout_time");
 
       toast.success(t("Email confermata! Benvenuto.", "Email confirmed! Welcome."));
+      sendSignupNotification();
       navigate({ to: "/app" });
     } catch (err) {
       console.error("Verification error:", err);
