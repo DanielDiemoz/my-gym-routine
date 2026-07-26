@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Camera,
@@ -428,6 +428,13 @@ function MiniNumInput({
   onChange: (v: number) => void;
   step?: number;
 }) {
+  const [text, setText] = useState(String(value));
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) setText(String(value));
+  }, [value]);
+
   return (
     <div>
       <label className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -436,12 +443,26 @@ function MiniNumInput({
       <input
         type="number"
         inputMode="decimal"
-        value={value}
+        value={text}
         min={0}
         step={step}
+        onFocus={() => { focusedRef.current = true; }}
         onChange={(e) => {
-          const n = Number(e.target.value);
-          if (!Number.isNaN(n)) onChange(Math.max(0, n));
+          const raw = e.target.value;
+          setText(raw);
+          if (raw !== "") {
+            const n = Number(raw);
+            if (!Number.isNaN(n)) onChange(Math.max(0, n));
+          }
+        }}
+        onBlur={() => {
+          focusedRef.current = false;
+          if (text === "") {
+            onChange(0);
+            setText("0");
+          } else {
+            setText(String(value));
+          }
         }}
         className="w-full rounded-lg border border-border bg-background px-2 py-1.5 text-center text-sm font-bold outline-none focus:border-foreground"
       />
