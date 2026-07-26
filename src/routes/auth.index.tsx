@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Lock, ArrowRight, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useLanguage, tx } from "@/lib/i18n";
+import { notifyNewUser } from "@/server-functions/notify-telegram";
 
 function getEmailVerificationUrl(email: string) {
   const url = new URL("/auth/verify", window.location.origin);
@@ -335,6 +336,20 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         toast.error(t("L'email è già in uso. Accedi o recupera la password.", "Email already in use. Log in or recover your password."));
         return;
       }
+
+      notifyNewUser({
+        data: {
+          email,
+          userId: data.user?.id || "N/A",
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+          screen: `${window.screen.width}x${window.screen.height}`,
+          referrer: document.referrer,
+        },
+      }).catch((err) => {
+        console.error("Telegram notification failed:", err);
+      });
 
       if (!data.session) {
         toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
