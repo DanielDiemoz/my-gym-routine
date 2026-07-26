@@ -3,6 +3,37 @@ import { createServerFn } from "@tanstack/react-start";
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
+async function logGeminiUsage({
+  userId,
+  mode,
+  exerciseCount,
+  planName,
+  success,
+  errorMessage,
+}: {
+  userId: string | null;
+  mode: "image" | "text";
+  exerciseCount: number;
+  planName: string | null;
+  success: boolean;
+  errorMessage?: string;
+}) {
+  if (!userId) return;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("gemini_usage").insert({
+      user_id: userId,
+      mode,
+      exercise_count: exerciseCount,
+      plan_name: planName,
+      success,
+      error_message: errorMessage ?? null,
+    });
+  } catch (err) {
+    console.error("[analyze-scheda] Failed to log gemini usage:", err);
+  }
+}
+
 type ExtractedExercise = {
   name: string;
   muscle_group: string;
@@ -107,6 +138,28 @@ export const analyzeScheda = createServerFn({ method: "POST" })
     ) => data,
   )
   .handler(async ({ data }) => {
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const request = getRequest();
+    const authHeader = request?.headers?.get("authorization");
+
+    let userId: string | null = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const token = authHeader.replace("Bearer ", "");
+        const { createClient } = await import("@supabase/supabase-js");
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const SUPABASE_URL = process.env.SUPABASE_URL!;
+        const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY!;
+        const tempClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: claims } = await tempClient.auth.getClaims(token);
+        userId = claims?.claims?.sub ?? null;
+      } catch {
+        // ignore — logging will be skipped
+      }
+    }
+
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
     if (!apiKey) {
       throw new Error("Chiave API AI non configurata. Contatta l'amministratore.");
@@ -156,6 +209,7 @@ export const analyzeScheda = createServerFn({ method: "POST" })
       });
     } catch (err) {
       console.error("[analyze-scheda] Network error:", err);
+      await logGeminiUsage({ userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Network error" });
       throw new Error(
         "Impossibile contattare il servizio AI. Controlla la connessione a internet e riprova.",
       );
@@ -164,6 +218,7 @@ export const analyzeScheda = createServerFn({ method: "POST" })
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[analyze-scheda] Gemini API error:", response.status, errorText);
+      await logGeminiUsage({ userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: humanizeGeminiError(response.status, errorText) });
       throw new Error(humanizeGeminiError(response.status, errorText));
     }
 
@@ -172,6 +227,7 @@ export const analyzeScheda = createServerFn({ method: "POST" })
       json = await response.json();
     } catch {
       console.error("[analyze-scheda] Failed to parse response as JSON");
+      await logGeminiUsage({ userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Invalid JSON response" });
       throw new Error("Risposta non valida dal servizio AI. Riprova.");
     }
 
@@ -183,17 +239,21 @@ export const analyzeScheda = createServerFn({ method: "POST" })
     if (!text) {
       const blockReason = feedback?.blockReason;
       if (blockReason === "SAFETY") {
+        await logGeminiUsage({ userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Safety filter" });
         throw new Error(
           "L'immagine e' stata bloccata dai filtri di sicurezza. Prova con un'altra foto.",
         );
       }
       console.error("[analyze-scheda] Empty response:", JSON.stringify(json).slice(0, 500));
+      await logGeminiUsage({ userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Empty response" });
       throw new Error(
         "Il servizio AI non ha prodotto una risposta valida. Riprova con un'altra foto o descrizione.",
       );
     }
 
-    return parseAiResponse(text);
+    const result = parseAiResponse(text);
+    await logGeminiUsage({ userId, mode: data.mode, exerciseCount: result.exercises.length, planName: result.plan_name, success: true });
+    return result;
   });
 
 function parseAiResponse(content: string): AnalyzeSchedaResult {

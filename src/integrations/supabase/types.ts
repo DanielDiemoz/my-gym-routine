@@ -378,12 +378,54 @@ export type Database = {
           },
         ]
       }
+      gemini_usage: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          exercise_count: number
+          id: string
+          mode: string
+          plan_name: string | null
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          exercise_count?: number
+          id?: string
+          mode: string
+          plan_name?: string | null
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          exercise_count?: number
+          id?: string
+          mode?: string
+          plan_name?: string | null
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gemini_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       cleanup_orphaned_sessions: { Args: never; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
       create_circle: {
         Args: { circle_name: string }
         Returns: {
