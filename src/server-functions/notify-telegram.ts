@@ -16,6 +16,10 @@ export const notifyNewUser = createServerFn({ method: "POST" })
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
+    console.log("notifyNewUser called with:", JSON.stringify(data));
+    console.log("Token exists:", !!TELEGRAM_BOT_TOKEN, "length:", TELEGRAM_BOT_TOKEN?.length);
+    console.log("ChatId:", TELEGRAM_CHAT_ID);
+
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
       console.error("Telegram env vars not configured");
       return { success: false, error: "Telegram not configured" };
