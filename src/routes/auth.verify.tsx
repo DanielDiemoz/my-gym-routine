@@ -6,6 +6,7 @@ import { Mail, ArrowLeft, RefreshCw, KeyRound, Timer, ShieldX, AlertCircle } fro
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { OTP_LENGTH } from "@/lib/otp";
 import { useLanguage } from "@/lib/i18n";
+import { notifyNewUser } from "@/server-functions/notify-telegram";
 
 export const Route = createFileRoute("/auth/verify")({
   ssr: false,
@@ -161,16 +162,8 @@ function VerifyPage() {
 
     completeLinkSignIn();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") {
-        toast.success(t("Accesso effettuato.", "Signed in."));
-        navigate({ to: "/app" });
-      }
-    });
-
     return () => {
       cancelled = true;
-      sub.subscription.unsubscribe();
     };
   }, [navigate]);
 
@@ -205,6 +198,22 @@ function VerifyPage() {
       sessionStorage.removeItem("gymbro_otp_lockout_time");
 
       toast.success(t("Email confermata! Benvenuto.", "Email confirmed! Welcome."));
+
+      const { data: userData } = await supabase.auth.getUser();
+      notifyNewUser({
+        data: {
+          email,
+          userId: userData.user?.id || "N/A",
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+          screen: `${window.screen.width}x${window.screen.height}`,
+          referrer: document.referrer,
+        },
+      }).catch((err) => {
+        console.error("Telegram notification failed:", err);
+      });
+
       navigate({ to: "/app" });
     } catch (err) {
       console.error("Verification error:", err);
