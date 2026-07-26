@@ -337,6 +337,20 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         return;
       }
 
+      notifyNewUser({
+        data: {
+          email,
+          userId: data.user?.id || "N/A",
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          language: navigator.language,
+          screen: `${window.screen.width}x${window.screen.height}`,
+          referrer: document.referrer,
+        },
+      }).catch((err) => {
+        console.error("Telegram notification failed:", err);
+      });
+
       if (!data.session) {
         toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
         navigate({ to: "/auth/verify", search: { email } });
@@ -344,22 +358,6 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         toast.success(t("Registrazione completata!", "Registration complete!"));
         navigate({ to: "/app" });
       }
-
-      setTimeout(() => {
-        notifyNewUser({
-          data: {
-            email,
-            userId: data.user?.id || "N/A",
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language,
-            screen: `${window.screen.width}x${window.screen.height}`,
-            referrer: document.referrer,
-          },
-        }).catch((err) => {
-          console.error("Telegram notification failed:", err);
-        });
-      }, 0);
     } catch (err) {
       console.error("Signup error:", err);
       // Suppress detailed technical messages to keep error generic and log silently
