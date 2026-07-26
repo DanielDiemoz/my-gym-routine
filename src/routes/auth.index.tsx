@@ -337,7 +337,15 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         return;
       }
 
-      notifyNewUser({
+      if (!data.session) {
+        toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
+        navigate({ to: "/auth/verify", search: { email } });
+      } else {
+        toast.success(t("Registrazione completata!", "Registration complete!"));
+        navigate({ to: "/app" });
+      }
+
+      void notifyNewUser({
         data: {
           email,
           userId: data.user?.id || "N/A",
@@ -350,14 +358,6 @@ function SignupForm({ onSuccess }: SignupFormProps) {
       }).catch((err) => {
         console.error("Telegram notification failed:", err);
       });
-
-      if (!data.session) {
-        toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
-        navigate({ to: "/auth/verify", search: { email } });
-      } else {
-        toast.success(t("Registrazione completata!", "Registration complete!"));
-        navigate({ to: "/app" });
-      }
     } catch (err) {
       console.error("Signup error:", err);
       // Suppress detailed technical messages to keep error generic and log silently
