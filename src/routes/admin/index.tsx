@@ -240,11 +240,17 @@ function AdminDashboard() {
   const geminiImageCalls = geminiUsage.filter((g) => g.mode === "image").length;
   const geminiTextCalls = geminiUsage.filter((g) => g.mode === "text").length;
 
-  // Filter users by search
-  const filteredUsers = users.filter((u) =>
-    u.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter users by search, then sort by completed workouts descending
+  const filteredUsers = users
+    .filter((u) =>
+      u.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.id.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const aCompleted = sessions.filter((s) => s.user_id === a.id && s.completed_at).length;
+      const bCompleted = sessions.filter((s) => s.user_id === b.id && s.completed_at).length;
+      return bCompleted - aCompleted;
+    });
 
   // Get user stats
   const getUserStats = (userId: string) => {
