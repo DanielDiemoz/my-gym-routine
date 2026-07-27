@@ -39,6 +39,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      circle_messages: {
+        Row: {
+          circle_id: string
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          circle_id: string
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          circle_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "circle_messages_circle_id_fkey"
+            columns: ["circle_id"]
+            isOneToOne: false
+            referencedRelation: "circles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "circle_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       circle_members: {
         Row: {
           circle_id: string
@@ -74,45 +113,6 @@ export type Database = {
           },
           {
             foreignKeyName: "circle_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      circle_messages: {
-        Row: {
-          circle_id: string
-          content: string
-          created_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          circle_id: string
-          content: string
-          created_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          circle_id?: string
-          content?: string
-          created_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "circle_messages_circle_id_fkey"
-            columns: ["circle_id"]
-            isOneToOne: false
-            referencedRelation: "circles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "circle_messages_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -232,39 +232,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      gemini_usage: {
-        Row: {
-          created_at: string
-          error_message: string | null
-          exercise_count: number
-          id: string
-          mode: string
-          plan_name: string | null
-          success: boolean
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          error_message?: string | null
-          exercise_count?: number
-          id?: string
-          mode: string
-          plan_name?: string | null
-          success?: boolean
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          error_message?: string | null
-          exercise_count?: number
-          id?: string
-          mode?: string
-          plan_name?: string | null
-          success?: boolean
-          user_id?: string
-        }
-        Relationships: []
       }
       plans: {
         Row: {
@@ -411,13 +378,54 @@ export type Database = {
           },
         ]
       }
+      gemini_usage: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          exercise_count: number
+          id: string
+          mode: string
+          plan_name: string | null
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          exercise_count?: number
+          id?: string
+          mode: string
+          plan_name?: string | null
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          exercise_count?: number
+          id?: string
+          mode?: string
+          plan_name?: string | null
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gemini_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      check_is_admin: { Args: { uid: string }; Returns: boolean }
       cleanup_orphaned_sessions: { Args: never; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
       create_circle: {
         Args: { circle_name: string }
         Returns: {
@@ -448,24 +456,11 @@ export type Database = {
       get_circle_members: {
         Args: { p_circle_id: string }
         Returns: {
-          nickname: string
           user_id: string
-        }[]
-      }
-      get_circle_messages: {
-        Args: { p_circle_id: string }
-        Returns: {
-          avatar_url: string
-          circle_id: string
-          content: string
-          created_at: string
-          display_name: string
-          id: string
-          user_id: string
+          nickname: string | null
         }[]
       }
       get_my_circle_ids: { Args: never; Returns: string[] }
-      get_my_circle_member_ids: { Args: never; Returns: string[] }
       get_my_circles: {
         Args: never
         Returns: {
@@ -477,24 +472,35 @@ export type Database = {
           owner_id: string
         }[]
       }
-      get_unread_count: { Args: { p_circle_id: string }; Returns: number }
-      is_admin: { Args: never; Returns: boolean }
       join_circle_by_code: { Args: { invite_code: string }; Returns: string }
-      mark_circle_read: { Args: { p_circle_id: string }; Returns: undefined }
-      remove_circle_member: {
-        Args: { p_circle_id: string; p_member_id: string }
-        Returns: undefined
+      get_circle_messages: {
+        Args: { p_circle_id: string }
+        Returns: {
+          id: string
+          circle_id: string
+          user_id: string
+          content: string
+          created_at: string
+          display_name: string | null
+          avatar_url: string | null
+        }[]
       }
+      get_unread_count: {
+        Args: { p_circle_id: string }
+        Returns: number
+      }
+      mark_circle_read: { Args: { p_circle_id: string }; Returns: undefined }
+      remove_circle_member: { Args: { p_circle_id: string; p_member_id: string }; Returns: undefined }
       send_circle_message: {
         Args: { p_circle_id: string; p_content: string }
         Returns: {
-          avatar_url: string
+          id: string
           circle_id: string
+          user_id: string
           content: string
           created_at: string
-          display_name: string
-          id: string
-          user_id: string
+          display_name: string | null
+          avatar_url: string | null
         }[]
       }
       update_circle_member_nickname: {
@@ -636,5 +642,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-[31mTimeout while shutting down PostHog. Some events may not have been sent.[39m
-Try rerunning the command with --debug to troubleshoot the error.

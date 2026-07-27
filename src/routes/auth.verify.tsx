@@ -7,7 +7,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { OTP_LENGTH } from "@/lib/otp";
 import { useLanguage } from "@/lib/i18n";
 import { notifyNewUser } from "@/server-functions/notify-telegram";
-import { isAdmin, resetAdminCache } from "@/lib/admin-role";
 
 export const Route = createFileRoute("/auth/verify")({
   ssr: false,
@@ -16,10 +15,7 @@ export const Route = createFileRoute("/auth/verify")({
   }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) {
-      if (await isAdmin()) throw redirect({ to: "/admin" });
-      throw redirect({ to: "/app" });
-    }
+    if (data.user) throw redirect({ to: "/app" });
   },
   component: VerifyPage,
 });
@@ -157,9 +153,7 @@ function VerifyPage() {
       if (cancelled) return;
       if (data.session) {
         toast.success(t("Email confermata! Benvenuto su GymBro.", "Email confirmed! Welcome to GymBro."));
-        resetAdminCache();
-        const admin = await isAdmin();
-        navigate({ to: admin ? "/admin" : "/app" });
+        navigate({ to: "/app" });
         return;
       }
 
@@ -220,9 +214,7 @@ function VerifyPage() {
         console.error("Telegram notification failed:", err);
       });
 
-      resetAdminCache();
-      const admin = await isAdmin();
-      navigate({ to: admin ? "/admin" : "/app" });
+      navigate({ to: "/app" });
     } catch (err) {
       console.error("Verification error:", err);
       setCode(""); // Clear the input field for security

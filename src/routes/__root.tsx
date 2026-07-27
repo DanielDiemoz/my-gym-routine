@@ -13,7 +13,6 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
-import { resetAdminCache } from "@/lib/admin-role";
 import { ThemeProvider } from "@/lib/theme";
 
 function NotFoundComponent() {
@@ -151,7 +150,9 @@ function RootComponent() {
       // Usa navigate invece di router.invalidate() per evitare race condition
       // con navigazioni in corso (es. dopo onboarding)
       if (event === "SIGNED_OUT") {
-        resetAdminCache();
+        // Non rubare la navigazione se siamo già nell'area di autenticazione
+        // (es. durante la registrazione, signOut pulisce la sessione non
+        // confermata ma il flusso deve atterrare su /auth/verify, non /auth).
         if (!router.state.location.pathname.startsWith("/auth")) {
           router.navigate({ to: "/auth" }).catch(() => {});
         }
