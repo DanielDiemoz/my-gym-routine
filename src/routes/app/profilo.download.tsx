@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ChevronDown, CheckCircle2, Smartphone, Apple, Download, AlertTriangle } from "lucide-react";
+import {
+  ChevronDown,
+  CheckCircle2,
+  Smartphone,
+  Apple,
+  Download,
+  AlertTriangle,
+} from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { useLanguage } from "@/lib/i18n";
 

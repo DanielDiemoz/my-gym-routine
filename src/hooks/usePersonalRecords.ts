@@ -101,11 +101,9 @@ export function usePersonalRecords(userId: string) {
 export function isNewPR(
   exerciseName: string,
   weight: number,
-  currentPRs: ExercisePR[]
+  currentPRs: ExercisePR[],
 ): { isNew: boolean; oldPR: number } {
-  const pr = currentPRs.find(
-    (p) => p.exercise.toLowerCase() === exerciseName.toLowerCase()
-  );
+  const pr = currentPRs.find((p) => p.exercise.toLowerCase() === exerciseName.toLowerCase());
   if (!pr) return { isNew: weight > 0, oldPR: 0 };
   return { isNew: weight > pr.maxWeight, oldPR: pr.maxWeight };
 }

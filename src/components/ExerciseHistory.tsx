@@ -79,7 +79,9 @@ export function ExerciseHistory({ exerciseName }: { exerciseName: string | undef
             className="flex w-full items-center justify-center gap-1 border-t border-primary/20 py-2.5 text-xs font-semibold text-primary"
             aria-expanded={showMore}
           >
-            {showMore ? t("Nascondi", "Hide") : t(`Vedi altre ${older.length} volte`, `See ${older.length} more times`)}
+            {showMore
+              ? t("Nascondi", "Hide")
+              : t(`Vedi altre ${older.length} volte`, `See ${older.length} more times`)}
             <ChevronDown
               className={`h-4 w-4 transition-transform ${showMore ? "rotate-180" : ""}`}
             />

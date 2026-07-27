@@ -5,15 +5,7 @@ import { useState } from "react";
 import { Fragment } from "react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { it } from "date-fns/locale";
-import {
-  Users,
-  Dumbbell,
-  Brain,
-  Calendar,
-  Search,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Users, Dumbbell, Brain, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -231,9 +223,7 @@ function AdminDashboard() {
   const totalSessions = sessions.length;
   const completedSessions = sessions.filter((s) => s.completed_at).length;
   const activeUsers = new Set(
-    sessions
-      .filter((s) => new Date(s.started_at) >= dateFilter)
-      .map((s) => s.user_id)
+    sessions.filter((s) => new Date(s.started_at) >= dateFilter).map((s) => s.user_id),
   ).size;
   const geminiCalls = geminiUsage.length;
   const geminiSuccess = geminiUsage.filter((g) => g.success).length;
@@ -242,9 +232,10 @@ function AdminDashboard() {
 
   // Filter users by search, then sort by completed workouts descending
   const filteredUsers = users
-    .filter((u) =>
-      u.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.id.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(
+      (u) =>
+        u.display_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.id.toLowerCase().includes(searchQuery.toLowerCase()),
     )
     .sort((a, b) => {
       const aCompleted = sessions.filter((s) => s.user_id === a.id && s.completed_at).length;
@@ -275,9 +266,7 @@ function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              {onboardedUsers} completati onboarding
-            </p>
+            <p className="text-xs text-muted-foreground">{onboardedUsers} completati onboarding</p>
           </CardContent>
         </Card>
 
@@ -289,7 +278,15 @@ function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalSessions}</div>
             <p className="text-xs text-muted-foreground">
-              {completedSessions} completati · {activeUsers} utenti attivi ({dateRange === "all" ? "totale" : dateRange === "7d" ? "7gg" : dateRange === "30d" ? "30gg" : "90gg"})
+              {completedSessions} completati · {activeUsers} utenti attivi (
+              {dateRange === "all"
+                ? "totale"
+                : dateRange === "7d"
+                  ? "7gg"
+                  : dateRange === "30d"
+                    ? "30gg"
+                    : "90gg"}
+              )
             </p>
           </CardContent>
         </Card>
@@ -368,11 +365,17 @@ function AdminDashboard() {
                       <TableRow>
                         <TableCell>
                           <div className="font-medium">{user.display_name ?? "Senza nome"}</div>
-                          <div className="text-xs text-muted-foreground font-mono">{user.id.slice(0, 8)}...</div>
+                          <div className="text-xs text-muted-foreground font-mono">
+                            {user.id.slice(0, 8)}...
+                          </div>
                         </TableCell>
                         <TableCell className="text-center">{stats.sessions}</TableCell>
                         <TableCell className="text-center">
-                          <Badge variant={stats.completedSessions === stats.sessions ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              stats.completedSessions === stats.sessions ? "default" : "secondary"
+                            }
+                          >
                             {stats.completedSessions}/{stats.sessions}
                           </Badge>
                         </TableCell>
@@ -390,7 +393,11 @@ function AdminDashboard() {
                               setExpandedPlan(null);
                             }}
                           >
-                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            {isExpanded ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -411,52 +418,85 @@ function AdminDashboard() {
                               {(() => {
                                 const sessionsForUser = sessions
                                   .filter((s) => s.user_id === user.id)
-                                  .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+                                  .sort(
+                                    (a, b) =>
+                                      new Date(b.started_at).getTime() -
+                                      new Date(a.started_at).getTime(),
+                                  );
                                 return (
                                   <div className="space-y-4">
                                     {/* Schede */}
                                     <div>
-                                      <p className="font-semibold text-sm mb-2">Schede ({plans.length})</p>
+                                      <p className="font-semibold text-sm mb-2">
+                                        Schede ({plans.length})
+                                      </p>
                                       {plans.length === 0 ? (
-                                        <p className="text-muted-foreground text-xs">Nessuna scheda.</p>
+                                        <p className="text-muted-foreground text-xs">
+                                          Nessuna scheda.
+                                        </p>
                                       ) : (
                                         <div className="space-y-1.5">
                                           {plans.map((plan) => {
                                             const isPlanExpanded = expandedPlan === plan.id;
                                             const planExercises = exercises
                                               .filter((e) => e.plan_id === plan.id)
-                                              .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+                                              .sort(
+                                                (a, b) => (a.position ?? 0) - (b.position ?? 0),
+                                              );
                                             return (
-                                              <div key={plan.id} className="rounded-lg border bg-background">
+                                              <div
+                                                key={plan.id}
+                                                className="rounded-lg border bg-background"
+                                              >
                                                 <button
-                                                  onClick={() => setExpandedPlan(isPlanExpanded ? null : plan.id)}
+                                                  onClick={() =>
+                                                    setExpandedPlan(isPlanExpanded ? null : plan.id)
+                                                  }
                                                   className="flex w-full items-center justify-between px-3 py-2 text-left"
                                                 >
                                                   <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-medium">{plan.name}</span>
+                                                    <span className="text-sm font-medium">
+                                                      {plan.name}
+                                                    </span>
                                                     <span className="text-[10px] text-muted-foreground">
                                                       {planExercises.length} esercizi
                                                     </span>
                                                   </div>
                                                   <div className="flex items-center gap-2">
                                                     <span className="text-xs text-muted-foreground">
-                                                      {format(new Date(plan.created_at), "dd MMM", { locale: it })}
+                                                      {format(new Date(plan.created_at), "dd MMM", {
+                                                        locale: it,
+                                                      })}
                                                     </span>
-                                                    {isPlanExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                                    {isPlanExpanded ? (
+                                                      <ChevronUp className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                      <ChevronDown className="h-3.5 w-3.5" />
+                                                    )}
                                                   </div>
                                                 </button>
                                                 {isPlanExpanded && (
                                                   <div className="border-t px-3 py-2">
                                                     {planExercises.length === 0 ? (
-                                                      <p className="text-xs text-muted-foreground py-1">Nessun esercizio.</p>
+                                                      <p className="text-xs text-muted-foreground py-1">
+                                                        Nessun esercizio.
+                                                      </p>
                                                     ) : (
                                                       <div className="space-y-1.5">
                                                         {planExercises.map((ex) => (
-                                                          <div key={ex.id} className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5">
+                                                          <div
+                                                            key={ex.id}
+                                                            className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-1.5"
+                                                          >
                                                             <div className="flex items-center gap-2">
-                                                              <span className="text-sm font-semibold">{ex.name}</span>
+                                                              <span className="text-sm font-semibold">
+                                                                {ex.name}
+                                                              </span>
                                                               {ex.muscle_group && (
-                                                                <Badge variant="outline" className="text-[10px]">
+                                                                <Badge
+                                                                  variant="outline"
+                                                                  className="text-[10px]"
+                                                                >
                                                                   {ex.muscle_group}
                                                                 </Badge>
                                                               )}
@@ -479,66 +519,116 @@ function AdminDashboard() {
 
                                     {/* Allenamenti */}
                                     <div>
-                                      <p className="font-semibold text-sm mb-2">Allenamenti ({sessionsForUser.length})</p>
+                                      <p className="font-semibold text-sm mb-2">
+                                        Allenamenti ({sessionsForUser.length})
+                                      </p>
                                       {sessionsForUser.length === 0 ? (
-                                        <p className="text-muted-foreground text-xs">Nessuna sessione.</p>
+                                        <p className="text-muted-foreground text-xs">
+                                          Nessuna sessione.
+                                        </p>
                                       ) : (
                                         <div className="space-y-1.5">
                                           {sessionsForUser.map((s) => {
                                             const isSessionExpanded = expandedSession === s.id;
-                                            const logs = sessionLogs.filter((l) => l.session_id === s.id);
+                                            const logs = sessionLogs.filter(
+                                              (l) => l.session_id === s.id,
+                                            );
                                             const exercisesByName = new Map<string, SessionLog[]>();
                                             for (const log of logs) {
-                                              const existing = exercisesByName.get(log.exercise_name) ?? [];
+                                              const existing =
+                                                exercisesByName.get(log.exercise_name) ?? [];
                                               existing.push(log);
                                               exercisesByName.set(log.exercise_name, existing);
                                             }
                                             return (
-                                              <div key={s.id} className="rounded-lg border bg-background">
+                                              <div
+                                                key={s.id}
+                                                className="rounded-lg border bg-background"
+                                              >
                                                 <button
-                                                  onClick={() => setExpandedSession(isSessionExpanded ? null : s.id)}
+                                                  onClick={() =>
+                                                    setExpandedSession(
+                                                      isSessionExpanded ? null : s.id,
+                                                    )
+                                                  }
                                                   className="flex w-full items-center justify-between px-3 py-2 text-left"
                                                 >
                                                   <div className="flex items-center gap-2">
                                                     {s.completed_at ? (
-                                                      <Badge variant="default" className="text-[10px]">Completata</Badge>
+                                                      <Badge
+                                                        variant="default"
+                                                        className="text-[10px]"
+                                                      >
+                                                        Completata
+                                                      </Badge>
                                                     ) : (
-                                                      <Badge variant="secondary" className="text-[10px]">In corso</Badge>
+                                                      <Badge
+                                                        variant="secondary"
+                                                        className="text-[10px]"
+                                                      >
+                                                        In corso
+                                                      </Badge>
                                                     )}
-                                                    <span className="font-medium text-sm">{s.plan_name ?? "Sessione"}</span>
+                                                    <span className="font-medium text-sm">
+                                                      {s.plan_name ?? "Sessione"}
+                                                    </span>
                                                   </div>
                                                   <div className="flex items-center gap-2">
                                                     <span className="text-xs text-muted-foreground">
-                                                      {format(new Date(s.started_at), "dd MMM HH:mm", { locale: it })}
+                                                      {format(
+                                                        new Date(s.started_at),
+                                                        "dd MMM HH:mm",
+                                                        { locale: it },
+                                                      )}
                                                     </span>
-                                                    {isSessionExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                                                    {isSessionExpanded ? (
+                                                      <ChevronUp className="h-3.5 w-3.5" />
+                                                    ) : (
+                                                      <ChevronDown className="h-3.5 w-3.5" />
+                                                    )}
                                                   </div>
                                                 </button>
                                                 {isSessionExpanded && (
                                                   <div className="border-t px-3 py-2">
                                                     {exercisesByName.size === 0 ? (
-                                                      <p className="text-xs text-muted-foreground py-1">Nessun log esercizi.</p>
+                                                      <p className="text-xs text-muted-foreground py-1">
+                                                        Nessun log esercizi.
+                                                      </p>
                                                     ) : (
                                                       <div className="space-y-2">
-                                                        {Array.from(exercisesByName.entries()).map(([name, exerciseLogs]) => (
-                                                          <div key={name} className="rounded-md bg-muted/50 px-3 py-2">
-                                                            <div className="flex items-center justify-between">
-                                                              <span className="text-sm font-semibold">{name}</span>
-                                                              {exerciseLogs[0]?.muscle_group && (
-                                                                <Badge variant="outline" className="text-[10px]">
-                                                                  {exerciseLogs[0].muscle_group}
-                                                                </Badge>
-                                                              )}
-                                                            </div>
-                                                            <div className="mt-1 flex flex-wrap gap-1.5">
-                                                              {exerciseLogs.map((log) => (
-                                                                <span key={log.id} className="rounded bg-background px-2 py-0.5 text-xs font-mono">
-                                                                  {log.set_number}×{log.reps} @ {log.weight}kg
+                                                        {Array.from(exercisesByName.entries()).map(
+                                                          ([name, exerciseLogs]) => (
+                                                            <div
+                                                              key={name}
+                                                              className="rounded-md bg-muted/50 px-3 py-2"
+                                                            >
+                                                              <div className="flex items-center justify-between">
+                                                                <span className="text-sm font-semibold">
+                                                                  {name}
                                                                 </span>
-                                                              ))}
+                                                                {exerciseLogs[0]?.muscle_group && (
+                                                                  <Badge
+                                                                    variant="outline"
+                                                                    className="text-[10px]"
+                                                                  >
+                                                                    {exerciseLogs[0].muscle_group}
+                                                                  </Badge>
+                                                                )}
+                                                              </div>
+                                                              <div className="mt-1 flex flex-wrap gap-1.5">
+                                                                {exerciseLogs.map((log) => (
+                                                                  <span
+                                                                    key={log.id}
+                                                                    className="rounded bg-background px-2 py-0.5 text-xs font-mono"
+                                                                  >
+                                                                    {log.set_number}×{log.reps} @{" "}
+                                                                    {log.weight}kg
+                                                                  </span>
+                                                                ))}
+                                                              </div>
                                                             </div>
-                                                          </div>
-                                                        ))}
+                                                          ),
+                                                        )}
                                                       </div>
                                                     )}
                                                   </div>
@@ -557,8 +647,6 @@ function AdminDashboard() {
                         </TableRow>
                       )}
                     </Fragment>
-
-
                   );
                 })}
               </TableBody>
@@ -606,7 +694,9 @@ function AdminDashboard() {
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">{user?.display_name ?? "Sconosciuto"}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{usage.user_id.slice(0, 8)}...</div>
+                        <div className="text-xs text-muted-foreground font-mono">
+                          {usage.user_id.slice(0, 8)}...
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={usage.mode === "image" ? "default" : "secondary"}>

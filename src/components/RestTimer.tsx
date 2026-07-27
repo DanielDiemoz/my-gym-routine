@@ -214,7 +214,11 @@ export function RestTimer() {
     }
 
     // Notifica di completamento (sostituisce quella di avvio se presente)
-    if (typeof window !== "undefined" && typeof Notification !== "undefined" && Notification.permission === "granted") {
+    if (
+      typeof window !== "undefined" &&
+      typeof Notification !== "undefined" &&
+      Notification.permission === "granted"
+    ) {
       try {
         navigator.serviceWorker.ready.then((reg) => {
           reg.showNotification("GymBro", {
@@ -224,7 +228,9 @@ export function RestTimer() {
         });
       } catch {
         try {
-          new Notification("GymBro", { body: t("Riposo terminato! Prossima serie 💪", "Rest over! Next set 💪") });
+          new Notification("GymBro", {
+            body: t("Riposo terminato! Prossima serie 💪", "Rest over! Next set 💪"),
+          });
         } catch {}
       }
     }
@@ -258,13 +264,16 @@ export function RestTimer() {
     }
   }, []);
 
-  const handleTargetChange = useCallback((value: number) => {
-    setTarget(value);
-    // Il tempo trascorso va resettato per coerenza col nuovo target.
-    pausedSecondsRef.current = 0;
-    startTimestampRef.current = running ? Date.now() : 0;
-    setSeconds(0);
-  }, [running]);
+  const handleTargetChange = useCallback(
+    (value: number) => {
+      setTarget(value);
+      // Il tempo trascorso va resettato per coerenza col nuovo target.
+      pausedSecondsRef.current = 0;
+      startTimestampRef.current = running ? Date.now() : 0;
+      setSeconds(0);
+    },
+    [running],
+  );
 
   return (
     <div className="mt-8 rounded-3xl border border-border bg-card p-5">
@@ -279,7 +288,9 @@ export function RestTimer() {
               type="button"
               onClick={() => handleTargetChange(t)}
               className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                target === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                target === t
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               }`}
             >
               {t}s
@@ -288,13 +299,17 @@ export function RestTimer() {
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <div className="text-5xl font-black tracking-tighter tabular-nums">{mm}:{ss}</div>
+        <div className="text-5xl font-black tracking-tighter tabular-nums">
+          {mm}:{ss}
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={toggleSound}
             className="rounded-full border border-border px-3 py-2 text-xs font-semibold"
-            aria-label={soundOn ? t("Disattiva suono", "Mute sound") : t("Attiva suono", "Enable sound")}
+            aria-label={
+              soundOn ? t("Disattiva suono", "Mute sound") : t("Attiva suono", "Enable sound")
+            }
             aria-pressed={soundOn}
             title={soundOn ? t("Suono attivo", "Sound on") : t("Suono disattivato", "Sound off")}
           >

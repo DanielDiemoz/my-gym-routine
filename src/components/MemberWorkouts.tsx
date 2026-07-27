@@ -157,7 +157,10 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
           <div>
             <h1 className="text-3xl font-black tracking-tight">{memberName}</h1>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {q.data?.sessions.length ?? 0} {q.data?.sessions.length === 1 ? t("allenamento", "workout") : t("allenamenti", "workouts")}
+              {q.data?.sessions.length ?? 0}{" "}
+              {q.data?.sessions.length === 1
+                ? t("allenamento", "workout")
+                : t("allenamenti", "workouts")}
             </p>
           </div>
         </div>
@@ -183,9 +186,7 @@ export function MemberWorkouts({ circleId, userId }: { circleId: string; userId:
             >
               <Calendar className="mr-1.5 inline h-4 w-4" />
               {format(month, "MMMM yyyy", { locale: dateLocale })}
-              <span className="ml-1.5 text-xs opacity-70">
-                ({monthSessions.length})
-              </span>
+              <span className="ml-1.5 text-xs opacity-70">({monthSessions.length})</span>
             </button>
           );
         })}
@@ -220,7 +221,13 @@ function WeekGroup({
   onToggle,
 }: {
   sessions: {
-    session: { id: string; plan_name: string | null; started_at: string; completed_at: string | null; total_volume: number };
+    session: {
+      id: string;
+      plan_name: string | null;
+      started_at: string;
+      completed_at: string | null;
+      total_volume: number;
+    };
     logs: WorkoutLog[];
   }[];
   openId: string | null;

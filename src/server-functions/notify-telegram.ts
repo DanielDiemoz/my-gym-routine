@@ -63,7 +63,7 @@ export const notifyNewUser = createServerFn({ method: "POST" })
             chat_id: TELEGRAM_CHAT_ID,
             text: message,
           }),
-        }
+        },
       );
 
       if (!response.ok) {

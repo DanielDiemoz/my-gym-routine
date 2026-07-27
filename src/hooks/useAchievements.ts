@@ -20,17 +20,24 @@ type SessionRow = {
 };
 
 function computeAchievements(sessions: SessionRow[]): Achievement[] {
-  const completed = sessions.filter((s) => s.completed_at !== null) as { completed_at: string; total_volume: number }[];
+  const completed = sessions.filter((s) => s.completed_at !== null) as {
+    completed_at: string;
+    total_volume: number;
+  }[];
   const totalWorkouts = completed.length;
   const totalVolume = completed.reduce((sum, s) => sum + Number(s.total_volume), 0);
 
   // Calculate best streak
-  const dates = [...new Set(
-    completed.map((s) => {
-      const d = new Date(s.completed_at);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    })
-  )].sort().reverse();
+  const dates = [
+    ...new Set(
+      completed.map((s) => {
+        const d = new Date(s.completed_at);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }),
+    ),
+  ]
+    .sort()
+    .reverse();
 
   let bestStreak = 0;
   let currentStreak = 0;

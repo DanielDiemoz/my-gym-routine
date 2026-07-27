@@ -39,13 +39,7 @@ interface Props {
  * - L'utente può scrivere un nome custom (nessun blocco).
  * - Stile shadcn Card (`bg-card border border-border rounded-2xl`).
  */
-export function ExerciseAutocomplete({
-  value,
-  onChange,
-  onPick,
-  onBlur,
-  placeholder,
-}: Props) {
+export function ExerciseAutocomplete({ value, onChange, onPick, onBlur, placeholder }: Props) {
   const { t } = useLanguage();
   const [debounced, setDebounced] = useState(value.trim());
   const [open, setOpen] = useState(false);
@@ -114,9 +108,7 @@ export function ExerciseAutocomplete({
         {open && (
           <CommandList className="absolute left-0 right-0 top-full z-50 mt-1 max-h-64 rounded-2xl border border-border bg-card shadow-lg">
             {query.isLoading ? (
-              <div className="px-3 py-2 text-xs text-muted-foreground">
-                Caricamento...
-              </div>
+              <div className="px-3 py-2 text-xs text-muted-foreground">Caricamento...</div>
             ) : results.length === 0 ? (
               <CommandEmpty>
                 {debounced.length < 2

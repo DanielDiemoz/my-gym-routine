@@ -44,7 +44,9 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
       return;
     }
     setSent(true);
-    toast.success(t("Codice di conferma inviato alla tua email.", "Confirmation code sent to your email."));
+    toast.success(
+      t("Codice di conferma inviato alla tua email.", "Confirmation code sent to your email."),
+    );
   }
 
   async function handleVerify() {
@@ -124,10 +126,7 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
           <>
             <h1 className="text-2xl font-bold">{t("Inserisci il codice", "Enter the code")}</h1>
             <p className="mt-3 text-sm text-muted-foreground">
-              {t(
-                "Abbiamo inviato un codice di conferma a ",
-                "We sent a confirmation code to ",
-              )}
+              {t("Abbiamo inviato un codice di conferma a ", "We sent a confirmation code to ")}
               <span className="font-semibold text-foreground">{email.trim()}</span>.{" "}
               {t("Inseriscilo per attivare l'account.", "Enter it to activate your account.")}
             </p>
@@ -161,7 +160,10 @@ export function EmailMigrationGate({ user }: { user: { id: string; email?: strin
                 onClick={handleResend}
                 className="block w-full text-center text-xs font-semibold text-muted-foreground"
               >
-                {t("Non hai ricevuto il codice? Inviane un altro", "Didn't get the code? Send another")}
+                {t(
+                  "Non hai ricevuto il codice? Inviane un altro",
+                  "Didn't get the code? Send another",
+                )}
               </button>
             </div>
           </>

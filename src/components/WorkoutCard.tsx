@@ -71,7 +71,8 @@ export function WorkoutCard({
             <div className="shrink-0 text-xs text-muted-foreground">{when}</div>
           </div>
           <div className="mt-0.5 truncate text-xs text-muted-foreground">
-            {grouped.length} {grouped.length === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}
+            {grouped.length}{" "}
+            {grouped.length === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}
             {Number(session.total_volume) > 0 && (
               <> · {display(Number(session.total_volume), { digits: 0 })}</>
             )}
@@ -100,7 +101,9 @@ export function WorkoutCard({
                       key={i}
                       className="flex justify-between rounded-lg bg-card px-3 py-1.5 text-xs"
                     >
-                      <span className="font-semibold">{t("Set", "Set")} {i + 1}</span>
+                      <span className="font-semibold">
+                        {t("Set", "Set")} {i + 1}
+                      </span>
                       <span>
                         {s.reps} × {display(s.weight, { digits: 1 })}
                       </span>

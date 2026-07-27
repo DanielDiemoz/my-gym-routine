@@ -49,7 +49,9 @@ function AuthResetPage() {
 
   async function onSubmit(values: ResetForm) {
     if (code.length < OTP_LENGTH) {
-      toast.error(t(`Inserisci il codice di ${OTP_LENGTH} cifre.`, `Enter the ${OTP_LENGTH}-digit code.`));
+      toast.error(
+        t(`Inserisci il codice di ${OTP_LENGTH} cifre.`, `Enter the ${OTP_LENGTH}-digit code.`),
+      );
       return;
     }
     setVerifying(true);
@@ -76,7 +78,9 @@ function AuthResetPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Errore";
       toast.error(
-        msg.includes("Token") || msg.includes("otp") ? t("Codice non valido o scaduto.", "Invalid or expired code.") : msg,
+        msg.includes("Token") || msg.includes("otp")
+          ? t("Codice non valido o scaduto.", "Invalid or expired code.")
+          : msg,
       );
     } finally {
       setVerifying(false);
@@ -97,7 +101,9 @@ function AuthResetPage() {
       <div className="w-full max-w-md mx-auto rounded-2xl border border-border bg-card p-6 text-center animate-in fade-in duration-300">
         <CheckCircle2 className="mx-auto h-12 w-12 text-primary" />
         <p className="mt-4 text-sm font-semibold">{t("Password aggiornata", "Password updated")}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{t("Verrai reindirizzato al login…", "You will be redirected to login…")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t("Verrai reindirizzato al login…", "You will be redirected to login…")}
+        </p>
       </div>
     );
   }
@@ -113,10 +119,13 @@ function AuthResetPage() {
       </button>
 
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-extrabold tracking-tight">{t("Reset password", "Reset password")}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("Reset password", "Reset password")}
+        </h1>
         <p className="text-sm text-muted-foreground">
           {t("Inserisci il codice ricevuto a", "Enter the code received at")}{" "}
-          <span className="font-semibold text-foreground break-all">{email}</span> {t("e scegli una nuova password.", "and choose a new password.")}
+          <span className="font-semibold text-foreground break-all">{email}</span>{" "}
+          {t("e scegli una nuova password.", "and choose a new password.")}
         </p>
       </div>
 

@@ -70,8 +70,12 @@ export function useConfirmDialog() {
           )}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => finish(false)}>{t("Annulla", "Cancel")}</AlertDialogCancel>
-          <AlertDialogAction onClick={() => finish(true)}>{t("Conferma", "Confirm")}</AlertDialogAction>
+          <AlertDialogCancel onClick={() => finish(false)}>
+            {t("Annulla", "Cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={() => finish(true)}>
+            {t("Conferma", "Confirm")}
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -1,9 +1,5 @@
 import { Flame, Trophy, Target } from "lucide-react";
-import {
-  differenceInCalendarDays,
-  format,
-  subDays,
-} from "date-fns";
+import { differenceInCalendarDays, format, subDays } from "date-fns";
 import {
   Select,
   SelectContent,
@@ -33,18 +29,10 @@ interface Props {
  * - Barra progresso settimanale vs `weeklyGoal`
  * - Select per modificare weekly_goal (1-7)
  */
-export function StreakCard({
-  sessions,
-  weeklyGoal,
-  weeklyCount,
-  onChangeGoal,
-  isLoading,
-}: Props) {
+export function StreakCard({ sessions, weeklyGoal, weeklyCount, onChangeGoal, isLoading }: Props) {
   const { t } = useLanguage();
   const safeWeeklyGoal = Math.max(1, Math.min(7, weeklyGoal || 3));
-  const completedAts = sessions
-    .map((s) => s.completed_at)
-    .filter((v): v is string => !!v);
+  const completedAts = sessions.map((s) => s.completed_at).filter((v): v is string => !!v);
   const { current, record } = computeStreak(completedAts);
   const ratio = Math.min(weeklyCount / safeWeeklyGoal, 1);
   const goalReached = weeklyCount >= safeWeeklyGoal;
@@ -59,9 +47,7 @@ export function StreakCard({
       </div>
 
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-3xl font-black tracking-tight">
-          {isLoading ? "—" : current}
-        </span>
+        <span className="text-3xl font-black tracking-tight">{isLoading ? "—" : current}</span>
         <span className="text-sm text-muted-foreground">
           {current === 1 ? t("giorno", "day") : t("giorni", "days")}
         </span>
@@ -69,8 +55,9 @@ export function StreakCard({
 
       <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
         <Trophy className="h-3 w-3" />
-         <span>
-          {t("Record", "Record")}: <span className="font-semibold text-foreground">{isLoading ? "—" : record}</span>
+        <span>
+          {t("Record", "Record")}:{" "}
+          <span className="font-semibold text-foreground">{isLoading ? "—" : record}</span>
         </span>
       </div>
 
@@ -97,10 +84,7 @@ export function StreakCard({
             >
               {weeklyCount}/{safeWeeklyGoal}
             </span>
-            <Select
-              value={String(safeWeeklyGoal)}
-              onValueChange={(v) => onChangeGoal(Number(v))}
-            >
+            <Select value={String(safeWeeklyGoal)} onValueChange={(v) => onChangeGoal(Number(v))}>
               <SelectTrigger
                 aria-label={t("Obiettivo settimanale", "Weekly goal")}
                 className="h-7 w-auto rounded-full border px-2 text-xs font-semibold"
@@ -118,10 +102,7 @@ export function StreakCard({
           </div>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-primary transition-all"
-            style={{ width: `${ratio * 100}%` }}
-          />
+          <div className="h-full bg-primary transition-all" style={{ width: `${ratio * 100}%` }} />
         </div>
       </div>
     </section>

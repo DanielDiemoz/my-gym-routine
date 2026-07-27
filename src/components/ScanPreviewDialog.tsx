@@ -446,7 +446,9 @@ function MiniNumInput({
         value={text}
         min={0}
         step={step}
-        onFocus={() => { focusedRef.current = true; }}
+        onFocus={() => {
+          focusedRef.current = true;
+        }}
         onChange={(e) => {
           const raw = e.target.value;
           setText(raw);

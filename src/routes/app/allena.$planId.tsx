@@ -36,7 +36,9 @@ let _cached: string | null = null;
 
 function persist(stateStr: string) {
   _cached = stateStr;
-  try { localStorage.setItem(WS_KEY, stateStr); } catch {}
+  try {
+    localStorage.setItem(WS_KEY, stateStr);
+  } catch {}
 }
 
 function restore(): string | null {
@@ -45,18 +47,25 @@ function restore(): string | null {
     const raw = localStorage.getItem(WS_KEY);
     if (raw) _cached = raw;
     return raw;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function clearPersisted() {
   _cached = null;
-  try { localStorage.removeItem(WS_KEY); } catch {}
+  try {
+    localStorage.removeItem(WS_KEY);
+  } catch {}
 }
 
 // Sempre attivo: prima di chiudere la pagina, salva l'ultimo stato.
 if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", () => {
-    if (_cached) try { localStorage.setItem(WS_KEY, _cached); } catch {}
+    if (_cached)
+      try {
+        localStorage.setItem(WS_KEY, _cached);
+      } catch {}
   });
 }
 
@@ -147,16 +156,31 @@ function ActiveSession() {
   const { data: workCtx, setData: setWorkCtx } = useWorkoutStash();
 
   const latestDraftRef = useRef<WorkoutState | null>(null);
-  const persistDraft = useCallback((state: WorkoutState | null) => {
-    if (!state?.sessionId) return;
-    console.log("[PERSIST] saving to LS", state.sessionId, "logs:", Object.keys(state.logs ?? {}).length, "exercises");
-    persist(JSON.stringify(state));
-    setWorkCtx(JSON.stringify(state));
-  }, [setWorkCtx]);
+  const persistDraft = useCallback(
+    (state: WorkoutState | null) => {
+      if (!state?.sessionId) return;
+      console.log(
+        "[PERSIST] saving to LS",
+        state.sessionId,
+        "logs:",
+        Object.keys(state.logs ?? {}).length,
+        "exercises",
+      );
+      persist(JSON.stringify(state));
+      setWorkCtx(JSON.stringify(state));
+    },
+    [setWorkCtx],
+  );
   const stageDraft = useCallback((state: WorkoutState | null) => {
     if (!state?.sessionId) return;
     latestDraftRef.current = state;
-    console.log("[PERSIST] stageDraft saving to LS", state.sessionId, "logs:", Object.keys(state.logs ?? {}).length, "exercises");
+    console.log(
+      "[PERSIST] stageDraft saving to LS",
+      state.sessionId,
+      "logs:",
+      Object.keys(state.logs ?? {}).length,
+      "exercises",
+    );
     persist(JSON.stringify(state));
   }, []);
 
@@ -200,8 +224,9 @@ function ActiveSession() {
     if (orphan && !userDecision) {
       const last = JSON.parse(sessionStorage.getItem("gw_last") ?? "null") as WorkoutState | null;
       const ctxData = JSON.parse(workCtx ?? "null") as WorkoutState | null;
-      const match = (last?.sessionId === orphan.id && last?.planId === planId) ||
-                    ctxData?.sessionId === orphan.id;
+      const match =
+        (last?.sessionId === orphan.id && last?.planId === planId) ||
+        ctxData?.sessionId === orphan.id;
       if (match) {
         setOrphanIdAtDecision(orphan.id);
         setUserDecision("resume");
@@ -256,14 +281,17 @@ function ActiveSession() {
         if (!cancelled && resolvedId) {
           console.log("[SESSION] setting sessionId:", resolvedId);
           setSessionId(resolvedId);
-          sessionStorage.setItem("gw_last", JSON.stringify({
-            sessionId: resolvedId,
-            planId,
-            userId: user.id,
-            logs: {},
-            currentIdx: 0,
-            localExercises: [],
-          }));
+          sessionStorage.setItem(
+            "gw_last",
+            JSON.stringify({
+              sessionId: resolvedId,
+              planId,
+              userId: user.id,
+              logs: {},
+              currentIdx: 0,
+              localExercises: [],
+            }),
+          );
         }
       } catch (err) {
         if (cancelled) return;
@@ -311,16 +339,35 @@ function ActiveSession() {
   const restoredRef = useRef(false);
   const skipNextPersistRef = useRef(false);
   useEffect(() => {
-    if (!sessionId) { console.log("[RESTORE] no sessionId yet"); return; }
-    if (restoredRef.current) { console.log("[RESTORE] already restored"); return; }
+    if (!sessionId) {
+      console.log("[RESTORE] no sessionId yet");
+      return;
+    }
+    if (restoredRef.current) {
+      console.log("[RESTORE] already restored");
+      return;
+    }
 
-    if (orphanQ.isLoading) { console.log("[RESTORE] waiting for orphanQ"); return; }
-    if (!orphanQ.data && orphanQ.isFetching) { console.log("[RESTORE] waiting for orphanQ"); return; }
+    if (orphanQ.isLoading) {
+      console.log("[RESTORE] waiting for orphanQ");
+      return;
+    }
+    if (!orphanQ.data && orphanQ.isFetching) {
+      console.log("[RESTORE] waiting for orphanQ");
+      return;
+    }
 
     restoredRef.current = true;
     skipNextPersistRef.current = true;
 
-    console.log("[RESTORE] attempting restore for sessionId:", sessionId, "planId:", planId, "userId:", user.id);
+    console.log(
+      "[RESTORE] attempting restore for sessionId:",
+      sessionId,
+      "planId:",
+      planId,
+      "userId:",
+      user.id,
+    );
     let saved: WorkoutState | null = null;
     try {
       const raw = restore();
@@ -328,17 +375,31 @@ function ActiveSession() {
     } catch {}
 
     console.log("[RESTORE] localStorage found:", !!saved, "sessionId:", saved?.sessionId);
-    if (!saved) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (!saved) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
     console.log("[RESTORE] sessionId match:", saved.sessionId === sessionId);
-    if (saved.sessionId !== sessionId) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (saved.sessionId !== sessionId) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
     console.log("[RESTORE] planId match:", saved.planId === planId);
-    if (saved.planId !== planId) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (saved.planId !== planId) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
     console.log("[RESTORE] userId match:", saved.userId === user.id);
-    if (saved.userId !== user.id) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (saved.userId !== user.id) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
 
     console.log("[RESTORE] restoring with", Object.keys(saved?.logs ?? {}).length, "exercises");
     latestDraftRef.current = {
-      sessionId, planId, userId: user.id,
+      sessionId,
+      planId,
+      userId: user.id,
       logs: saved.logs ?? {},
       currentIdx: saved.currentIdx ?? 0,
       localExercises: saved.localExercises ?? [],
@@ -361,12 +422,27 @@ function ActiveSession() {
         return merged;
       });
     }
-  }, [sessionId, orphanQ.data, orphanQ.isLoading, orphanQ.isFetching, planId, user.id, planQ.data?.exercises]);
+  }, [
+    sessionId,
+    orphanQ.data,
+    orphanQ.isLoading,
+    orphanQ.isFetching,
+    planId,
+    user.id,
+    planQ.data?.exercises,
+  ]);
 
   // ── Persistenza ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!sessionId || !restoredRef.current) return;
-    latestDraftRef.current = { sessionId, planId, userId: user.id, logs, currentIdx, localExercises };
+    latestDraftRef.current = {
+      sessionId,
+      planId,
+      userId: user.id,
+      logs,
+      currentIdx,
+      localExercises,
+    };
     if (skipNextPersistRef.current) {
       skipNextPersistRef.current = false;
       return;
@@ -387,9 +463,15 @@ function ActiveSession() {
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") { flushDraft(); flushDb(); }
+      if (document.visibilityState === "hidden") {
+        flushDraft();
+        flushDb();
+      }
     };
-    const onBeforeUnload = () => { flushDraft(); flushDb(); };
+    const onBeforeUnload = () => {
+      flushDraft();
+      flushDb();
+    };
 
     window.addEventListener("pagehide", flushDraft);
     window.addEventListener("pagehide", flushDb);
@@ -408,10 +490,19 @@ function ActiveSession() {
   // ── Persistenza su DB (debounce) ──────────────────────────────────────
   useEffect(() => {
     if (!sessionId || !restoredRef.current) return;
-    const state: WorkoutState = { sessionId, planId, userId: user.id, logs, currentIdx, localExercises };
+    const state: WorkoutState = {
+      sessionId,
+      planId,
+      userId: user.id,
+      logs,
+      currentIdx,
+      localExercises,
+    };
     if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
     dbTimerRef.current = setTimeout(() => saveWorkoutStateToDb(state), 2000);
-    return () => { if (dbTimerRef.current) clearTimeout(dbTimerRef.current); };
+    return () => {
+      if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
+    };
   }, [sessionId, planId, user.id, logs, currentIdx, localExercises, saveWorkoutStateToDb]);
 
   const exercises = localExercises.length > 0 ? localExercises : (planQ.data?.exercises ?? []);
@@ -533,11 +624,14 @@ function ActiveSession() {
       return;
     }
     await supabase.from("session_logs").insert(rows);
-    await supabase.from("sessions").update({
-      completed_at: new Date().toISOString(),
-      total_volume: totalVolume,
-      workout_state: null,
-    }).eq("id", sessionId);
+    await supabase
+      .from("sessions")
+      .update({
+        completed_at: new Date().toISOString(),
+        total_volume: totalVolume,
+        workout_state: null,
+      })
+      .eq("id", sessionId);
     sessionStorage.removeItem("gw_last");
     console.log("[CLEANUP] removing LS key");
     clearPersisted();
@@ -607,17 +701,19 @@ function ActiveSession() {
     setLocalExercises((prev) => {
       const next = [...prev];
       next[currentIdx] = newExercise;
-      stageDraft(buildDraft({
-        localExercises: next,
-        logs: {
-          ...logs,
-          [newExercise.id]: Array.from({ length: newExercise.sets }, () => ({
-            reps: newExercise.reps,
-            weight: Number(newExercise.weight),
-            done: false,
-          })),
-        },
-      }));
+      stageDraft(
+        buildDraft({
+          localExercises: next,
+          logs: {
+            ...logs,
+            [newExercise.id]: Array.from({ length: newExercise.sets }, () => ({
+              reps: newExercise.reps,
+              weight: Number(newExercise.weight),
+              done: false,
+            })),
+          },
+        }),
+      );
       return next;
     });
     setLogs((prev) => ({
@@ -642,14 +738,21 @@ function ActiveSession() {
           <AlertDialogDescription>
             {orphanQ.data ? (
               <>
-                {t("Hai una sessione interrotta iniziata il", "You have a paused session started on")}{" "}
+                {t(
+                  "Hai una sessione interrotta iniziata il",
+                  "You have a paused session started on",
+                )}{" "}
                 <strong>
                   {new Date(orphanQ.data.started_at).toLocaleString(intlLocale, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
                 </strong>
-                . {t("Vuoi riprenderla o iniziarne una nuova?", "Do you want to resume it or start a new one?")}
+                .{" "}
+                {t(
+                  "Vuoi riprenderla o iniziarne una nuova?",
+                  "Do you want to resume it or start a new one?",
+                )}
               </>
             ) : (
               t("Caricamento…", "Loading…")
@@ -671,19 +774,21 @@ function ActiveSession() {
   if (!current) {
     return (
       <div className="container-app flex min-h-screen flex-col items-center justify-center text-center">
-          {planQ.data && exercises.length === 0 ? (
-            <>
-              <p className="text-sm text-muted-foreground">{t("Questa scheda non ha esercizi.", "This plan has no exercises.")}</p>
-              <button
-                onClick={() => navigate({ to: "/app/schede/$planId", params: { planId } })}
-                className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
-              >
-                {t("Aggiungi esercizi", "Add exercises")}
-              </button>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("Caricamento…", "Loading…")}</p>
-          )}
+        {planQ.data && exercises.length === 0 ? (
+          <>
+            <p className="text-sm text-muted-foreground">
+              {t("Questa scheda non ha esercizi.", "This plan has no exercises.")}
+            </p>
+            <button
+              onClick={() => navigate({ to: "/app/schede/$planId", params: { planId } })}
+              className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+            >
+              {t("Aggiungi esercizi", "Add exercises")}
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("Caricamento…", "Loading…")}</p>
+        )}
         {orphanDialog}
         {ConfirmDialog}
       </div>
@@ -759,7 +864,9 @@ function ActiveSession() {
             color: muscleColor(current.muscle_group),
           }}
         >
-          {current.muscle_group ? t(current.muscle_group, MUSCLE_EN[current.muscle_group] ?? current.muscle_group) : t("Esercizio", "Exercise")}
+          {current.muscle_group
+            ? t(current.muscle_group, MUSCLE_EN[current.muscle_group] ?? current.muscle_group)
+            : t("Esercizio", "Exercise")}
         </div>
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-black tracking-tight">{current.name}</h1>
@@ -796,7 +903,8 @@ function ActiveSession() {
           </div>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          {t("Target", "Target")}: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
+          {t("Target", "Target")}: {current.sets} × {current.reps} @{" "}
+          {fmtWeight(Number(current.weight))}
         </p>
         {current.notes && <p className="mt-2 rounded-xl bg-muted p-3 text-sm">{current.notes}</p>}
 
@@ -825,7 +933,9 @@ function ActiveSession() {
               <button
                 onClick={() => updateSet(i, { done: !s.done })}
                 className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-                  s.done ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                  s.done
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-muted-foreground"
                 }`}
               >
                 <Check className="h-4 w-4" />
@@ -878,9 +988,9 @@ function ActiveSession() {
                 setCurrentIdx(nextIdx);
               }}
               className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
-              >
-                {t("Indietro", "Back")}
-              </button>
+            >
+              {t("Indietro", "Back")}
+            </button>
           )}
           {!isLast ? (
             <>
@@ -890,7 +1000,7 @@ function ActiveSession() {
                   stageDraft(buildDraft({ currentIdx: nextIdx }));
                   setCurrentIdx(nextIdx);
                 }}
-                 className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+                className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
               >
                 {t("Prossimo esercizio", "Next exercise")}
               </button>
@@ -898,7 +1008,10 @@ function ActiveSession() {
                 onClick={async () => {
                   const ok = await confirmDialog(
                     t("Salvare l'allenamento?", "Save the workout?"),
-                    t("Verranno salvate solo le serie completate.", "Only completed sets will be saved."),
+                    t(
+                      "Verranno salvate solo le serie completate.",
+                      "Only completed sets will be saved.",
+                    ),
                   );
                   if (ok) finishWorkout();
                 }}
@@ -912,7 +1025,7 @@ function ActiveSession() {
             <button
               onClick={finishWorkout}
               disabled={finishing}
-               className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+              className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
             >
               {finishing ? "..." : t("Termina allenamento", "Finish workout")}
             </button>
@@ -928,7 +1041,11 @@ function ActiveSession() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("Sostituisci esercizio", "Replace exercise")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("Cerca un esercizio dalla libreria per sostituire", "Search the library to replace")} "{current.name}".
+              {t(
+                "Cerca un esercizio dalla libreria per sostituire",
+                "Search the library to replace",
+              )}{" "}
+              "{current.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="relative mb-1 mt-1">
@@ -947,12 +1064,18 @@ function ActiveSession() {
           </p>
           <div className="space-y-1">
             {searchQuery.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">{t("Inizia a digitare per cercare", "Start typing to search")}</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("Inizia a digitare per cercare", "Start typing to search")}
+              </p>
             ) : searchQ.isLoading ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">{t("Ricerca…", "Searching…")}</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("Ricerca…", "Searching…")}
+              </p>
             ) : searchResults.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">{t("Nessun esercizio trovato", "No exercise found")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("Nessun esercizio trovato", "No exercise found")}
+                </p>
                 <button
                   type="button"
                   onClick={() => replaceExercise(searchQuery, null)}
@@ -978,7 +1101,9 @@ function ActiveSession() {
                         color: muscleColor(ex.muscle_group),
                       }}
                     >
-                      {ex.muscle_group ? t(ex.muscle_group, MUSCLE_EN[ex.muscle_group] ?? ex.muscle_group) : ex.muscle_group}
+                      {ex.muscle_group
+                        ? t(ex.muscle_group, MUSCLE_EN[ex.muscle_group] ?? ex.muscle_group)
+                        : ex.muscle_group}
                     </span>
                   </div>
                   <RotateCcw className="h-4 w-4 shrink-0 text-muted-foreground" />

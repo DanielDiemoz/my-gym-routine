@@ -53,10 +53,13 @@ function PersonalRecordsPage() {
       <header className="mb-6">
         <div className="flex items-center gap-2">
           <Trophy className="h-6 w-6 text-yellow-500" />
-          <h1 className="text-3xl font-black tracking-tight">{t("Record Personali", "Personal Records")}</h1>
+          <h1 className="text-3xl font-black tracking-tight">
+            {t("Record Personali", "Personal Records")}
+          </h1>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {prs.length} {t("esercizi", "exercises")} · {t("1RM stimato con formula di Epley", "Estimated 1RM with Epley formula")}
+          {prs.length} {t("esercizi", "exercises")} ·{" "}
+          {t("1RM stimato con formula di Epley", "Estimated 1RM with Epley formula")}
         </p>
       </header>
 
@@ -77,7 +80,10 @@ function PersonalRecordsPage() {
         {filtered.map((pr) => {
           const isExpanded = expandedExercise === pr.exercise;
           return (
-            <div key={pr.exercise} className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div
+              key={pr.exercise}
+              className="rounded-2xl border border-border bg-card overflow-hidden"
+            >
               <button
                 onClick={() => setExpandedExercise(isExpanded ? null : pr.exercise)}
                 className="no-tap-highlight flex w-full items-center gap-4 px-5 py-4 text-left active:scale-[0.99]"
@@ -94,7 +100,9 @@ function PersonalRecordsPage() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-lg font-black text-primary">{fmtWeight(pr.maxWeight, { digits: 1 })}</div>
+                  <div className="text-lg font-black text-primary">
+                    {fmtWeight(pr.maxWeight, { digits: 1 })}
+                  </div>
                   <div className="text-[10px] text-muted-foreground">
                     {format(new Date(pr.date), "d MMM", { locale: dateLocale })}
                   </div>
@@ -109,10 +117,14 @@ function PersonalRecordsPage() {
                   {/* 1RM Card */}
                   <div className="mb-4 rounded-xl bg-primary/5 p-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-muted-foreground">{t("1RM Stimato", "Est. 1RM")}</span>
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        {t("1RM Stimato", "Est. 1RM")}
+                      </span>
                       <TrendingUp className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="mt-1 text-2xl font-black text-primary">{fmtWeight(pr.estimated1RM, { digits: 1 })}</div>
+                    <div className="mt-1 text-2xl font-black text-primary">
+                      {fmtWeight(pr.estimated1RM, { digits: 1 })}
+                    </div>
                   </div>
 
                   {/* History */}
@@ -121,10 +133,16 @@ function PersonalRecordsPage() {
                   </div>
                   <div className="space-y-1.5">
                     {pr.history.map((h, i) => (
-                      <div key={i} className="flex items-center justify-between rounded-lg bg-card px-3 py-2">
-                        <div className="text-sm font-semibold">{fmtWeight(h.weight, { digits: 1 })}</div>
+                      <div
+                        key={i}
+                        className="flex items-center justify-between rounded-lg bg-card px-3 py-2"
+                      >
+                        <div className="text-sm font-semibold">
+                          {fmtWeight(h.weight, { digits: 1 })}
+                        </div>
                         <div className="text-xs text-muted-foreground">
-                          {h.reps} {t("rep", "reps")} · {format(new Date(h.date), "d MMM yyyy", { locale: dateLocale })}
+                          {h.reps} {t("rep", "reps")} ·{" "}
+                          {format(new Date(h.date), "d MMM yyyy", { locale: dateLocale })}
                         </div>
                         {i === 0 && (
                           <span className="rounded-full bg-yellow-500/10 px-2 py-0.5 text-[10px] font-bold text-yellow-600">
@@ -144,7 +162,10 @@ function PersonalRecordsPage() {
           <p className="py-12 text-center text-sm text-muted-foreground">
             {search
               ? t("Nessun esercizio trovato.", "No exercises found.")
-              : t("Completa alcuni allenamenti per vedere i tuoi record!", "Complete some workouts to see your records!")}
+              : t(
+                  "Completa alcuni allenamenti per vedere i tuoi record!",
+                  "Complete some workouts to see your records!",
+                )}
           </p>
         )}
       </div>

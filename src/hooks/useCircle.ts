@@ -76,8 +76,7 @@ export function useCircle(userId: string) {
     staleTime: 1000 * 30, // 30 secondi
   });
 
-  const invalidateCircles = () =>
-    qc.invalidateQueries({ queryKey: CIRCLES_KEY(userId) });
+  const invalidateCircles = () => qc.invalidateQueries({ queryKey: CIRCLES_KEY(userId) });
 
   // ── Mutation: entra in una cerchia ────────────────────────────────────────
   // Usa la RPC SECURITY DEFINER `join_circle_by_code` perché la policy
@@ -86,10 +85,9 @@ export function useCircle(userId: string) {
   // il membro (idempotente via ON CONFLICT DO NOTHING).
   const joinMut = useMutation({
     mutationFn: async (code: string): Promise<string> => {
-      const { data: circleId, error } = await supabase.rpc(
-        "join_circle_by_code",
-        { invite_code: code },
-      );
+      const { data: circleId, error } = await supabase.rpc("join_circle_by_code", {
+        invite_code: code,
+      });
       if (error) {
         // Il messaggio Postgres (`'Codice non trovato...'`) viene propagato
         // tale e quale → lo mostriamo direttamente come toast.
@@ -212,9 +210,7 @@ export function useCircle(userId: string) {
       toast.success("Nickname aggiornato.");
     },
     onError: (err: unknown) => {
-      toast.error(
-        err instanceof Error ? err.message : "Errore durante l'aggiornamento",
-      );
+      toast.error(err instanceof Error ? err.message : "Errore durante l'aggiornamento");
     },
   });
 
@@ -260,9 +256,7 @@ export function useCircle(userId: string) {
       });
     },
     onError: (err: unknown) => {
-      toast.error(
-        err instanceof Error ? err.message : "Errore nell'invio del messaggio",
-      );
+      toast.error(err instanceof Error ? err.message : "Errore nell'invio del messaggio");
     },
   });
 
@@ -343,8 +337,7 @@ export function useCircle(userId: string) {
     /** Recupera i messaggi di una cerchia */
     useMessages,
     /** Invia un messaggio in una cerchia */
-    sendMessage: (circleId: string, content: string) =>
-      sendMut.mutateAsync({ circleId, content }),
+    sendMessage: (circleId: string, content: string) => sendMut.mutateAsync({ circleId, content }),
     isSending: sendMut.isPending,
     /** Recupera il conteggio dei messaggi non letti per una cerchia */
     useUnreadCount,

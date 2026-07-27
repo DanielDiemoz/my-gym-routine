@@ -33,9 +33,21 @@ const signupSchema = z
     email: z.string().trim().email(tx("Inserisci un'email valida", "Enter a valid email")),
     password: z
       .string()
-      .min(6, tx("La password deve essere di almeno 6 caratteri", "Password must be at least 6 characters"))
+      .min(
+        6,
+        tx(
+          "La password deve essere di almeno 6 caratteri",
+          "Password must be at least 6 characters",
+        ),
+      )
       .regex(/[0-9]/, tx("Deve contenere almeno un numero", "Must contain at least one number"))
-      .regex(/[^A-Za-z0-9]/, tx("Deve contenere almeno un carattere speciale", "Must contain at least one special character")),
+      .regex(
+        /[^A-Za-z0-9]/,
+        tx(
+          "Deve contenere almeno un carattere speciale",
+          "Must contain at least one special character",
+        ),
+      ),
     confirmPassword: z.string().min(1, tx("Conferma la password", "Confirm the password")),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -57,9 +69,7 @@ function AuthIndexPage() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { mode: initialMode } = Route.useSearch();
-  const [mode, setMode] = useState<AuthMode>(
-    initialMode === "signup" ? "signup" : "login",
-  );
+  const [mode, setMode] = useState<AuthMode>(initialMode === "signup" ? "signup" : "login");
   const [forgot, setForgot] = useState(false);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resendingUnverified, setResendingUnverified] = useState(false);
@@ -85,12 +95,17 @@ function AuthIndexPage() {
         options: { emailRedirectTo },
       });
       if (error) throw error;
-      
-       toast.success(t("Codice di conferma inviato nuovamente.", "Confirmation code sent again."));
+
+      toast.success(t("Codice di conferma inviato nuovamente.", "Confirmation code sent again."));
       navigate({ to: "/auth/verify", search: { email: unverifiedEmail } });
     } catch (err) {
       console.error("Resend error:", err);
-      toast.error(t("Impossibile inviare il codice. Riprova più tardi.", "Unable to send the code. Try again later."));
+      toast.error(
+        t(
+          "Impossibile inviare il codice. Riprova più tardi.",
+          "Unable to send the code. Try again later.",
+        ),
+      );
     } finally {
       setResendingUnverified(false);
     }
@@ -107,10 +122,19 @@ function AuthIndexPage() {
         </h1>
         <p className="text-sm text-muted-foreground">
           {forgot
-            ? t("Recupera la tua password inserendo la mail.", "Recover your password by entering your email.")
+            ? t(
+                "Recupera la tua password inserendo la mail.",
+                "Recover your password by entering your email.",
+              )
             : mode === "login"
-              ? t("Bentornato. Accedi per continuare i tuoi allenamenti.", "Welcome back. Log in to continue your workouts.")
-              : t("Crea un account per iniziare a tracciare le tue schede.", "Create an account to start tracking your plans.")}
+              ? t(
+                  "Bentornato. Accedi per continuare i tuoi allenamenti.",
+                  "Welcome back. Log in to continue your workouts.",
+                )
+              : t(
+                  "Crea un account per iniziare a tracciare le tue schede.",
+                  "Create an account to start tracking your plans.",
+                )}
         </p>
       </div>
 
@@ -119,9 +143,14 @@ function AuthIndexPage() {
           <div className="flex gap-3">
             <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-destructive">{t("Account non verificato", "Account not verified")}</h4>
+              <h4 className="text-sm font-semibold text-destructive">
+                {t("Account non verificato", "Account not verified")}
+              </h4>
               <p className="text-xs text-muted-foreground">
-                {t("Devi confermare la tua email con il codice OTP per poter accedere.", "You must confirm your email with the OTP code to log in.")}
+                {t(
+                  "Devi confermare la tua email con il codice OTP per poter accedere.",
+                  "You must confirm your email with the OTP code to log in.",
+                )}
               </p>
             </div>
           </div>
@@ -139,7 +168,9 @@ function AuthIndexPage() {
               onClick={handleResendUnverified}
               className="text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-lg hover:opacity-90 active:scale-95 transition disabled:opacity-50"
             >
-              {resendingUnverified ? t("Invio...", "Sending...") : t("Reinvia codice OTP", "Resend OTP code")}
+              {resendingUnverified
+                ? t("Invio...", "Sending...")
+                : t("Reinvia codice OTP", "Resend OTP code")}
             </button>
           </div>
         </div>
@@ -222,7 +253,12 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
           (error.status === 400 && error.message.toLowerCase().includes("confirm"))
         ) {
           onUnverified(email);
-          toast.error(t("Email non verificata. Conferma il tuo account prima di accedere.", "Email not verified. Confirm your account before logging in."));
+          toast.error(
+            t(
+              "Email non verificata. Conferma il tuo account prima di accedere.",
+              "Email not verified. Confirm your account before logging in.",
+            ),
+          );
           return;
         }
         throw error;
@@ -233,12 +269,14 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
     } catch (err) {
       console.error("Login error:", err);
       const errorMsg = err instanceof Error ? err.message : "";
-      
+
       if (errorMsg.includes("429") || errorMsg.toLowerCase().includes("rate limit")) {
-        toast.error(t("Troppi tentativi. Riprova più tardi.", "Too many attempts. Try again later."));
+        toast.error(
+          t("Troppi tentativi. Riprova più tardi.", "Too many attempts. Try again later."),
+        );
         return;
       }
-      
+
       // Generic message to prevent email harvesting
       toast.error(t("Email o password non validi.", "Invalid email or password."));
     }
@@ -265,7 +303,9 @@ function LoginForm({ onSuccess, onForgot, onUnverified }: LoginFormProps) {
         registration={register("password")}
         error={errors.password?.message}
         icon={<Lock className="h-5 w-5 text-muted-foreground" />}
-        trailing={<PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
+        trailing={
+          <PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />
+        }
       />
 
       <div className="flex justify-end">
@@ -324,7 +364,12 @@ function SignupForm({ onSuccess }: SignupFormProps) {
           error.message.toLowerCase().includes("already registered") ||
           error.message.toLowerCase().includes("already in use")
         ) {
-          toast.error(t("L'email è già in uso. Accedi o recupera la password.", "Email already in use. Log in or recover your password."));
+          toast.error(
+            t(
+              "L'email è già in uso. Accedi o recupera la password.",
+              "Email already in use. Log in or recover your password.",
+            ),
+          );
           return;
         }
         throw error;
@@ -332,12 +377,19 @@ function SignupForm({ onSuccess }: SignupFormProps) {
 
       // Check if identities is empty array (meaning email is already registered and verified in Supabase)
       if (data.user && data.user.identities && data.user.identities.length === 0) {
-        toast.error(t("L'email è già in uso. Accedi o recupera la password.", "Email already in use. Log in or recover your password."));
+        toast.error(
+          t(
+            "L'email è già in uso. Accedi o recupera la password.",
+            "Email already in use. Log in or recover your password.",
+          ),
+        );
         return;
       }
 
       if (!data.session) {
-        toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
+        toast.success(
+          t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"),
+        );
         navigate({ to: "/auth/verify", search: { email } });
       } else {
         toast.success(t("Registrazione completata!", "Registration complete!"));
@@ -346,7 +398,12 @@ function SignupForm({ onSuccess }: SignupFormProps) {
     } catch (err) {
       console.error("Signup error:", err);
       // Suppress detailed technical messages to keep error generic and log silently
-      toast.error(t("Impossibile completare la registrazione. Riprova più tardi.", "Unable to complete registration. Try again later."));
+      toast.error(
+        t(
+          "Impossibile completare la registrazione. Riprova più tardi.",
+          "Unable to complete registration. Try again later.",
+        ),
+      );
     }
   }
 
@@ -371,25 +428,41 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         registration={register("password")}
         error={errors.password?.message}
         icon={<Lock className="h-5 w-5 text-muted-foreground" />}
-        trailing={<PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
+        trailing={
+          <PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />
+        }
       />
 
       {/* Real-time password feedback */}
       {passwordValue && (
         <div className="rounded-xl bg-muted/30 border border-border p-3 space-y-1.5 text-xs text-muted-foreground animate-in slide-in-from-top-1 duration-200">
-          <p className="font-semibold text-foreground">{t("Requisiti password:", "Password requirements:")}</p>
+          <p className="font-semibold text-foreground">
+            {t("Requisiti password:", "Password requirements:")}
+          </p>
           <div className="grid grid-cols-1 gap-1">
             <div className="flex items-center gap-2">
-              <span className={`h-1.5 w-1.5 rounded-full ${hasMinLength ? "bg-success" : "bg-muted-foreground"}`} />
-              <span className={hasMinLength ? "text-foreground font-medium" : ""}>{t("Almeno 6 caratteri", "At least 6 characters")}</span>
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${hasMinLength ? "bg-success" : "bg-muted-foreground"}`}
+              />
+              <span className={hasMinLength ? "text-foreground font-medium" : ""}>
+                {t("Almeno 6 caratteri", "At least 6 characters")}
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`h-1.5 w-1.5 rounded-full ${hasNumber ? "bg-success" : "bg-muted-foreground"}`} />
-              <span className={hasNumber ? "text-foreground font-medium" : ""}>{t("Almeno un numero", "At least one number")}</span>
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${hasNumber ? "bg-success" : "bg-muted-foreground"}`}
+              />
+              <span className={hasNumber ? "text-foreground font-medium" : ""}>
+                {t("Almeno un numero", "At least one number")}
+              </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`h-1.5 w-1.5 rounded-full ${hasSpecial ? "bg-success" : "bg-muted-foreground"}`} />
-              <span className={hasSpecial ? "text-foreground font-medium" : ""}>{t("Almeno un carattere speciale", "At least one special character")}</span>
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${hasSpecial ? "bg-success" : "bg-muted-foreground"}`}
+              />
+              <span className={hasSpecial ? "text-foreground font-medium" : ""}>
+                {t("Almeno un carattere speciale", "At least one special character")}
+              </span>
             </div>
           </div>
         </div>
@@ -404,7 +477,9 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         registration={register("confirmPassword")}
         error={errors.confirmPassword?.message}
         icon={<Lock className="h-5 w-5 text-muted-foreground" />}
-        trailing={<PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
+        trailing={
+          <PasswordToggle show={showPassword} onToggle={() => setShowPassword((v) => !v)} />
+        }
       />
 
       <SubmitButton loading={isSubmitting}>{t("Registrati", "Sign up")}</SubmitButton>
@@ -450,7 +525,9 @@ function ForgotForm({ onBack }: { onBack: () => void }) {
         icon={<Mail className="h-5 w-5 text-muted-foreground" />}
       />
 
-      <SubmitButton loading={isSubmitting}>{t("Invia codice di reset", "Send reset code")}</SubmitButton>
+      <SubmitButton loading={isSubmitting}>
+        {t("Invia codice di reset", "Send reset code")}
+      </SubmitButton>
 
       <button
         type="button"
@@ -489,7 +566,10 @@ function FormField({
 }: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <label
+        htmlFor={id}
+        className="block text-xs font-bold uppercase tracking-wider text-muted-foreground"
+      >
         {label}
       </label>
       <div className="relative flex items-center">
@@ -503,12 +583,18 @@ function FormField({
           className={`w-full rounded-2xl border bg-card py-4 text-base outline-none transition duration-200 focus:border-foreground focus:ring-1 focus:ring-foreground ${
             icon ? "pl-12" : "pl-4"
           } ${trailing ? "pr-12" : "pr-4"} ${
-            error ? "border-destructive/50 focus:border-destructive focus:ring-destructive" : "border-border"
+            error
+              ? "border-destructive/50 focus:border-destructive focus:ring-destructive"
+              : "border-border"
           }`}
         />
         {trailing && <div className="absolute right-4">{trailing}</div>}
       </div>
-      {error && <p className="text-xs font-semibold text-destructive animate-in fade-in duration-200">{error}</p>}
+      {error && (
+        <p className="text-xs font-semibold text-destructive animate-in fade-in duration-200">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -519,7 +605,9 @@ function PasswordToggle({ show, onToggle }: { show: boolean; onToggle: () => voi
     <button
       type="button"
       onClick={onToggle}
-      aria-label={show ? t("Nascondi password", "Hide password") : t("Mostra password", "Show password")}
+      aria-label={
+        show ? t("Nascondi password", "Hide password") : t("Mostra password", "Show password")
+      }
       className="no-tap-highlight text-muted-foreground hover:text-foreground transition"
     >
       {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

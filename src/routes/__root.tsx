@@ -15,6 +15,9 @@ import { Toaster } from "@/components/ui/sonner";
 import { LanguageProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
 
+const SITE_URL = "https://mygymbro.org";
+const OG_IMAGE = `${SITE_URL}/landing/home.webp`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-6">
@@ -71,22 +74,57 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#0a0a0a" },
-      { title: "GymBro — Allenamento essenziale" },
+      {
+        title: "GymBro — App Palestra: Schede Allenamento, Workout Tracker e Progressi",
+      },
       {
         name: "description",
-        content: "GymBro: crea schede, allenati e tieni traccia dei tuoi progressi settimanali.",
+        content:
+          "GymBro è l'app palestra gratuita per creare schede allenamento, tracciare workout e monitorare i tuoi progressi. Workout tracker semplice e veloce per la palestra.",
       },
-      { property: "og:title", content: "GymBro" },
+      {
+        name: "keywords",
+        content:
+          "app palestra, workout tracker, schede allenamento, tracciare allenamenti, gym log, app fitness, planner palestra, progressi palestra,日记 palestra, gym tracker app",
+      },
+      {
+        property: "og:title",
+        content: "GymBro — App Palestra Gratuita | Schede e Workout Tracker",
+      },
       {
         property: "og:description",
-        content: "Crea schede, allenati e tieni traccia dei tuoi progressi.",
+        content:
+          "Crea schede allenamento, traccia i tuoi workout e monitora i progressi. L'app palestra semplice e veloce.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:site_name", content: "GymBro" },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "GymBro - App Palestra" },
+      { property: "og:locale", content: "it_IT" },
+      { property: "og:locale:alternate", content: "en_US" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "GymBro — App Palestra Gratuita" },
+      {
+        name: "twitter:description",
+        content: "Crea schede allenamento, traccia i tuoi workout e monitora i progressi.",
+      },
+      { name: "twitter:image", content: OG_IMAGE },
       { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "GymBro" },
+      { name: "application-name", content: "GymBro" },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "canonical", href: SITE_URL },
+      { rel: "alternate", hrefLang: "it", href: `${SITE_URL}?lang=it` },
+      { rel: "alternate", hrefLang: "en", href: `${SITE_URL}?lang=en` },
+      { rel: "alternate", hrefLang: "x-default", href: SITE_URL },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -116,12 +154,47 @@ const THEME_INIT_SCRIPT = `
 })();
 `;
 
+const STRUCTURED_DATA = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "GymBro",
+  alternateName: "GymBro App Palestra",
+  description:
+    "App palestra gratuita per creare schede allenamento, tracciare workout e monitorare i progressi. Workout tracker semplice e veloce.",
+  url: SITE_URL,
+  applicationCategory: "HealthApplication",
+  operatingSystem: "Qualsiasi (Web App)",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "EUR",
+  },
+  featureList: [
+    "Creazione schede allenamento",
+    "Tracciamento workout in tempo reale",
+    "Monitoraggio progressi settimanali",
+    "Cerchie e classifiche social",
+    "Cronologia allenamenti",
+    "Record personali",
+  ],
+  screenshot: OG_IMAGE,
+  author: {
+    "@type": "Organization",
+    name: "GymBro",
+    url: SITE_URL,
+  },
+};
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="it">
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(STRUCTURED_DATA) }}
+        />
       </head>
       <body>
         {children}

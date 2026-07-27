@@ -57,7 +57,8 @@ export function WorkoutCalendar({ workoutDays }: WorkoutCalendarProps) {
             {format(currentMonth, "MMMM yyyy", { locale: dateLocale })}
           </div>
           <div className="text-[10px] text-muted-foreground">
-            {monthWorkoutCount} {monthWorkoutCount === 1 ? t("allenamento", "workout") : t("allenamenti", "workouts")}
+            {monthWorkoutCount}{" "}
+            {monthWorkoutCount === 1 ? t("allenamento", "workout") : t("allenamenti", "workouts")}
           </div>
         </div>
         <button
@@ -70,7 +71,10 @@ export function WorkoutCalendar({ workoutDays }: WorkoutCalendarProps) {
 
       <div className="grid grid-cols-7 gap-1">
         {weekDayLabels.map((label) => (
-          <div key={label} className="py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground">
+          <div
+            key={label}
+            className="py-1 text-center text-[10px] font-semibold uppercase text-muted-foreground"
+          >
             {label}
           </div>
         ))}

@@ -150,7 +150,9 @@ function VerifyPage() {
         });
         if (cancelled) return;
         if (error) {
-          toast.error(t("Link di conferma non valido o scaduto.", "Confirmation link invalid or expired."));
+          toast.error(
+            t("Link di conferma non valido o scaduto.", "Confirmation link invalid or expired."),
+          );
           setCheckingLink(false);
           return;
         }
@@ -159,7 +161,9 @@ function VerifyPage() {
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       if (data.session) {
-        toast.success(t("Email confermata! Benvenuto su GymBro.", "Email confirmed! Welcome to GymBro."));
+        toast.success(
+          t("Email confermata! Benvenuto su GymBro.", "Email confirmed! Welcome to GymBro."),
+        );
         navigate({ to: "/app" });
         return;
       }
@@ -182,7 +186,12 @@ function VerifyPage() {
     if (code.length < OTP_LENGTH) return;
 
     if (lockoutTimer > 0) {
-      toast.error(t(`Troppi tentativi falliti. Riprova tra ${lockoutTimer} secondi.`, `Too many failed attempts. Try again in ${lockoutTimer} seconds.`));
+      toast.error(
+        t(
+          `Troppi tentativi falliti. Riprova tra ${lockoutTimer} secondi.`,
+          `Too many failed attempts. Try again in ${lockoutTimer} seconds.`,
+        ),
+      );
       return;
     }
 
@@ -238,9 +247,19 @@ function VerifyPage() {
         setLockoutTimer(60);
         setFailedAttempts(0);
         sessionStorage.setItem("gymbro_otp_failed_attempts", "0");
-        toast.error(t("Troppi tentativi errati. Account temporaneamente bloccato per 60 secondi.", "Too many wrong attempts. Account temporarily locked for 60 seconds."));
+        toast.error(
+          t(
+            "Troppi tentativi errati. Account temporaneamente bloccato per 60 secondi.",
+            "Too many wrong attempts. Account temporarily locked for 60 seconds.",
+          ),
+        );
       } else {
-        toast.error(t(`Codice errato. Rimangono ${5 - nextFailed} tentativi.`, `Wrong code. ${5 - nextFailed} attempts remaining.`));
+        toast.error(
+          t(
+            `Codice errato. Rimangono ${5 - nextFailed} tentativi.`,
+            `Wrong code. ${5 - nextFailed} attempts remaining.`,
+          ),
+        );
       }
     } finally {
       setVerifying(false);
@@ -254,12 +273,22 @@ function VerifyPage() {
     }
 
     if (resendCount >= 3) {
-      toast.error(t("Limite massimo di richieste OTP raggiunto per questa sessione.", "Maximum OTP requests reached for this session."));
+      toast.error(
+        t(
+          "Limite massimo di richieste OTP raggiunto per questa sessione.",
+          "Maximum OTP requests reached for this session.",
+        ),
+      );
       return;
     }
 
     if (cooldown > 0) {
-      toast.error(t(`Attendi altri ${cooldown} secondi prima di richiedere un nuovo codice.`, `Wait ${cooldown} more seconds before requesting a new code.`));
+      toast.error(
+        t(
+          `Attendi altri ${cooldown} secondi prima di richiedere un nuovo codice.`,
+          `Wait ${cooldown} more seconds before requesting a new code.`,
+        ),
+      );
       return;
     }
 
@@ -274,7 +303,9 @@ function VerifyPage() {
       if (error) {
         const msg = error.message.toLowerCase();
         if (msg.includes("already confirmed") || msg.includes("already verified")) {
-          toast.info(t("Email già confermata. Accedi dal login.", "Email already confirmed. Log in."));
+          toast.info(
+            t("Email già confermata. Accedi dal login.", "Email already confirmed. Log in."),
+          );
           navigate({ to: "/auth" });
           return;
         }
@@ -294,7 +325,12 @@ function VerifyPage() {
       toast.success(t("Codice inviato di nuovo.", "Code sent again."));
     } catch (err) {
       console.error("Resend OTP error:", err);
-      toast.error(t("Impossibile inviare il codice. Riprova più tardi.", "Unable to send the code. Try again later."));
+      toast.error(
+        t(
+          "Impossibile inviare il codice. Riprova più tardi.",
+          "Unable to send the code. Try again later.",
+        ),
+      );
     } finally {
       setResending(false);
     }
@@ -319,7 +355,9 @@ function VerifyPage() {
       if (error) {
         const msg = error.message.toLowerCase();
         if (msg.includes("already confirmed")) {
-          toast.info(t("Email già confermata. Accedi dal login.", "Email already confirmed. Log in."));
+          toast.info(
+            t("Email già confermata. Accedi dal login.", "Email already confirmed. Log in."),
+          );
           navigate({ to: "/auth" });
           return;
         }
@@ -329,7 +367,9 @@ function VerifyPage() {
       setEmail(nextEmail);
       setEmailInput(nextEmail);
       navigate({ to: "/auth/verify", search: { email: nextEmail }, replace: true });
-      toast.success(t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"));
+      toast.success(
+        t("Codice di conferma inviato alla tua email!", "Confirmation code sent to your email!"),
+      );
 
       // Start cooldown timer
       const nowStr = new Date().toISOString();
@@ -337,7 +377,12 @@ function VerifyPage() {
       setCooldown(60);
     } catch (err) {
       console.error("Email submission error:", err);
-      toast.error(t("Impossibile inviare il codice. Riprova più tardi.", "Unable to send the code. Try again later."));
+      toast.error(
+        t(
+          "Impossibile inviare il codice. Riprova più tardi.",
+          "Unable to send the code. Try again later.",
+        ),
+      );
     } finally {
       setResending(false);
     }
@@ -352,7 +397,9 @@ function VerifyPage() {
     return (
       <div className="w-full max-w-md mx-auto text-center space-y-4 py-8 animate-in fade-in duration-300">
         <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-muted-foreground font-medium">{t("Verifica in corso...", "Verifying...")}</p>
+        <p className="text-sm text-muted-foreground font-medium">
+          {t("Verifica in corso...", "Verifying...")}
+        </p>
       </div>
     );
   }
@@ -367,12 +414,29 @@ function VerifyPage() {
         ) : (
           <div className="mb-4 flex justify-center overflow-hidden">
             <div className="relative h-16 w-24">
-              <svg viewBox="0 0 96 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+              <svg
+                viewBox="0 0 96 64"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-full w-full"
+              >
                 <g style={{ animation: "paperPlaneFly 2.5s cubic-bezier(0.22,1,0.36,1) infinite" }}>
                   <path d="M8 32 L88 8 L56 32 L88 56 Z" className="fill-primary" opacity="0.9" />
                   <path d="M56 32 L88 8 L72 32 L88 56 Z" className="fill-primary/50" />
-                  <circle cx="6" cy="32" r="2" className="fill-primary/25" style={{ animation: "trailFade 2.5s ease-out infinite" }} />
-                  <circle cx="0" cy="32" r="1.5" className="fill-primary/15" style={{ animation: "trailFade 2.5s ease-out 0.15s infinite" }} />
+                  <circle
+                    cx="6"
+                    cy="32"
+                    r="2"
+                    className="fill-primary/25"
+                    style={{ animation: "trailFade 2.5s ease-out infinite" }}
+                  />
+                  <circle
+                    cx="0"
+                    cy="32"
+                    r="1.5"
+                    className="fill-primary/15"
+                    style={{ animation: "trailFade 2.5s ease-out 0.15s infinite" }}
+                  />
                 </g>
               </svg>
               <style>{`
@@ -391,30 +455,40 @@ function VerifyPage() {
             </div>
           </div>
         )}
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
-            {lockoutTimer > 0 ? t("Account Bloccato", "Account Locked") : t("Verifica il tuo account", "Verify your account")}
-          </h1>
-          {email ? (
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">
-                {t("Inserisci il codice OTP di", "Enter the")} {OTP_LENGTH} {t("cifre inviato a:", "digit OTP code sent to:")}
-              </p>
-              <p className="font-semibold text-foreground break-all">{email}</p>
-            </div>
-          ) : (
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+          {lockoutTimer > 0
+            ? t("Account Bloccato", "Account Locked")
+            : t("Verifica il tuo account", "Verify your account")}
+        </h1>
+        {email ? (
+          <div className="space-y-1">
             <p className="text-sm text-muted-foreground">
-              {t("Inserisci l'email per inviare un nuovo codice di verifica.", "Enter the email to send a new verification code.")}
+              {t("Inserisci il codice OTP di", "Enter the")} {OTP_LENGTH}{" "}
+              {t("cifre inviato a:", "digit OTP code sent to:")}
             </p>
-          )}
+            <p className="font-semibold text-foreground break-all">{email}</p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {t(
+              "Inserisci l'email per inviare un nuovo codice di verifica.",
+              "Enter the email to send a new verification code.",
+            )}
+          </p>
+        )}
       </div>
 
       {lockoutTimer > 0 && (
         <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 flex gap-3 items-center animate-in zoom-in-95 duration-200">
           <Timer className="h-5 w-5 text-destructive shrink-0 animate-bounce" />
           <div className="space-y-0.5">
-            <p className="text-sm font-semibold text-destructive">{t("Troppi tentativi falliti", "Too many failed attempts")}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {t("Troppi tentativi falliti", "Too many failed attempts")}
+            </p>
             <p className="text-xs text-muted-foreground">
-              {t("Potrai inserire il codice nuovamente tra", "You can enter the code again in")} <span className="font-bold text-foreground">{lockoutTimer}</span> {t("secondi.", "seconds.")}
+              {t("Potrai inserire il codice nuovamente tra", "You can enter the code again in")}{" "}
+              <span className="font-bold text-foreground">{lockoutTimer}</span>{" "}
+              {t("secondi.", "seconds.")}
             </p>
           </div>
         </div>
@@ -424,9 +498,14 @@ function VerifyPage() {
         <div className="rounded-2xl border border-warning/20 bg-warning/5 p-4 flex gap-3 items-center animate-in zoom-in-95 duration-200">
           <AlertCircle className="h-5 w-5 text-warning shrink-0" />
           <div className="space-y-0.5">
-            <p className="text-sm font-semibold text-warning">{t("Richieste esaurite", "Requests exhausted")}</p>
+            <p className="text-sm font-semibold text-warning">
+              {t("Richieste esaurite", "Requests exhausted")}
+            </p>
             <p className="text-xs text-muted-foreground">
-              {t("Hai raggiunto il limite di invii OTP. Per riprovare, riavvia la sessione o contatta il supporto.", "You reached the OTP send limit. To retry, restart the session or contact support.")}
+              {t(
+                "Hai raggiunto il limite di invii OTP. Per riprovare, riavvia la sessione o contatta il supporto.",
+                "You reached the OTP send limit. To retry, restart the session or contact support.",
+              )}
             </p>
           </div>
         </div>
@@ -507,7 +586,10 @@ function VerifyPage() {
               >
                 <RefreshCw className={`h-3 w-3 ${resending ? "animate-spin" : ""}`} />
                 {cooldown > 0
-                  ? t(`Attendi ${cooldown}s prima di reinviare`, `Wait ${cooldown}s before resending`)
+                  ? t(
+                      `Attendi ${cooldown}s prima di reinviare`,
+                      `Wait ${cooldown}s before resending`,
+                    )
                   : resendCount >= 3
                     ? t("Limite invii OTP raggiunto", "OTP send limit reached")
                     : t("Non hai ricevuto il codice? Reinvia", "Didn't get the code? Resend")}

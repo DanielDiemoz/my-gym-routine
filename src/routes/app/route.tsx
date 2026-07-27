@@ -73,7 +73,8 @@ function AuthLayout() {
     return null;
   }
 
-  const showNav = !loc.pathname.startsWith("/app/onboarding") && !loc.pathname.startsWith("/app/profilo");
+  const showNav =
+    !loc.pathname.startsWith("/app/onboarding") && !loc.pathname.startsWith("/app/profilo");
 
   return (
     <div className="min-h-screen bg-background pb-28">

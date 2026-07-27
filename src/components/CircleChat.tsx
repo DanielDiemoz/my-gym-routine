@@ -13,8 +13,7 @@ interface CircleChatProps {
 export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
   const { t, dateLocale } = useLanguage();
   const [open, setOpen] = useState(false);
-  const { useMessages, sendMessage, isSending, useUnreadCount, markAsRead } =
-    useCircle(userId);
+  const { useMessages, sendMessage, isSending, useUnreadCount, markAsRead } = useCircle(userId);
   const { data: messages, isLoading } = useMessages(circleId);
   const { data: unreadCount } = useUnreadCount(circleId);
   const [input, setInput] = useState("");
@@ -85,11 +84,7 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
               ) : messages && messages.length > 0 ? (
                 <div className="space-y-3">
                   {messages.map((msg) => (
-                    <MessageBubble
-                      key={msg.id}
-                      message={msg}
-                      isOwn={msg.user_id === userId}
-                    />
+                    <MessageBubble key={msg.id} message={msg} isOwn={msg.user_id === userId} />
                   ))}
                   <div ref={endRef} />
                 </div>
@@ -141,19 +136,10 @@ export function CircleChat({ circleId, circleName, userId }: CircleChatProps) {
   );
 }
 
-function MessageBubble({
-  message,
-  isOwn,
-}: {
-  message: CircleMessage;
-  isOwn: boolean;
-}) {
+function MessageBubble({ message, isOwn }: { message: CircleMessage; isOwn: boolean }) {
   const { dateLocale } = useLanguage();
   const time = format(new Date(message.created_at), "HH:mm", { locale: dateLocale });
-  const initials = (message.display_name ?? "?")
-    .trim()
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = (message.display_name ?? "?").trim().slice(0, 2).toUpperCase();
 
   return (
     <div className={`flex gap-2 ${isOwn ? "flex-row-reverse" : ""}`}>
@@ -168,9 +154,7 @@ function MessageBubble({
         )}
         <div
           className={`rounded-2xl px-3 py-2 text-sm ${
-            isOwn
-              ? "rounded-tr-md bg-primary text-primary-foreground"
-              : "rounded-tl-md bg-muted"
+            isOwn ? "rounded-tr-md bg-primary text-primary-foreground" : "rounded-tl-md bg-muted"
           }`}
         >
           <p className="whitespace-pre-wrap break-words">{message.content}</p>

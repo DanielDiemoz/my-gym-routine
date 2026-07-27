@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { enUS as dateEn, it as dateIt } from "date-fns/locale";
 import type { Locale } from "date-fns";
 
@@ -45,10 +38,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = useCallback((l: Language) => setLangState(l), []);
 
-  const t = useCallback(
-    (it: string, en: string) => (language === "en" ? en : it),
-    [language],
-  );
+  const t = useCallback((it: string, en: string) => (language === "en" ? en : it), [language]);
 
   const dateLocale = language === "en" ? dateEn : dateIt;
 

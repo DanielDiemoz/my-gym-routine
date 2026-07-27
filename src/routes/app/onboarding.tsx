@@ -35,7 +35,9 @@ function Onboarding() {
       markOnboardingComplete();
       await navigate({ to: "/app" });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t("Qualcosa è andato storto", "Something went wrong"));
+      toast.error(
+        err instanceof Error ? err.message : t("Qualcosa è andato storto", "Something went wrong"),
+      );
     } finally {
       setSaving(false);
     }
@@ -47,8 +49,12 @@ function Onboarding() {
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           {t("Benvenuto", "Welcome")}
         </p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight">{t("Configura il tuo profilo", "Set up your profile")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("Inserisci il tuo nome per iniziare.", "Enter your name to get started.")}</p>
+        <h1 className="mt-2 text-3xl font-black tracking-tight">
+          {t("Configura il tuo profilo", "Set up your profile")}
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("Inserisci il tuo nome per iniziare.", "Enter your name to get started.")}
+        </p>
       </div>
 
       <div className="mt-10 space-y-6">

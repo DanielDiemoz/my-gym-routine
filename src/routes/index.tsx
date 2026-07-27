@@ -1,17 +1,39 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import {
-  Dumbbell,
-  ArrowRight,
-  Sparkles,
-  Smartphone,
-  Instagram,
-} from "lucide-react";
+import { Dumbbell, ArrowRight, Sparkles, Smartphone, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage, tx } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
-  ssr: false,
+  head: () => ({
+    meta: [
+      {
+        title: "GymBro — App Palestra Gratuita: Schede Allenamento e Workout Tracker",
+      },
+      {
+        name: "description",
+        content:
+          "GymBro è l'app palestra gratuita per creare schede allenamento, tracciare i tuoi workout e monitorare i progressi. Semplice, veloce, senza distrazioni. Crea la tua scheda palestra in pochi tap.",
+      },
+      {
+        name: "keywords",
+        content:
+          "app palestra, app palestra gratuita, workout tracker, schede allenamento, schede palestra, tracciare allenamenti, gym log, app fitness, planner palestra, progressi palestra, diario palestra, gym tracker, workout planner, fitness tracker, allenamento in palestra",
+      },
+      {
+        property: "og:title",
+        content: "GymBro — App Palestra Gratuita | Schede e Workout Tracker",
+      },
+      {
+        property: "og:description",
+        content:
+          "Crea schede allenamento, traccia i tuoi workout e monitora i progressi. L'app palestra semplice e veloce.",
+      },
+      { property: "og:url", content: "https://mygymbro.org/" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "https://mygymbro.org/" }],
+  }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (data.user) {
@@ -41,7 +63,7 @@ function FeatureShot({
         <div className="mx-auto max-w-[260px] overflow-hidden rounded-[2rem] border-[6px] border-foreground/90 bg-background shadow-xl">
           <img
             src={src}
-            alt={title}
+            alt={`GymBro - ${title}`}
             width={520}
             height={1120}
             loading="lazy"
@@ -60,6 +82,45 @@ function FeatureShot({
 
 function LandingPage() {
   const { t, language, setLanguage } = useLanguage();
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Cos'è GymBro?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "GymBro è un'app palestra gratuita che ti permette di creare schede allenamento, tracciare i tuoi workout e monitorare i progressi. Disponibile come web app e su Android.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "GymBro è gratuita?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Sì, GymBro è completamente gratuita. Nessun abbonamento, nessun costo nascosto.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Come funziona il workout tracker?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Seleziona la tua scheda, avvia l'allenamento e registra ogni serie con peso e ripetizioni. GymBro calcola automaticamente il volume e ti mostra i progressi.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Cosa sono le Cerchie?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Le Cerchie sono gruppi social dove puoi allenarti con amici. Classifiche per volume settimanale, statistiche di gruppo e sana competizione.",
+        },
+      },
+    ],
+  };
 
   const shots = [
     {
@@ -114,6 +175,10 @@ function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
         <div className="container-app flex h-16 items-center justify-between">
@@ -176,8 +241,15 @@ function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="link" className="w-full text-muted-foreground sm:w-auto">
-              <Link to="/auth">{t("Hai già un account? Accedi", "Already have an account? Log in")}</Link>
+            <Button
+              asChild
+              size="lg"
+              variant="link"
+              className="w-full text-muted-foreground sm:w-auto"
+            >
+              <Link to="/auth">
+                {t("Hai già un account? Accedi", "Already have an account? Log in")}
+              </Link>
             </Button>
           </div>
         </div>
@@ -204,6 +276,53 @@ function LandingPage() {
           {shots.map((s) => (
             <FeatureShot key={s.src} src={s.src} title={s.title} description={s.description} />
           ))}
+        </div>
+      </section>
+
+      {/* Features list */}
+      <section className="container-app pb-24">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-border bg-card p-8 md:p-12">
+          <h2 className="text-2xl font-extrabold tracking-tight md:text-3xl">
+            {t("Tutto quello che ti serve per la palestra", "Everything you need for the gym")}
+          </h2>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <h3 className="font-bold">{t("Schede Allenamento", "Workout Plans")}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "Crea e gestisci le tue schede palestra con esercizi, serie, ripetizioni e pesi. Pianifica il tuo allenamento in pochi tap.",
+                  "Create and manage your gym plans with exercises, sets, reps and weights. Plan your workout in a few taps.",
+                )}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-bold">{t("Workout Tracker", "Workout Tracker")}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "Registra ogni serie durante l'allenamento. Timer per le pause, peso e ripetizioni sempre a portata di mano.",
+                  "Log every set during your workout. Rest timer, weight and reps always at hand.",
+                )}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-bold">{t("Progressi e Statistiche", "Progress & Stats")}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "Storico completo, volume settimanale, streak e record personali. Vedi i tuoi miglioramenti nel tempo.",
+                  "Full history, weekly volume, streaks and personal records. See your improvements over time.",
+                )}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-bold">{t("Cerchie Social", "Social Circles")}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "Allenati in gruppo con le Cerchie. Classifiche per volume settimanale e sana competizione tra amici.",
+                  "Train together with Circles. Weekly volume leaderboards and healthy competition among friends.",
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -244,11 +363,90 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section className="container-app pb-24">
+        <div className="mx-auto max-w-3xl">
+          <h2 className="text-2xl font-extrabold tracking-tight md:text-3xl">
+            {t("Domande frequenti", "Frequently asked questions")}
+          </h2>
+          <div className="mt-8 space-y-6">
+            <details className="group rounded-2xl border border-border bg-card p-6">
+              <summary className="cursor-pointer font-bold">
+                {t("Cos'è GymBro?", "What is GymBro?")}
+              </summary>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {t(
+                  "GymBro è un'app palestra gratuita che ti permette di creare schede allenamento, tracciare i tuoi workout e monitorare i progressi. Disponibile come web app e su Android.",
+                  "GymBro is a free gym app that lets you create workout plans, track your workouts and monitor your progress. Available as a web app and on Android.",
+                )}
+              </p>
+            </details>
+            <details className="group rounded-2xl border border-border bg-card p-6">
+              <summary className="cursor-pointer font-bold">
+                {t("GymBro è gratuita?", "Is GymBro free?")}
+              </summary>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {t(
+                  "Sì, GymBro è completamente gratuita. Nessun abbonamento, nessun costo nascosto. Crea un account e inizia ad allenarti.",
+                  "Yes, GymBro is completely free. No subscriptions, no hidden costs. Create an account and start training.",
+                )}
+              </p>
+            </details>
+            <details className="group rounded-2xl border border-border bg-card p-6">
+              <summary className="cursor-pointer font-bold">
+                {t("Come funziona il workout tracker?", "How does the workout tracker work?")}
+              </summary>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {t(
+                  "Seleziona la tua scheda, avvia l'allenamento e registra ogni serie con peso e ripetizioni. GymBro calcola automaticamente il volume e ti mostra i progressi.",
+                  "Select your plan, start the workout and log every set with weight and reps. GymBro automatically calculates volume and shows your progress.",
+                )}
+              </p>
+            </details>
+            <details className="group rounded-2xl border border-border bg-card p-6">
+              <summary className="cursor-pointer font-bold">
+                {t("Cosa sono le Cerchie?", "What are Circles?")}
+              </summary>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {t(
+                  "Le Cerchie sono gruppi social dove puoi allenarti con amici. Classifiche per volume settimanale, statistiche di gruppo e sana competizione.",
+                  "Circles are social groups where you can train with friends. Weekly volume leaderboards, group stats and healthy competition.",
+                )}
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border">
-        <div className="container-app flex h-16 items-center justify-between text-xs text-muted-foreground">
-          <span className="font-semibold">GymBro</span>
-          <span>© {new Date().getFullYear()}</span>
+        <div className="container-app flex flex-col items-center gap-4 py-12 text-center text-xs text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <span className="font-semibold text-foreground">GymBro</span>
+            <span className="ml-2">— {t("App palestra gratuita", "Free gym app")}</span>
+          </div>
+          <div className="flex gap-4">
+            <a href="/auth" className="hover:text-foreground">
+              {t("Accedi", "Log in")}
+            </a>
+            <a
+              href="https://www.instagram.com/try.gymbro"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground"
+            >
+              Instagram
+            </a>
+            <a
+              href="https://www.tiktok.com/@trygymbro"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground"
+            >
+              TikTok
+            </a>
+          </div>
+          <span>© {new Date().getFullYear()} GymBro</span>
         </div>
       </footer>
     </div>

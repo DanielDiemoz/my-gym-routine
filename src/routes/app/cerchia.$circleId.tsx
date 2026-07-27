@@ -340,9 +340,7 @@ function CircleDetailPage() {
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
             {t("Codice invito", "Invite code")}
           </p>
-            <p className="mt-1 font-mono text-base tracking-[0.25em] text-foreground/80">
-              ••••••
-            </p>
+          <p className="mt-1 font-mono text-base tracking-[0.25em] text-foreground/80">••••••</p>
         </div>
         <CopyCodeButton text={circle.code} label={t("Copia", "Copy")} size="sm" />
       </div>
@@ -398,7 +396,14 @@ function CircleDetailPage() {
                 {/* Immagine rank con anello di progresso settimanale */}
                 <div className="relative h-12 w-12 shrink-0">
                   <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48" aria-hidden="true">
-                    <circle cx="24" cy="24" r="22" fill="none" stroke="var(--color-border)" strokeWidth="3" />
+                    <circle
+                      cx="24"
+                      cy="24"
+                      r="22"
+                      fill="none"
+                      stroke="var(--color-border)"
+                      strokeWidth="3"
+                    />
                     <circle
                       cx="24"
                       cy="24"

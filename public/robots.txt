@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://mygymbro.org/sitemap.xml

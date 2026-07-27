@@ -12,11 +12,7 @@ const WorkoutContext = createContext<WorkoutStash>({
 
 export function WorkoutProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<string | null>(null);
-  return (
-    <WorkoutContext.Provider value={{ data, setData }}>
-      {children}
-    </WorkoutContext.Provider>
-  );
+  return <WorkoutContext.Provider value={{ data, setData }}>{children}</WorkoutContext.Provider>;
 }
 
 export function useWorkoutStash() {

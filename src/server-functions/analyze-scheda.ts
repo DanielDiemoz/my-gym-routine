@@ -8,7 +8,8 @@ const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/
 
 async function getAuthContext() {
   const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const SUPABASE_KEY =
+    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   if (!SUPABASE_URL || !SUPABASE_KEY) return { supabase: null, userId: null };
 
   const request = getRequest();
@@ -215,7 +216,15 @@ export const analyzeScheda = createServerFn({ method: "POST" })
       });
     } catch (err) {
       console.error("[analyze-scheda] Network error:", err);
-      await logGeminiUsage({ supabase, userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Network error" });
+      await logGeminiUsage({
+        supabase,
+        userId,
+        mode: data.mode,
+        exerciseCount: 0,
+        planName: null,
+        success: false,
+        errorMessage: "Network error",
+      });
       throw new Error(
         "Impossibile contattare il servizio AI. Controlla la connessione a internet e riprova.",
       );
@@ -224,7 +233,15 @@ export const analyzeScheda = createServerFn({ method: "POST" })
     if (!response.ok) {
       const errorText = await response.text();
       console.error("[analyze-scheda] Gemini API error:", response.status, errorText);
-      await logGeminiUsage({ supabase, userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: humanizeGeminiError(response.status, errorText) });
+      await logGeminiUsage({
+        supabase,
+        userId,
+        mode: data.mode,
+        exerciseCount: 0,
+        planName: null,
+        success: false,
+        errorMessage: humanizeGeminiError(response.status, errorText),
+      });
       throw new Error(humanizeGeminiError(response.status, errorText));
     }
 
@@ -233,7 +250,15 @@ export const analyzeScheda = createServerFn({ method: "POST" })
       json = await response.json();
     } catch {
       console.error("[analyze-scheda] Failed to parse response as JSON");
-      await logGeminiUsage({ supabase, userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Invalid JSON response" });
+      await logGeminiUsage({
+        supabase,
+        userId,
+        mode: data.mode,
+        exerciseCount: 0,
+        planName: null,
+        success: false,
+        errorMessage: "Invalid JSON response",
+      });
       throw new Error("Risposta non valida dal servizio AI. Riprova.");
     }
 
@@ -245,20 +270,43 @@ export const analyzeScheda = createServerFn({ method: "POST" })
     if (!text) {
       const blockReason = feedback?.blockReason;
       if (blockReason === "SAFETY") {
-        await logGeminiUsage({ supabase, userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Safety filter" });
+        await logGeminiUsage({
+          supabase,
+          userId,
+          mode: data.mode,
+          exerciseCount: 0,
+          planName: null,
+          success: false,
+          errorMessage: "Safety filter",
+        });
         throw new Error(
           "L'immagine e' stata bloccata dai filtri di sicurezza. Prova con un'altra foto.",
         );
       }
       console.error("[analyze-scheda] Empty response:", JSON.stringify(json).slice(0, 500));
-      await logGeminiUsage({ supabase, userId, mode: data.mode, exerciseCount: 0, planName: null, success: false, errorMessage: "Empty response" });
+      await logGeminiUsage({
+        supabase,
+        userId,
+        mode: data.mode,
+        exerciseCount: 0,
+        planName: null,
+        success: false,
+        errorMessage: "Empty response",
+      });
       throw new Error(
         "Il servizio AI non ha prodotto una risposta valida. Riprova con un'altra foto o descrizione.",
       );
     }
 
     const result = parseAiResponse(text);
-    await logGeminiUsage({ supabase, userId, mode: data.mode, exerciseCount: result.exercises.length, planName: result.plan_name, success: true });
+    await logGeminiUsage({
+      supabase,
+      userId,
+      mode: data.mode,
+      exerciseCount: result.exercises.length,
+      planName: result.plan_name,
+      success: true,
+    });
     return result;
   });
 

@@ -3,7 +3,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Play, Pencil } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
+  GripVertical,
+  Play,
+  Pencil,
+} from "lucide-react";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { ExerciseAutocomplete, type ExerciseLibraryEntry } from "@/components/ExerciseAutocomplete";
 import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
@@ -62,7 +71,11 @@ function PlanEditor() {
   const planQ = useQuery({
     queryKey: ["plan", planId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("plans").select("id, name").eq("id", planId).maybeSingle();
+      const { data, error } = await supabase
+        .from("plans")
+        .select("id, name")
+        .eq("id", planId)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -82,11 +95,15 @@ function PlanEditor() {
   });
 
   const [items, setItems] = useState<Exercise[]>([]);
-  useEffect(() => { if (exQ.data) setItems(exQ.data); }, [exQ.data]);
+  useEffect(() => {
+    if (exQ.data) setItems(exQ.data);
+  }, [exQ.data]);
 
   const [editingName, setEditingName] = useState(false);
   const [planName, setPlanName] = useState("");
-  useEffect(() => { if (planQ.data) setPlanName(planQ.data.name); }, [planQ.data]);
+  useEffect(() => {
+    if (planQ.data) setPlanName(planQ.data.name);
+  }, [planQ.data]);
 
   const hasActiveQ = useQuery({
     queryKey: ["has-active-session", user.id, planId],
@@ -115,7 +132,9 @@ function PlanEditor() {
     const newIdx = items.findIndex((x) => x.id === over.id);
     const next = arrayMove(items, oldIdx, newIdx).map((x, i) => ({ ...x, position: i }));
     setItems(next);
-    await Promise.all(next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)));
+    await Promise.all(
+      next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)),
+    );
   }
 
   async function moveExerciseUp(id: string) {
@@ -123,7 +142,9 @@ function PlanEditor() {
     if (idx <= 0) return;
     const next = arrayMove(items, idx, idx - 1).map((x, i) => ({ ...x, position: i }));
     setItems(next);
-    await Promise.all(next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)));
+    await Promise.all(
+      next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)),
+    );
   }
 
   async function moveExerciseDown(id: string) {
@@ -131,7 +152,9 @@ function PlanEditor() {
     if (idx < 0 || idx >= items.length - 1) return;
     const next = arrayMove(items, idx, idx + 1).map((x, i) => ({ ...x, position: i }));
     setItems(next);
-    await Promise.all(next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)));
+    await Promise.all(
+      next.map((x) => supabase.from("exercises").update({ position: x.position }).eq("id", x.id)),
+    );
   }
 
   async function deleteExercise(id: string) {
@@ -150,7 +173,10 @@ function PlanEditor() {
   }
 
   async function deletePlan() {
-    const ok = await confirmDialog(t("Eliminare questa scheda?", "Delete this plan?"), t("L'azione è irreversibile.", "This action is irreversible."));
+    const ok = await confirmDialog(
+      t("Eliminare questa scheda?", "Delete this plan?"),
+      t("L'azione è irreversibile.", "This action is irreversible."),
+    );
     if (!ok) return;
     await supabase.from("plans").delete().eq("id", planId);
     qc.invalidateQueries({ queryKey: ["plans-all", user.id] });
@@ -161,10 +187,15 @@ function PlanEditor() {
   return (
     <div className="container-app pt-6">
       <div className="mb-6 flex items-center justify-between">
-        <Link to="/app/schede" className="flex items-center gap-1 text-sm font-semibold text-muted-foreground">
+        <Link
+          to="/app/schede"
+          className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
+        >
           <ChevronLeft className="h-5 w-5" /> {t("Schede", "Plans")}
         </Link>
-        <button onClick={deletePlan} className="text-xs font-semibold text-destructive">{t("Elimina", "Delete")}</button>
+        <button onClick={deletePlan} className="text-xs font-semibold text-destructive">
+          {t("Elimina", "Delete")}
+        </button>
       </div>
 
       <div className="mb-8">
@@ -178,12 +209,18 @@ function PlanEditor() {
             className="w-full bg-transparent text-3xl font-black tracking-tight outline-none"
           />
         ) : (
-          <button onClick={() => setEditingName(true)} className="flex items-center gap-2 text-left">
+          <button
+            onClick={() => setEditingName(true)}
+            className="flex items-center gap-2 text-left"
+          >
             <h1 className="text-3xl font-black tracking-tight">{planQ.data?.name}</h1>
             <Pencil className="h-4 w-4 text-muted-foreground" />
           </button>
         )}
-        <p className="mt-1 text-sm text-muted-foreground">{items.length} {items.length === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {items.length}{" "}
+          {items.length === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}
+        </p>
       </div>
 
       {items.length > 0 && (
@@ -192,7 +229,9 @@ function PlanEditor() {
           params={{ planId }}
           className="no-tap-highlight mb-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
         >
-          <Play className="h-4 w-4 fill-current" /> {hasActiveQ.data ? t("Continua", "Continue") : t("Inizia", "Start")} {t("allenamento", "workout")}
+          <Play className="h-4 w-4 fill-current" />{" "}
+          {hasActiveQ.data ? t("Continua", "Continue") : t("Inizia", "Start")}{" "}
+          {t("allenamento", "workout")}
         </Link>
       )}
 
@@ -228,8 +267,15 @@ function PlanEditor() {
           planId={planId}
           userId={user.id}
           nextPosition={items.length}
-          onClose={() => { setAdding(false); setEditing(null); }}
-          onSaved={() => { setAdding(false); setEditing(null); qc.invalidateQueries({ queryKey: ["exercises", planId] }); }}
+          onClose={() => {
+            setAdding(false);
+            setEditing(null);
+          }}
+          onSaved={() => {
+            setAdding(false);
+            setEditing(null);
+            qc.invalidateQueries({ queryKey: ["exercises", planId] });
+          }}
         />
       )}
       {ConfirmDialog}
@@ -237,7 +283,15 @@ function PlanEditor() {
   );
 }
 
-function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLast }: {
+function SortableRow({
+  ex,
+  onEdit,
+  onDelete,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
+}: {
   ex: Exercise;
   onEdit: () => void;
   onDelete: () => void;
@@ -247,14 +301,20 @@ function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLa
   isLast: boolean;
 }) {
   const { t } = useLanguage();
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: ex.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: ex.id,
+  });
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-2 rounded-2xl border border-border bg-card p-3 ${isDragging ? "opacity-60" : ""}`}
     >
-      <button {...attributes} {...listeners} className="cursor-grab touch-none p-1 text-muted-foreground">
+      <button
+        {...attributes}
+        {...listeners}
+        className="cursor-grab touch-none p-1 text-muted-foreground"
+      >
         <GripVertical className="h-5 w-5" />
       </button>
       <button onClick={onEdit} className="flex-1 text-left">
@@ -302,10 +362,19 @@ function SortableRow({ ex, onEdit, onDelete, onMoveUp, onMoveDown, isFirst, isLa
 }
 
 function ExerciseSheet({
-  ex, planId, userId, nextPosition, onClose, onSaved,
+  ex,
+  planId,
+  userId,
+  nextPosition,
+  onClose,
+  onSaved,
 }: {
-  ex: Exercise | null; planId: string; userId: string; nextPosition: number;
-  onClose: () => void; onSaved: () => void;
+  ex: Exercise | null;
+  planId: string;
+  userId: string;
+  nextPosition: number;
+  onClose: () => void;
+  onSaved: () => void;
 }) {
   const { t } = useLanguage();
   const [name, setName] = useState(ex?.name ?? "");
@@ -338,7 +407,10 @@ function ExerciseSheet({
   }
 
   async function save() {
-    if (!name.trim()) { toast.error(t("Inserisci un nome", "Enter a name")); return; }
+    if (!name.trim()) {
+      toast.error(t("Inserisci un nome", "Enter a name"));
+      return;
+    }
     setSaving(true);
     const data = {
       name: name.trim(),
@@ -350,10 +422,7 @@ function ExerciseSheet({
       exercise_library_id: libraryId,
     };
     if (ex) {
-      await supabase
-        .from("exercises")
-        .update(data)
-        .eq("id", ex.id);
+      await supabase.from("exercises").update(data).eq("id", ex.id);
     } else {
       await supabase.from("exercises").insert({
         ...data,
@@ -366,13 +435,18 @@ function ExerciseSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      onClick={onClose}
+    >
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md rounded-t-3xl bg-background p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:rounded-3xl"
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border sm:hidden" />
-        <h3 className="text-xl font-bold">{ex ? t("Modifica esercizio", "Edit exercise") : t("Nuovo esercizio", "New exercise")}</h3>
+        <h3 className="text-xl font-bold">
+          {ex ? t("Modifica esercizio", "Edit exercise") : t("Nuovo esercizio", "New exercise")}
+        </h3>
 
         <div className="mt-5 space-y-4">
           <Field label={t("Nome", "Name")}>
@@ -380,10 +454,16 @@ function ExerciseSheet({
               value={name}
               onChange={setName}
               onPick={handlePick}
-              placeholder={t("Cerca esercizio (es. Panca piana)", "Search exercise (e.g. Bench press)")}
+              placeholder={t(
+                "Cerca esercizio (es. Panca piana)",
+                "Search exercise (e.g. Bench press)",
+              )}
             />
             <p className="mt-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-              {t("Seleziona un suggerimento per auto-compilare il gruppo muscolare.", "Pick a suggestion to auto-fill the muscle group.")}
+              {t(
+                "Seleziona un suggerimento per auto-compilare il gruppo muscolare.",
+                "Pick a suggestion to auto-fill the muscle group.",
+              )}
             </p>
           </Field>
 
@@ -395,7 +475,9 @@ function ExerciseSheet({
                   type="button"
                   onClick={() => setMuscle(value)}
                   className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                    muscle === value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                    muscle === value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   <span
@@ -411,7 +493,13 @@ function ExerciseSheet({
           <div className="grid grid-cols-3 gap-3">
             <NumField label={t("Serie", "Sets")} value={sets} onChange={setSets} min={0} max={20} />
             <NumField label={t("Rip.", "Reps")} value={reps} onChange={setReps} min={0} max={100} />
-            <NumField label={t("Kg", "Kg")} value={weight} onChange={setWeight} min={0} step={0.5} />
+            <NumField
+              label={t("Kg", "Kg")}
+              value={weight}
+              onChange={setWeight}
+              min={0}
+              step={0.5}
+            />
           </div>
 
           <Field label={t("Note (opzionale)", "Notes (optional)")}>
@@ -425,8 +513,17 @@ function ExerciseSheet({
         </div>
 
         <div className="mt-6 flex gap-2">
-          <button onClick={onClose} className="flex-1 rounded-full border border-border py-3 text-sm font-semibold">{t("Annulla", "Cancel")}</button>
-          <button onClick={save} disabled={saving} className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-full border border-border py-3 text-sm font-semibold"
+          >
+            {t("Annulla", "Cancel")}
+          </button>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
             {saving ? "..." : t("Salva", "Save")}
           </button>
         </div>
@@ -438,13 +535,29 @@ function ExerciseSheet({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</label>
+      <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </label>
       {children}
     </div>
   );
 }
 
-function NumField({ label, value, onChange, min, max, step = 1 }: { label: string; value: number; onChange: (n: number) => void; min?: number; max?: number; step?: number }) {
+function NumField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
   const [text, setText] = useState(String(value));
   const focusedRef = useRef(false);
 
@@ -465,7 +578,9 @@ function NumField({ label, value, onChange, min, max, step = 1 }: { label: strin
         type="number"
         inputMode="decimal"
         value={text}
-        min={min} max={max} step={step}
+        min={min}
+        max={max}
+        step={step}
         onFocus={() => {
           focusedRef.current = true;
         }}

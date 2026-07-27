@@ -26,7 +26,9 @@ export function BadgeGrid({ achievements }: { achievements: Achievement[] }) {
             className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"
           >
             {expanded ? t("Meno", "Less") : t("Tutti", "All")}
-            <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`}
+            />
           </button>
         )}
       </div>
@@ -36,9 +38,7 @@ export function BadgeGrid({ achievements }: { achievements: Achievement[] }) {
           <div key={a.id} className="flex flex-col items-center text-center">
             <div
               className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl ${
-                a.unlocked
-                  ? "bg-primary/10"
-                  : "bg-muted opacity-40 grayscale"
+                a.unlocked ? "bg-primary/10" : "bg-muted opacity-40 grayscale"
               }`}
             >
               {a.unlocked ? a.icon : <Lock className="h-5 w-5 text-muted-foreground" />}

@@ -15,6 +15,7 @@ Let me now explore more of the app to understand the structure better, check if 
 **Tool: glob**
 
 **Input:**
+
 ```json
 {
   "pattern": "**/*.test.ts*"
@@ -22,6 +23,7 @@ Let me now explore more of the app to understand the structure better, check if 
 ```
 
 **Output:**
+
 ```
 No files found
 ```
@@ -29,6 +31,7 @@ No files found
 **Tool: glob**
 
 **Input:**
+
 ```json
 {
   "pattern": "**/*.spec.ts*"
@@ -36,6 +39,7 @@ No files found
 ```
 
 **Output:**
+
 ```
 No files found
 ```
@@ -43,6 +47,7 @@ No files found
 **Tool: glob**
 
 **Input:**
+
 ```json
 {
   "pattern": "**/tests/**/*"
@@ -50,6 +55,7 @@ No files found
 ```
 
 **Output:**
+
 ```
 No files found
 ```
@@ -65,6 +71,7 @@ No tests currently. Let me also check the docs folder for any PRD or design docs
 **Tool: glob**
 
 **Input:**
+
 ```json
 {
   "pattern": "docs/**/*.md"
@@ -72,6 +79,7 @@ No tests currently. Let me also check the docs folder for any PRD or design docs
 ```
 
 **Output:**
+
 ```
 /home/daniel/github/gymBro/docs/telegram-notification-setup.md
 ```
@@ -90,51 +98,51 @@ Now I have a good understanding of the gymBro app. Here's a comprehensive list o
 
 ### 🔴 **Critiche (Bug/Architecture)**
 
-| Area | Problema | Soluzione |
-|------|----------|-----------|
-| **Testing** | **Zero test** (unit/integration/e2e) | Aggiungi Vitest + React Testing Library + Playwright (vedi skill `webapp-testing`) |
-| **Error handling** | `try/catch` con `console.warn` silenziosi in `useEffect` cleanup | Centralizza error handling con Sentry (vedi skill `sentry-fix-issues`) + toast user-facing |
-| **Race conditions** | `allena.$planId.tsx` ha race condition complesse tra `orphanQ`, `userDecision`, `sessionCreated` ref | Semplifica state machine, usa XState o TanStack Query mutations per session creation |
-| **Type safety** | `useCircle.ts` usa `any` per tipi DB, cast manuali `(data ?? []) as Type[]` | Rigenera tipi Supabase dopo migration (`supabase gen types`) + Zod validation su API boundary |
-| **Bundle size** | `@radix-ui/*` 25+ package, `lucide-react` tree-shaking parziale | Audit bundle (`npm run build && npx vite-bundle-analyzer`), rimuovi unused Radix |
+| Area                | Problema                                                                                             | Soluzione                                                                                     |
+| ------------------- | ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Testing**         | **Zero test** (unit/integration/e2e)                                                                 | Aggiungi Vitest + React Testing Library + Playwright (vedi skill `webapp-testing`)            |
+| **Error handling**  | `try/catch` con `console.warn` silenziosi in `useEffect` cleanup                                     | Centralizza error handling con Sentry (vedi skill `sentry-fix-issues`) + toast user-facing    |
+| **Race conditions** | `allena.$planId.tsx` ha race condition complesse tra `orphanQ`, `userDecision`, `sessionCreated` ref | Semplifica state machine, usa XState o TanStack Query mutations per session creation          |
+| **Type safety**     | `useCircle.ts` usa `any` per tipi DB, cast manuali `(data ?? []) as Type[]`                          | Rigenera tipi Supabase dopo migration (`supabase gen types`) + Zod validation su API boundary |
+| **Bundle size**     | `@radix-ui/*` 25+ package, `lucide-react` tree-shaking parziale                                      | Audit bundle (`npm run build && npx vite-bundle-analyzer`), rimuovi unused Radix              |
 
 ---
 
 ### 🟡 **Alta Priorità (UX/Performance)**
 
-| Area | Miglioramento | Priorità |
-|------|--------------|----------|
-| **Offline-first** | Workout session già usa localStorage ma non Service Worker per offline | Aggiungi Workbox/PWA offline queue per `session_logs` sync |
-| **TanStack Query** | `staleTime: 0` ovunque → refetch aggressivi | Imposta `staleTime: 30-60s` + `gcTime: 5min`; usa `prefetchQuery` su hover link |
-| **N+1 queries** | `storico.tsx` fa query separate per sessions + logs | Usa Supabase `select(..., session_logs(*))` con join o RPC |
-| **Bundle splitting** | Tutto in bundle principale | Code-split routes con `createFileRoute` + `lazy()` per pagine pesanti (PR, Storico) |
-| **i18n incompleto** | `useLanguage` usato ma stringhe hardcoded in componenti (`"..."` letterali) | Estrai tutte le stringhe in `lib/i18n.tsx` o usa `i18next` |
-| **Accessibility** | Mancano `aria-label`, `role`, focus management in dialog/modal | Aggiungi `aria-*`, focus trap, `Tab` navigation test |
+| Area                 | Miglioramento                                                               | Priorità                                                                            |
+| -------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Offline-first**    | Workout session già usa localStorage ma non Service Worker per offline      | Aggiungi Workbox/PWA offline queue per `session_logs` sync                          |
+| **TanStack Query**   | `staleTime: 0` ovunque → refetch aggressivi                                 | Imposta `staleTime: 30-60s` + `gcTime: 5min`; usa `prefetchQuery` su hover link     |
+| **N+1 queries**      | `storico.tsx` fa query separate per sessions + logs                         | Usa Supabase `select(..., session_logs(*))` con join o RPC                          |
+| **Bundle splitting** | Tutto in bundle principale                                                  | Code-split routes con `createFileRoute` + `lazy()` per pagine pesanti (PR, Storico) |
+| **i18n incompleto**  | `useLanguage` usato ma stringhe hardcoded in componenti (`"..."` letterali) | Estrai tutte le stringhe in `lib/i18n.tsx` o usa `i18next`                          |
+| **Accessibility**    | Mancano `aria-label`, `role`, focus management in dialog/modal              | Aggiungi `aria-*`, focus trap, `Tab` navigation test                                |
 
 ---
 
 ### 🟢 **Media Priorità (Code Quality/DX)**
 
-| Area | Miglioramento |
-|------|--------------|
-| **Custom hooks** | `allena.$planId.tsx` ha 1000+ linee → estrai `useWorkoutSession`, `useOrphanSession`, `useWorkoutPersistence` |
-| **Zod validation** | Nessuna validazione input (es. `createPlan`, `joinCircle`) | Aggiungi `zod` schema + `@hookform/resolvers` validation |
-| **Database** | RLS policies frammentate in 30+ migration | Consolida in `supabase/migrations/*_consolidate_rls.sql` + `supabase db diff` |
-| **Error boundaries** | Nessun `ErrorBoundary` → crash whole app | Wrap routes con `<ErrorBoundary fallback={<ErrorFallback />}>` |
-| **Analytics/Telemetry** | Solo `lovable-error-reporting` | Aggiungi PostHog/Plausible per feature adoption (PR views, workout completion rate) |
+| Area                    | Miglioramento                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **Custom hooks**        | `allena.$planId.tsx` ha 1000+ linee → estrai `useWorkoutSession`, `useOrphanSession`, `useWorkoutPersistence` |
+| **Zod validation**      | Nessuna validazione input (es. `createPlan`, `joinCircle`)                                                    | Aggiungi `zod` schema + `@hookform/resolvers` validation                            |
+| **Database**            | RLS policies frammentate in 30+ migration                                                                     | Consolida in `supabase/migrations/*_consolidate_rls.sql` + `supabase db diff`       |
+| **Error boundaries**    | Nessun `ErrorBoundary` → crash whole app                                                                      | Wrap routes con `<ErrorBoundary fallback={<ErrorFallback />}>`                      |
+| **Analytics/Telemetry** | Solo `lovable-error-reporting`                                                                                | Aggiungi PostHog/Plausible per feature adoption (PR views, workout completion rate) |
 
 ---
 
 ### 🔵 **Nice-to-have (Feature)**
 
-| Feature | Descrizione |
-|---------|-------------|
+| Feature                 | Descrizione                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | **Progressive Web App** | `manifest.webmanifest` + `sw.js` esistenti ma non registrati; aggiungi `vite-plugin-pwa` con `registerType: 'autoUpdate'` |
-| **Exercise Library** | `exercise_library` table esiste ma UI ricerca solo in `allena` → pagina dedicata "Esercizi" con filtri muscolo/equip |
-| **Progress Charts** | `recharts` installato ma non usato → grafici volume/volume/settimana in Dashboard/PR |
-| **Push Notifications** | `telegram-notification-setup.md` esiste ma non integrato → Web Push API + VAPID per reminder workout |
-| **Export/Backup** | `profilo.download.tsx` placeholder → export JSON/CSV completo (workouts, PRs, settings) |
-| **Dark mode** | `theme.tsx` esiste ma no toggle UI → aggiungi in `ProfileMenu` + `localStorage` persist |
+| **Exercise Library**    | `exercise_library` table esiste ma UI ricerca solo in `allena` → pagina dedicata "Esercizi" con filtri muscolo/equip      |
+| **Progress Charts**     | `recharts` installato ma non usato → grafici volume/volume/settimana in Dashboard/PR                                      |
+| **Push Notifications**  | `telegram-notification-setup.md` esiste ma non integrato → Web Push API + VAPID per reminder workout                      |
+| **Export/Backup**       | `profilo.download.tsx` placeholder → export JSON/CSV completo (workouts, PRs, settings)                                   |
+| **Dark mode**           | `theme.tsx` esiste ma no toggle UI → aggiungi in `ProfileMenu` + `localStorage` persist                                   |
 
 ---
 
@@ -195,6 +203,7 @@ The user wants me to explain the errors and solutions I proposed in more detail.
 **File coinvolti**: Tutto il codebase
 
 **Soluzione concreta**:
+
 ```bash
 # Setup (usa skill webapp-testing per Playwright)
 npm i -D vitest @testing-library/react @testing-library/user-event jsdom @playwright/test
@@ -202,42 +211,44 @@ npm i -D vitest @testing-library/react @testing-library/user-event jsdom @playwr
 
 ```ts
 // vitest.config.ts
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
-  resolve: { alias: { '@': path.resolve(__dirname, './src') } },
-})
+  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+});
 ```
 
 ```ts
 // vitest.setup.ts
-import '@testing-library/jest-dom'
-import { vi } from 'vitest'
-vi.mock('@/integrations/supabase/client', () => ({
+import "@testing-library/jest-dom";
+import { vi } from "vitest";
+vi.mock("@/integrations/supabase/client", () => ({
   supabase: { from: vi.fn(() => ({ select: vi.fn(), eq: vi.fn(), insert: vi.fn() })) },
-}))
+}));
 ```
 
 ```tsx
 // src/hooks/__tests__/usePersonalRecords.test.ts
-import { renderHook, waitFor } from '@testing-library/react'
-import { usePersonalRecords } from '@/hooks/usePersonalRecords'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from "@testing-library/react";
+import { usePersonalRecords } from "@/hooks/usePersonalRecords";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-test('computePRs calcola 1RM correttamente', () => {
-  const { result } = renderHook(() => usePersonalRecords('user-1'), {
-    wrapper: ({ children }) => <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>,
-  })
+test("computePRs calcola 1RM correttamente", () => {
+  const { result } = renderHook(() => usePersonalRecords("user-1"), {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+    ),
+  });
   // ... assertions
-})
+});
 ```
 
 ---
@@ -245,6 +256,7 @@ test('computePRs calcola 1RM correttamente', () => {
 ### 2. **Race Condition in `allena.$planId.tsx`** — Bug critico produzione
 
 **Codice problematico** (righe 189-288):
+
 ```tsx
 useEffect(() => {
   if (sessionCreated.current) return;
@@ -260,13 +272,15 @@ useEffect(() => {
 }, [orphanQ.data, orphanQ.isLoading, orphanQ.isFetching, ...]);  // ← Troppe dipendenze
 ```
 
-**Scenario di bug**: 
+**Scenario di bug**:
+
 1. Utente apre `/allena/plan-1` → `orphanQ` carica, trova sessione orfana
 2. React Query fa background refetch → `orphanQ.data` diventa `null` temporaneamente
 3. `useEffect` ri-esegue, vede `!orphanQ.data` → crea **nuova sessione** duplicata
 4. Utente preme "Riprendi" → `orphanIdAtDecision` punta a sessione già cancellata
 
 **Soluzione**: State machine esplicita con XState o TanStack Query mutations:
+
 ```tsx
 // Sostituisci useEffect complesso con mutation atomica
 const createOrResumeSession = useMutation({
@@ -292,6 +306,7 @@ const createOrResumeSession = useMutation({
 ### 3. **Type Safety — Cast `as Type[]` ovunque**
 
 **Esempi reali nel codebase**:
+
 ```tsx
 // src/routes/app/index.tsx:112
 const sessionsArr = (sessions ?? []) as SessionRow[];
@@ -306,14 +321,15 @@ return (data ?? []) as Circle[];
 **Problema**: Se migration DB aggiunge/rimuove colonne, TypeScript non urla → runtime error.
 
 **Soluzione**: Rigenera tipi + Zod validation boundary:
+
 ```bash
 npx supabase gen types typescript --project-id <ref> > src/integrations/supabase/types.ts
 ```
 
 ```ts
 // src/lib/validators.ts
-import { z } from 'zod'
-import type { Database } from '@/integrations/supabase/types'
+import { z } from "zod";
+import type { Database } from "@/integrations/supabase/types";
 
 export const SessionRowSchema = z.object({
   id: z.string().uuid(),
@@ -322,17 +338,17 @@ export const SessionRowSchema = z.object({
   completed_at: z.string().datetime().nullable(),
   total_volume: z.number(),
   plan_name: z.string().nullable(),
-})
+});
 
 export function validateSessions(data: unknown): SessionRow[] {
-  return z.array(SessionRowSchema).parse(data)
+  return z.array(SessionRowSchema).parse(data);
 }
 ```
 
 ```tsx
 // Usage
-const { data } = await supabase.from('sessions').select('...')
-const sessions = validateSessions(data)  // Throw se schema cambiato
+const { data } = await supabase.from("sessions").select("...");
+const sessions = validateSessions(data); // Throw se schema cambiato
 ```
 
 ---
@@ -340,6 +356,7 @@ const sessions = validateSessions(data)  // Throw se schema cambiato
 ### 4. **N+1 Query in `storico.tsx`** — Performance
 
 **Codice attuale** (righe 33-69):
+
 ```tsx
 const q = useQuery({  // Query 1: sessions
   queryFn: async () => {
@@ -360,6 +377,7 @@ const logsQ = useQuery({  // Query 2: logs (dipende da sessionIds)
 **Problema**: 2 round-trip DB, `sessionIds` array può essere grande (limit 1000 per `.in()`).
 
 **Soluzione**: Single query con join o RPC:
+
 ```sql
 -- Migration: crea RPC
 CREATE OR REPLACE FUNCTION get_history_with_logs(p_user_id uuid, p_since timestamptz)
@@ -371,7 +389,7 @@ RETURNS TABLE (
   total_volume numeric,
   logs jsonb
 ) LANGUAGE sql SECURITY DEFINER AS $$
-  SELECT 
+  SELECT
     s.id,
     s.plan_name,
     s.started_at,
@@ -396,15 +414,15 @@ $$;
 ```tsx
 // Client: single query
 const historyQ = useQuery({
-  queryKey: ['history', user.id, sixMonthsAgo],
+  queryKey: ["history", user.id, sixMonthsAgo],
   queryFn: async () => {
-    const { data } = await supabase.rpc('get_history_with_logs', {
+    const { data } = await supabase.rpc("get_history_with_logs", {
       p_user_id: user.id,
       p_since: sixMonthsAgo.toISOString(),
-    })
-    return data
+    });
+    return data;
   },
-})
+});
 ```
 
 ---
@@ -412,6 +430,7 @@ const historyQ = useQuery({
 ### 5. **Error Handling Silenzioso** — Debugging impossibile
 
 **Pattern ricorrente** in `allena.$planId.tsx`:
+
 ```tsx
 // Riga 169
 if (error) console.warn("DB workout_state save failed:", error.message);
@@ -428,45 +447,46 @@ if (error) console.warn("DB workout_state save failed:", error.message);
 **Problema**: Errori persi → utente vede UI rotta senza feedback, dev non vede logs in produzione.
 
 **Soluzione**: Centralized error reporting + user-facing toast:
+
 ```tsx
 // src/lib/error-capture.ts (esiste ma non usato bene)
-import * as Sentry from '@sentry/react'
+import * as Sentry from "@sentry/react";
 
 export function captureError(error: unknown, context?: Record<string, unknown>) {
-  console.error('[ERROR]', error, context)
-  Sentry.captureException(error, { extra: context })
+  console.error("[ERROR]", error, context);
+  Sentry.captureException(error, { extra: context });
 }
 
 // Wrapper per mutazioni
 export function withErrorHandling<TArgs extends unknown[], TReturn>(
   fn: (...args: TArgs) => Promise<TReturn>,
-  errorMessage: string
+  errorMessage: string,
 ) {
   return async (...args: TArgs): Promise<TReturn | null> => {
     try {
-      return await fn(...args)
+      return await fn(...args);
     } catch (err) {
-      captureError(err, { fn: fn.name, args })
-      toast.error(errorMessage)
-      return null
+      captureError(err, { fn: fn.name, args });
+      toast.error(errorMessage);
+      return null;
     }
-  }
+  };
 }
 ```
 
 ```tsx
 // Usage in allena.$planId.tsx
 const saveWorkoutStateToDb = useCallback(
-  withErrorHandling(
-    async (state: WorkoutState | null) => {
-      if (!state?.sessionId) return
-      const { error } = await supabase.from('sessions').update({ workout_state: state }).eq('id', state.sessionId)
-      if (error) throw error
-    },
-    'Errore salvataggio progressi'
-  ),
-  []
-)
+  withErrorHandling(async (state: WorkoutState | null) => {
+    if (!state?.sessionId) return;
+    const { error } = await supabase
+      .from("sessions")
+      .update({ workout_state: state })
+      .eq("id", state.sessionId);
+    if (error) throw error;
+  }, "Errore salvataggio progressi"),
+  [],
+);
 ```
 
 ---
@@ -476,6 +496,7 @@ const saveWorkoutStateToDb = useCallback(
 **Attuale `package.json`** (righe 19-44): 25 `@radix-ui/*` packages ~500KB gzipped.
 
 **Audit comando**:
+
 ```bash
 npm run build && npx vite-bundle-analyzer dist/client
 ```
@@ -483,6 +504,7 @@ npm run build && npx vite-bundle-analyzer dist/client
 **Probabili unused**: `context-menu`, `menubar`, `navigation-menu`, `resizable`, `aspect-ratio`, `pagination`, `breadcrumb`.
 
 **Soluzione**: Rimuovi unused + tree-shaking check:
+
 ```bash
 # Trova import inutilizzati
 grep -r "@radix-ui/react-" src/ --include="*.tsx" | cut -d'/' -f3 | sort -u
@@ -500,59 +522,62 @@ npm uninstall @radix-ui/react-context-menu @radix-ui/react-menubar @radix-ui/rea
 **File esistenti inutilizzati**: `public/sw.js`, `public/manifest.webmanifest`
 
 **Soluzione**: `vite-plugin-pwa` con queue offline:
+
 ```bash
 npm i -D vite-plugin-pwa workbox-window
 ```
 
 ```ts
 // vite.config.ts
-import { VitePWA } from 'vite-plugin-pwa'
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   plugins: [
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: "autoUpdate",
       manifest: {
-        name: 'gymBro',
-        short_name: 'gymBro',
-        theme_color: '#1a1a1a',
-        icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+        name: "gymBro",
+        short_name: "gymBro",
+        theme_color: "#1a1a1a",
+        icons: [{ src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [{
-          urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/,
-          handler: 'NetworkFirst',
-          options: { cacheName: 'supabase-api', expiration: { maxEntries: 100 } },
-        }],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/,
+            handler: "NetworkFirst",
+            options: { cacheName: "supabase-api", expiration: { maxEntries: 100 } },
+          },
+        ],
       },
     }),
   ],
-})
+});
 ```
 
 ```tsx
 // src/routes/__root.tsx - registra SW
 useEffect(() => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(console.error)
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(console.error);
   }
-}, [])
+}, []);
 ```
 
 ---
 
 ## Priorità di Intervento
 
-| Ordine | Task | Tempo | Impatto |
-|--------|------|-------|---------|
-| 1 | **Test setup** (Vitest + 1 test hook) | 2h | Abilita refactoring sicuri |
-| 2 | **Fix race condition** `allena.$planId.tsx` | 3h | Elimina bug duplicazione sessioni |
-| 3 | **Type generation + Zod** | 1h | Previene runtime error post-migration |
-| 4 | **N+1 query storico** | 2h | -50% latency pagina storico |
-| 5 | **Error Boundary + Sentry** | 2h | Visibilità errori produzione |
-| 6 | **Bundle audit + cleanup** | 1h | -100-200KB JS iniziale |
-| 7 | **PWA offline queue** | 3h | Workout funzionano offline |
+| Ordine | Task                                        | Tempo | Impatto                               |
+| ------ | ------------------------------------------- | ----- | ------------------------------------- |
+| 1      | **Test setup** (Vitest + 1 test hook)       | 2h    | Abilita refactoring sicuri            |
+| 2      | **Fix race condition** `allena.$planId.tsx` | 3h    | Elimina bug duplicazione sessioni     |
+| 3      | **Type generation + Zod**                   | 1h    | Previene runtime error post-migration |
+| 4      | **N+1 query storico**                       | 2h    | -50% latency pagina storico           |
+| 5      | **Error Boundary + Sentry**                 | 2h    | Visibilità errori produzione          |
+| 6      | **Bundle audit + cleanup**                  | 1h    | -100-200KB JS iniziale                |
+| 7      | **PWA offline queue**                       | 3h    | Workout funzionano offline            |
 
 ---
 
@@ -573,6 +598,7 @@ _Thinking:_
 The user wants me to start with Task 1: Test setup (Vitest + Playwright). Let me set up the testing infrastructure for this project.
 
 I'll need to:
+
 1. Install the test dependencies
 2. Create vitest.config.ts
 3. Create vitest.setup.ts
@@ -584,6 +610,7 @@ Let me start by installing the dependencies and creating the configuration files
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npm i -D vitest @testing-library/react @testing-library/user-event jsdom @playwright/test @vitest/coverage-v8"
@@ -591,6 +618,7 @@ Let me start by installing the dependencies and creating the configuration files
 ```
 
 **Output:**
+
 ```
 
 added 88 packages, removed 6 packages, and audited 562 packages in 29s
@@ -618,6 +646,7 @@ Good, dependencies installed. Now let me create the vitest configuration files
 **Tool: write**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/vitest.config.ts",
@@ -626,6 +655,7 @@ Good, dependencies installed. Now let me create the vitest configuration files
 ```
 
 **Output:**
+
 ```
 Wrote file successfully.
 ```
@@ -641,6 +671,7 @@ Now let me create the vitest setup file
 **Tool: write**
 
 **Input:**
+
 ```json
 {
   "content": "import { cleanup } from '@testing-library/react'\nimport { afterEach, vi } from 'vitest'\nimport '@testing-library/jest-dom'\n\nObject.defineProperty(window, 'matchMedia', {\n  writable: true,\n  value: vi.fn().mockImplementation((query) => ({\n    matches: false,\n    media: query,\n    onchange: null,\n    addListener: vi.fn(),\n    removeListener: vi.fn(),\n    addEventListener: vi.fn(),\n    removeEventListener: vi.fn(),\n    dispatchEvent: vi.fn(),\n  })),\n})\n\nObject.defineProperty(window, 'localStorage', {\n  writable: true,\n  value: {\n    getItem: vi.fn(),\n    setItem: vi.fn(),\n    removeItem: vi.fn(),\n    clear: vi.fn(),\n  },\n})\n\nObject.defineProperty(window, 'sessionStorage', {\n  writable: true,\n  value: {\n    getItem: vi.fn(),\n    setItem: vi.fn(),\n    removeItem: vi.fn(),\n    clear: vi.fn(),\n  },\n})\n\nwindow.navigator.clipboard = {\n  writeText: vi.fn().mockResolvedValue(undefined),\n  readText: vi.fn().mockResolvedValue(''),\n}\n\nHTMLDialogElement.prototype.showModal = vi.fn()\nHTMLDialogElement.prototype.close = vi.fn()\n\nafterEach(() => {\n  cleanup()\n  vi.clearAllMocks()\n})\n\nvi.mock('@/integrations/supabase/client', () => ({\n  supabase: {\n    from: vi.fn(() => ({\n      select: vi.fn().mockReturnThis(),\n      eq: vi.fn().mockReturnThis(),\n      not: vi.fn().mockReturnThis(),\n      gte: vi.fn().mockReturnThis(),\n      lte: vi.fn().mockReturnThis(),\n      in: vi.fn().mockReturnThis(),\n      order: vi.fn().mockReturnThis(),\n      limit: vi.fn().mockReturnThis(),\n      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),\n      single: vi.fn().mockResolvedValue({ data: null, error: null }),\n      insert: vi.fn().mockReturnThis(),\n      update: vi.fn().mockReturnThis(),\n      delete: vi.fn().mockReturnThis(),\n      rpc: vi.fn().mockResolvedValue({ data: null, error: null }),\n    })),\n    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),\n  },\n}))\n\nvi.mock('@tanstack/react-query', () => ({\n  useQuery: vi.fn(),\n  useMutation: vi.fn(),\n  useQueryClient: vi.fn(() => ({\n    invalidateQueries: vi.fn(),\n    setQueryData: vi.fn(),\n  })),\n  QueryClient: vi.fn(),\n  QueryClientProvider: ({ children }: { children: React.ReactNode }) => children,\n}))\n\nvi.mock('@tanstack/react-router', () => ({\n  createFileRoute: vi.fn(() => ({ component: () => null })),\n  Link: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,\n  useNavigate: vi.fn(() => vi.fn()),\n  useParams: vi.fn(() => ({})),\n  useSearch: vi.fn(() => ({})),\n  Outlet: () => null,\n}))\n\nvi.mock('sonner', () => ({\n  toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() },\n}))\n\nvi.mock('date-fns', () => ({\n  format: vi.fn((d, f, o) => d.toISOString()),\n  startOfWeek: vi.fn((d) => d),\n  endOfWeek: vi.fn((d) => d),\n  subWeeks: vi.fn((d) => d),\n  subDays: vi.fn((d) => d),\n  eachDayOfInterval: vi.fn(() => []),\n  isSameDay: vi.fn(() => false),\n  startOfMonth: vi.fn((d) => d),\n  endOfMonth: vi.fn((d) => d),\n  subMonths: vi.fn((d) => d),\n  isSameMonth: vi.fn(() => false),\n}))\n\nvi.mock('@/hooks/useLanguage', () => ({\n  useLanguage: () => ({\n    t: (it: string, en: string) => it,\n    language: 'it',\n    dateLocale: { code: 'it' },\n  }),\n}))\n\nvi.mock('@/hooks/useWeightUnit', () => ({\n  useWeightUnit: () => ({\n    display: (val: number) => `${val} kg`,\n    unit: 'kg',\n  }),\n}))",
@@ -649,6 +680,7 @@ Now let me create the vitest setup file
 ```
 
 **Output:**
+
 ```
 Wrote file successfully.
 ```
@@ -664,6 +696,7 @@ Now let me create a test for the usePersonalRecords hook since it's a pure funct
 **Tool: write**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/usePersonalRecords.test.ts",
@@ -672,6 +705,7 @@ Now let me create a test for the usePersonalRecords hook since it's a pure funct
 ```
 
 **Output:**
+
 ```
 Wrote file successfully.
 ```
@@ -697,6 +731,7 @@ The user wants me to continue. Let me run the tests to make sure they pass, and 
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/hooks/usePersonalRecords.test.ts"
@@ -704,6 +739,7 @@ The user wants me to continue. Let me run the tests to make sure they pass, and 
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -719,8 +755,8 @@ Error: Transform failed with 1 error:
     [38;5;246m╭[0m[38;5;246m─[0m[38;5;246m[[0m vitest.setup.ts:87:75 [38;5;246m][0m
     [38;5;246m│[0m
  [38;5;246m87 │[0m [38;5;249m [0m[38;5;249m [0m[38;5;249mL[0m[38;5;249mi[0m[38;5;249mn[0m[38;5;249mk[0m[38;5;249m:[0m[38;5;249m [0m[38;5;249m([0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mn[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m:[0m[38;5;249m [0m[38;5;249m{[0m[38;5;249m [0m[38;5;249mc[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mn[0m[38;5;249m:[0m[38;5;249m [0m[38;5;249mR[0m[38;5;249me[0m[38;5;249ma[0m[38;5;249mc[0m[38;5;249mt[0m[38;5;249m.[0m[38;5;249mR[0m[38;5;249me[0m[38;5;249ma[0m[38;5;249mc[0m[38;5;249mt[0m[38;5;249mN[0m[38;5;249mo[0m[38;5;249md[0m[38;5;249me[0m[38;5;249m [0m[38;5;249m}[0m[38;5;249m)[0m[38;5;249m [0m[38;5;249m=[0m[38;5;249m>[0m[38;5;249m [0m[38;5;249m<[0m[38;5;249ms[0m[38;5;249mp[0m[38;5;249ma[0m[38;5;249mn[0m[38;5;249m>[0m[38;5;249m{[0m[38;5;249mc[0m[38;5;249mh[0m[38;5;249mi[0m[38;5;249ml[0m[38;5;249md[0m[38;5;249mr[0m[38;5;249me[0m[38;5;249mn[0m[38;5;249m}[0m[38;5;249m<[0m/span>,
- [38;5;240m   │[0m                                                                           ────┬───  
- [38;5;240m   │[0m                                                                               ╰───── 
+ [38;5;240m   │[0m                                                                           ────┬───
+ [38;5;240m   │[0m                                                                               ╰─────
 [38;5;246m────╯[0m
 
   Plugin: vite:oxc
@@ -752,6 +788,7 @@ There's an issue with the vitest.setup.ts file - there's a regex issue. Let me f
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/vitest.setup.ts",
@@ -761,6 +798,7 @@ There's an issue with the vitest.setup.ts file - there's a regex issue. Let me f
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -776,6 +814,7 @@ Now let me run the tests again.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/hooks/usePersonalRecords.test.ts"
@@ -783,6 +822,7 @@ Now let me run the tests again.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -799,7 +839,7 @@ Error: Failed to resolve import "@testing-library/jest-dom" from "vitest.setup.t
   77 |  const __vi_import_0__ = await import("@testing-library/react");
   78 |  const __vi_import_1__ = await import("@testing-library/jest-dom");
      |                                       ^
-  79 |  
+  79 |
   80 |  import { afterEach, vi } from "vitest";
  ❯ TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/node.js:29914:39
  ❯ TransformPluginContext.error node_modules/vite/dist/node/chunks/node.js:29911:14
@@ -831,6 +871,7 @@ Need to install @testing-library/jest-dom
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npm i -D @testing-library/jest-dom"
@@ -838,6 +879,7 @@ Need to install @testing-library/jest-dom
 ```
 
 **Output:**
+
 ```
 
 added 8 packages, and audited 570 packages in 4s
@@ -865,6 +907,7 @@ Let me run the tests again.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/hooks/usePersonalRecords.test.ts"
@@ -872,6 +915,7 @@ Let me run the tests again.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -913,6 +957,7 @@ The issue is that vitest doesn't have global `expect` by default. Need to add `g
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/vitest.config.ts",
@@ -922,6 +967,7 @@ The issue is that vitest doesn't have global `expect` by default. Need to add `g
 ```
 
 **Error:**
+
 ```
 Could not find oldString in the file. It must match exactly, including whitespace, indentation, and line endings.
 ```
@@ -937,6 +983,7 @@ Let me read the file first
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/vitest.config.ts"
@@ -944,6 +991,7 @@ Let me read the file first
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/vitest.config.ts</path>
 <type>file</type>
@@ -951,7 +999,7 @@ Let me read the file first
 1: import { defineConfig } from 'vitest/config'
 2: import react from '@vitejs/plugin-react'
 3: import path from 'path'
-4: 
+4:
 5: export default defineConfig({
 6:   plugins: [react()],
 7:   test: {
@@ -982,6 +1030,7 @@ I see the config already has coverage config. Let me add globals.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "oldString": "test: {\n    environment: 'jsdom',\n    setupFiles: ['./vitest.setup.ts'],\n    include: ['src/**/*.test.{ts,tsx}'],\n    coverage: {",
@@ -991,6 +1040,7 @@ I see the config already has coverage config. Let me add globals.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -1006,6 +1056,7 @@ Now let me run the test again.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/hooks/usePersonalRecords.test.ts"
@@ -1013,6 +1064,7 @@ Now let me run the test again.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -1132,6 +1184,7 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/usePersonalRecords.ts"
@@ -1139,6 +1192,7 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/hooks/usePersonalRecords.ts</path>
 <type>file</type>
@@ -1146,14 +1200,14 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 1: import { useQuery } from "@tanstack/react-query";
 2: import { supabase } from "@/integrations/supabase/client";
 3: import { useMemo } from "react";
-4: 
+4:
 5: type LogRow = {
 6:   exercise_name: string;
 7:   weight: number;
 8:   reps: number;
 9:   created_at: string;
 10: };
-11: 
+11:
 12: export type ExercisePR = {
 13:   exercise: string;
 14:   maxWeight: number;
@@ -1162,26 +1216,26 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 17:   totalSets: number;
 18:   history: { weight: number; reps: number; date: string }[];
 19: };
-20: 
+20:
 21: function computePRs(logs: LogRow[]): ExercisePR[] {
 22:   const byExercise = new Map<string, LogRow[]>();
-23: 
+23:
 24:   for (const log of logs) {
 25:     const name = log.exercise_name.trim();
 26:     if (!name) continue;
 27:     if (!byExercise.has(name)) byExercise.set(name, []);
 28:     byExercise.get(name)!.push(log);
 29:   }
-30: 
+30:
 31:   const prs: ExercisePR[] = [];
-32: 
+32:
 33:   for (const [exercise, entries] of byExercise) {
 34:     // Sort by weight desc, then by date desc
 35:     entries.sort((a, b) => b.weight - a.weight || b.created_at.localeCompare(a.created_at));
-36: 
+36:
 37:     const topEntry = entries[0];
 38:     const maxWeight = topEntry.weight;
-39: 
+39:
 40:     // Estimated 1RM using Epley formula: weight × (1 + reps/30)
 41:     // Only for sets with reps <= 10 (reasonable range for 1RM estimation)
 42:     let estimated1RM = maxWeight;
@@ -1193,7 +1247,7 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 48:         }
 49:       }
 50:     }
-51: 
+51:
 52:     // History: last 5 unique weights (deduplicated, most recent first)
 53:     const seen = new Set<string>();
 54:     const history: { weight: number; reps: number; date: string }[] = [];
@@ -1206,7 +1260,7 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 61:         if (history.length >= 5) break;
 62:       }
 63:     }
-64: 
+64:
 65:     prs.push({
 66:       exercise,
 67:       maxWeight,
@@ -1216,13 +1270,13 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 71:       history,
 72:     });
 73:   }
-74: 
+74:
 75:   // Sort by max weight descending
 76:   prs.sort((a, b) => b.maxWeight - a.maxWeight);
-77: 
+77:
 78:   return prs;
 79: }
-80: 
+80:
 81: export function usePersonalRecords(userId: string) {
 82:   return useQuery({
 83:     queryKey: ["personal-records", userId],
@@ -1238,7 +1292,7 @@ The tests are failing because `computePRs` is not exported from the hook file. I
 93:     staleTime: 1000 * 60,
 94:   });
 95: }
-96: 
+96:
 97: /**
 98:  * Check if a given set is a new PR for that exercise.
 99:  * Returns the old PR weight (0 if first time) and whether it's a new PR.
@@ -1270,6 +1324,7 @@ The `computePRs` function is not exported. I need to export it.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/usePersonalRecords.ts",
@@ -1279,6 +1334,7 @@ The `computePRs` function is not exported. I need to export it.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -1294,6 +1350,7 @@ Now let me run the tests again.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/hooks/usePersonalRecords.test.ts"
@@ -1301,6 +1358,7 @@ Now let me run the tests again.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -1367,14 +1425,16 @@ _Thinking:_
 The test expectations are wrong - the algorithm is correctly computing 1RM using the maximum of all valid reps (not just the max weight entry). Let me fix the tests to match the actual implementation logic.
 
 Looking at the algorithm:
+
 - It finds the max weight entry first
 - Then iterates through ALL entries and calculates 1RM for each with reps <= 10
 - Takes the maximum 1RM from all those calculations
 
 For "Panca piana" with entries:
-- 80kg x 8 reps -> 1RM = 80 * (1 + 8/30) = 80 * 1.267 = 101.33 -> 101
-- 85kg x 5 reps -> 1RM = 85 * (1 + 5/30) = 85 * 1.167 = 99.17 -> 99
-- 75kg x 10 reps -> 1RM = 75 * (1 + 10/30) = 75 * 1.333 = 100
+
+- 80kg x 8 reps -> 1RM = 80 _ (1 + 8/30) = 80 _ 1.267 = 101.33 -> 101
+- 85kg x 5 reps -> 1RM = 85 _ (1 + 5/30) = 85 _ 1.167 = 99.17 -> 99
+- 75kg x 10 reps -> 1RM = 75 _ (1 + 10/30) = 75 _ 1.333 = 100
 
 So the max 1RM is 101 (from 80kg x 8 reps). That's why the test fails.
 
@@ -1383,6 +1443,7 @@ The test expectation is wrong - it assumes the max weight entry gives the max 1R
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "oldString": "it('calcola 1RM stimato con formula Epley', () => {\n    const prs = computePRs(mockLogs)\n    const panca = prs.find((p) => p.exercise === 'Panca piana')\n    const squat = prs.find((p) => p.exercise === 'Squat')\n    expect(panca?.estimated1RM).toBe(Math.round(85 * (1 + 5 / 30)))\n    expect(squat?.estimated1RM).toBe(Math.round(120 * (1 + 5 / 30)))\n  })",
@@ -1392,6 +1453,7 @@ The test expectation is wrong - it assumes the max weight entry gives the max 1R
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -1407,6 +1469,7 @@ Now let's run the test again.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/hooks/usePersonalRecords.test.ts"
@@ -1414,6 +1477,7 @@ Now let's run the test again.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -1476,7 +1540,7 @@ const logs = [
 ]
 ```
 
-The algorithm starts with `estimated1RM = maxWeight` which is 100 (the highest weight entry). Then it only considers entries with `reps <= 10` for the Epley calculation. So 80*5=93 is calculated but 100 (the max weight itself) is already higher. So the final estimated1RM = 100.
+The algorithm starts with `estimated1RM = maxWeight` which is 100 (the highest weight entry). Then it only considers entries with `reps <= 10` for the Epley calculation. So 80\*5=93 is calculated but 100 (the max weight itself) is already higher. So the final estimated1RM = 100.
 
 The test was expecting 93 but the correct value is 100 because the function starts with `maxWeight` as the baseline and only considers reps <= 10 entries as potentially higher. Let me fix the test.
 
@@ -1485,6 +1549,7 @@ L'ultimo test fallisce perché l'algoritmo parte dal `maxWeight` (100) come base
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/usePersonalRecords.test.ts",
@@ -1494,6 +1559,7 @@ L'ultimo test fallisce perché l'algoritmo parte dal `maxWeight` (100) come base
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -1509,6 +1575,7 @@ Now let me run the tests again to verify all pass.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/hooks/usePersonalRecords.test.ts"
@@ -1516,6 +1583,7 @@ Now let me run the tests again to verify all pass.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -1542,6 +1610,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/lib/calories.ts"
@@ -1549,6 +1618,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/lib/calories.ts</path>
 <type>file</type>
@@ -1564,6 +1634,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/lib/ranks.ts"
@@ -1571,6 +1642,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/lib/ranks.ts</path>
 <type>file</type>
@@ -1582,14 +1654,14 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 5:  * I tier sono derivati: non memorizziamo nulla su DB, calcoliamo tutto
 6:  * a partire dal conteggio delle sessioni completate.
 7:  */
-8: 
+8:
 9: import recluta from "@/assets/ranks/recluta.webp";
 10: import atleta from "@/assets/ranks/atleta.webp";
 11: import guerriero from "@/assets/ranks/guerriero.webp";
 12: import campione from "@/assets/ranks/campione.webp";
 13: import maestro from "@/assets/ranks/maestro.webp";
 14: import leggenda from "@/assets/ranks/leggenda.webp";
-15: 
+15:
 16: export type RankTier = {
 17:   /** Indice del livello (0-based). */
 18:   level: number;
@@ -1600,7 +1672,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 23:   /** Immagine decorativa del rank. */
 24:   image: string;
 25: };
-26: 
+26:
 27: /** Definizione dei 6 tier di rank. Ordinati per threshold crescente. */
 28: export const RANK_TIERS: RankTier[] = [
 29:   { level: 0, name: ["Recluta", "Recruit"], threshold: 0, image: recluta },
@@ -1610,7 +1682,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 33:   { level: 4, name: ["Maestro", "Master"], threshold: 100, image: maestro },
 34:   { level: 5, name: ["Leggenda", "Legend"], threshold: 200, image: leggenda },
 35: ];
-36: 
+36:
 37: export type RankInfo = {
 38:   /** Tier corrente. */
 39:   tier: RankTier;
@@ -1623,21 +1695,21 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 46:   /** Progresso 0..1 verso il prossimo rank (1 se al massimo). */
 47:   progress: number;
 48: };
-49: 
+49:
 50: /**
 51:  * Calcola il rank a partire dal numero totale di allenamenti completati.
 52:  */
 53: export function getRank(totalWorkouts: number): RankInfo {
 54:   const total = Math.max(0, Math.floor(totalWorkouts));
-55: 
+55:
 56:   let tier = RANK_TIERS[0];
 57:   for (const candidate of RANK_TIERS) {
 58:     if (total >= candidate.threshold) tier = candidate;
 59:   }
-60: 
+60:
 61:   const tierIndex = RANK_TIERS.indexOf(tier);
 62:   const next = RANK_TIERS[tierIndex + 1] ?? null;
-63: 
+63:
 64:   if (!next) {
 65:     return {
 66:       tier,
@@ -1647,11 +1719,11 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 70:       progress: 1,
 71:     };
 72:   }
-73: 
+73:
 74:   const span = next.threshold - tier.threshold;
 75:   const done = total - tier.threshold;
 76:   const progress = span > 0 ? Math.min(done / span, 1) : 1;
-77: 
+77:
 78:   return {
 79:     tier,
 80:     totalWorkouts: total,
@@ -1660,14 +1732,14 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 83:     progress,
 84:   };
 85: }
-86: 
+86:
 87: /**
 88:  * Restituisce il nome del rank nella lingua richiesta ("it" | "en").
 89:  */
 90: export function rankName(tier: RankTier, language: "it" | "en"): string {
 91:   return language === "en" ? tier.name[1] : tier.name[0];
 92: }
-93: 
+93:
 94: /**
 95:  * Restituisce il nome del tier successivo a `level` (null se `level`
 96:  * è l'ultimo). Utile per messaggi del tipo "mancano N allenamenti a <rank>".
@@ -1684,6 +1756,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/lib/muscleColors.ts"
@@ -1691,6 +1764,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/lib/muscleColors.ts</path>
 <type>file</type>
@@ -1706,11 +1780,11 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 9:   Glutei: "oklch(0.65 0.18 350)",
 10:   Altro: "oklch(0.7 0 0)",
 11: };
-12: 
+12:
 13: export function muscleColor(group?: string | null): string {
 14:   return MUSCLE_COLORS[group?.trim() ?? "Altro"] ?? MUSCLE_COLORS.Altro;
 15: }
-16: 
+16:
 17: // Traduzione IT→EN dei gruppi muscolari. I gruppi muscolari sono salvati in
 18: // italiano nel DB (testo libero), quindi mappiamo i valori più comuni.
 19: export const MUSCLE_EN: Record<string, string> = {
@@ -1734,7 +1808,7 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 37:   "Full body": "Full body",
 38:   Altro: "Other",
 39: };
-40: 
+40:
 41: export function muscleEn(it?: string | null): string {
 42:   if (!it) return "";
 43:   const key = it.trim();
@@ -1752,7 +1826,8 @@ Tutti i 11 test passano. Aggiungiamo test per altre funzioni pure.
 _Thinking:_
 
 Great, I can see there are good pure functions to test:
-1. `ranks.ts` - `getRank()`, `rankName()`, `nextRankName()` 
+
+1. `ranks.ts` - `getRank()`, `rankName()`, `nextRankName()`
 2. `muscleColors.ts` - `muscleColor()`, `muscleEn()`
 3. `calories.ts` - `formatVolume()`
 
@@ -1761,6 +1836,7 @@ Let me create tests for these. I'll skip ranks.ts since it imports image assets 
 **Tool: write**
 
 **Input:**
+
 ```json
 {
   "content": "import { describe, it, expect, vi } from 'vitest'\nimport { muscleColor, muscleEn, MUSCLE_COLORS, MUSCLE_EN } from '@/lib/muscleColors'\n\ndescribe('muscleColor', () => {\n  it('restituisce il colore per un gruppo muscolare valido', () => {\n    expect(muscleColor('Petto')).toBe(MUSCLE_COLORS.Petto)\n    expect(muscleColor('Gambe')).toBe(MUSCLE_COLORS.Gambe)\n    expect(muscleColor('Spalle')).toBe(MUSCLE_COLORS.Spalle)\n  })\n\n  it('restituisce Altro per gruppo null/undefined', () => {\n    expect(muscleColor(null)).toBe(MUSCLE_COLORS.Altro)\n    expect(muscleColor(undefined)).toBe(MUSCLE_COLORS.Altro)\n  })\n\n  it('restituisce Altro per gruppo non riconosciuto', () => {\n    expect(muscleColor('Inesistente')).toBe(MUSCLE_COLORS.Altro)\n  })\n\n  it('trimma whitespace', () => {\n    expect(muscleColor('  Petto  ')).toBe(MUSCLE_COLORS.Petto)\n  })\n\n  it('gestisce stringa vuota', () => {\n    expect(muscleColor('')).toBe(MUSCLE_COLORS.Altro)\n  })\n})\n\ndescribe('muscleEn', () => {\n  it('traduce gruppi comuni', () => {\n    expect(muscleEn('Petto')).toBe('Chest')\n    expect(muscleEn('Schiena')).toBe('Back')\n    expect(muscleEn('Gambe')).toBe('Legs')\n    expect(muscleEn('Spalle')).toBe('Shoulders')\n    expect(muscleEn('Bicipiti')).toBe('Biceps')\n    expect(muscleEn('Tricipiti')).toBe('Triceps')\n  })\n\n  it('gestisce sinonimi', () => {\n    expect(muscleEn('Dorsali')).toBe('Back')\n    expect(muscleEn('Quadricipiti')).toBe('Quads')\n    expect(muscleEn('Femorali')).toBe('Hamstrings')\n    expect(muscleEn('Polpacci')).toBe('Calves')\n  })\n\n  it('restituisce la stringa originale per gruppo sconosciuto', () => {\n    expect(muscleEn('MioGruppo')).toBe('MioGruppo')\n  })\n\n  it('restituisce stringa vuota per null/undefined', () => {\n    expect(muscleEn(null)).toBe('')\n    expect(muscleEn(undefined)).toBe('')\n  })\n\n  it('trimma whitespace', () => {\n    expect(muscleEn('  Petto  ')).toBe('Chest')\n  })\n})\n",
@@ -1769,6 +1845,7 @@ Let me create tests for these. I'll skip ranks.ts since it imports image assets 
 ```
 
 **Output:**
+
 ```
 Wrote file successfully.
 ```
@@ -1786,6 +1863,7 @@ Ora creiamo il test per `ranks.ts`:
 **Tool: write**
 
 **Input:**
+
 ```json
 {
   "content": "import { describe, it, expect, vi } from 'vitest'\n\nvi.mock('@/assets/ranks/recluta.webp', () => ({ default: 'recluta.webp' }))\nvi.mock('@/assets/ranks/atleta.webp', () => ({ default: 'atleta.webp' }))\nvi.mock('@/assets/ranks/guerriero.webp', () => ({ default: 'guerriero.webp' }))\nvi.mock('@/assets/ranks/campione.webp', () => ({ default: 'campione.webp' }))\nvi.mock('@/assets/ranks/maestro.webp', () => ({ default: 'maestro.webp' }))\nvi.mock('@/assets/ranks/leggenda.webp', () => ({ default: 'leggenda.webp' }))\n\nimport { getRank, rankName, nextRankName, RANK_TIERS } from '@/lib/ranks'\n\ndescribe('getRank', () => {\n  it('0 allenamenti → Recluta', () => {\n    const r = getRank(0)\n    expect(r.tier.name[0]).toBe('Recluta')\n    expect(r.tier.level).toBe(0)\n    expect(r.totalWorkouts).toBe(0)\n    expect(r.progress).toBe(0)\n  })\n\n  it('10 allenamenti → Atleta', () => {\n    const r = getRank(10)\n    expect(r.tier.name[0]).toBe('Atleta')\n    expect(r.tier.level).toBe(1)\n    expect(r.workoutsToNext).toBe(15)\n    expect(r.progress).toBe(0)\n  })\n\n  it('15 allenamenti → Atleta con progresso 20%', () => {\n    const r = getRank(15)\n    expect(r.tier.name[0]).toBe('Atleta')\n    expect(r.workoutsToNext).toBe(10)\n    expect(r.progress).toBeCloseTo(0.2, 1)\n  })\n\n  it('25 allenamenti → Guerriero', () => {\n    const r = getRank(25)\n    expect(r.tier.name[0]).toBe('Guerriero')\n    expect(r.tier.level).toBe(2)\n  })\n\n  it('50 allenamenti → Campione', () => {\n    expect(getRank(50).tier.name[0]).toBe('Campione')\n  })\n\n  it('100 allenamenti → Maestro', () => {\n    expect(getRank(100).tier.name[0]).toBe('Maestro')\n  })\n\n  it('200+ allenamenti → Leggenda', () => {\n    const r = getRank(200)\n    expect(r.tier.name[0]).toBe('Leggenda')\n    expect(r.tier.level).toBe(5)\n    expect(r.workoutsToNext).toBe(0)\n    expect(r.progress).toBe(1)\n    expect(r.nextThreshold).toBeNull()\n  })\n\n  it('300 allenamenti → sempre Leggenda', () => {\n    expect(getRank(300).tier.name[0]).toBe('Leggenda')\n  })\n\n  it('negativi trattati come 0', () => {\n    const r = getRank(-5)\n    expect(r.tier.name[0]).toBe('Recluta')\n    expect(r.totalWorkouts).toBe(0)\n  })\n\n  it('truncates float a intero', () => {\n    const r = getRank(9.7)\n    expect(r.totalWorkouts).toBe(9)\n    expect(r.tier.name[0]).toBe('Recluta')\n  })\n})\n\ndescribe('rankName', () => {\n  it('italiano', () => {\n    expect(rankName(RANK_TIERS[0], 'it')).toBe('Recluta')\n    expect(rankName(RANK_TIERS[5], 'it')).toBe('Leggenda')\n  })\n\n  it('inglese', () => {\n    expect(rankName(RANK_TIERS[0], 'en')).toBe('Recruit')\n    expect(rankName(RANK_TIERS[5], 'en')).toBe('Legend')\n  })\n})\n\ndescribe('nextRankName', () => {\n  it('restituisce il rank successivo', () => {\n    expect(nextRankName(0, 'it')).toBe('Atleta')\n    expect(nextRankName(4, 'it')).toBe('Leggenda')\n  })\n\n  it('null se è lultimo', () => {\n    expect(nextRankName(5, 'it')).toBeNull()\n    expect(nextRankName(5, 'en')).toBeNull()\n  })\n\n  it('inglese', () => {\n    expect(nextRankName(0, 'en')).toBe('Athlete')\n  })\n})\n",
@@ -1794,6 +1872,7 @@ Ora creiamo il test per `ranks.ts`:
 ```
 
 **Output:**
+
 ```
 Wrote file successfully.
 ```
@@ -1809,6 +1888,7 @@ Now let me run both test files.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run src/lib/ranks.test.ts src/lib/muscleColors.test.ts"
@@ -1816,6 +1896,7 @@ Now let me run both test files.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -1855,9 +1936,9 @@ _Thinking:_
 The progress calculation is wrong. Looking at the code:
 
 ```typescript
-const span = next.threshold - tier.threshold;  // 25 - 10 = 15
-const done = total - tier.threshold;            // 15 - 10 = 5
-const progress = span > 0 ? Math.min(done / span, 1) : 1;  // 5 / 15 = 0.333
+const span = next.threshold - tier.threshold; // 25 - 10 = 15
+const done = total - tier.threshold; // 15 - 10 = 5
+const progress = span > 0 ? Math.min(done / span, 1) : 1; // 5 / 15 = 0.333
 ```
 
 So15 allenamenti means (15-10)/(25-10) = 5/15 = 33%, not 20%. The test expectation is wrong.
@@ -1865,6 +1946,7 @@ So15 allenamenti means (15-10)/(25-10) = 5/15 = 33%, not 20%. The test expectati
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/lib/ranks.test.ts",
@@ -1874,6 +1956,7 @@ So15 allenamenti means (15-10)/(25-10) = 5/15 = 33%, not 20%. The test expectati
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -1891,6 +1974,7 @@ So the test should expect `1/3`.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run"
@@ -1898,6 +1982,7 @@ So the test should expect `1/3`.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -1924,6 +2009,7 @@ All 36 tests pass. Let me now add the npm test script to package.json and update
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/package.json",
@@ -1933,6 +2019,7 @@ All 36 tests pass. Let me now add the npm test script to package.json and update
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -1950,6 +2037,7 @@ Verifichiamo che lint passi ancora:
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npm run lint 2>&1 | tail -20"
@@ -1957,6 +2045,7 @@ Verifichiamo che lint passi ancora:
 ```
 
 **Output:**
+
 ```
 (no output)
 
@@ -1976,6 +2065,7 @@ Lint timed out, let me try a quicker approach.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx eslint src/hooks/usePersonalRecords.ts src/lib/muscleColors.ts src/lib/ranks.ts --quiet 2>&1"
@@ -1983,6 +2073,7 @@ Lint timed out, let me try a quicker approach.
 ```
 
 **Output:**
+
 ```
 
 /home/daniel/github/gymBro/src/hooks/usePersonalRecords.ts
@@ -2006,6 +2097,7 @@ There are Prettier errors on the files I modified. Let me fix them.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx prettier --write src/hooks/usePersonalRecords.ts"
@@ -2013,6 +2105,7 @@ There are Prettier errors on the files I modified. Let me fix them.
 ```
 
 **Output:**
+
 ```
 src/hooks/usePersonalRecords.ts 250ms
 
@@ -2029,6 +2122,7 @@ Good, now let me verify the lint passes for the test files I created.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx eslint src/hooks/usePersonalRecords.test.ts src/lib/muscleColors.test.ts src/lib/ranks.test.ts vitest.config.ts vitest.setup.ts --quiet 2>&1"
@@ -2036,6 +2130,7 @@ Good, now let me verify the lint passes for the test files I created.
 ```
 
 **Output:**
+
 ```
 ...output truncated...
 
@@ -2304,6 +2399,7 @@ Solo errori Prettier, si fixano con un comando:
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx prettier --write vitest.config.ts vitest.setup.ts src/hooks/usePersonalRecords.test.ts src/lib/muscleColors.test.ts src/lib/ranks.test.ts"
@@ -2311,6 +2407,7 @@ Solo errori Prettier, si fixano con un comando:
 ```
 
 **Output:**
+
 ```
 vitest.config.ts 96ms
 vitest.setup.ts 119ms
@@ -2331,6 +2428,7 @@ Now let me verify the tests still pass after prettier formatting, and also check
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run && npx eslint src/hooks/usePersonalRecords.test.ts src/lib/muscleColors.test.ts src/lib/ranks.test.ts vitest.config.ts vitest.setup.ts src/hooks/usePersonalRecords.ts --quiet"
@@ -2338,6 +2436,7 @@ Now let me verify the tests still pass after prettier formatting, and also check
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -2364,19 +2463,21 @@ Tutto verde. Riepilogo finale:
 ## ✅ Task 1 completato — Test Setup
 
 **Infrastruttura:**
+
 - `vitest.config.ts` — config con jsdom, globals, alias `@/`, coverage V8
 - `vitest.setup.ts` — mock Supabase, TanStack Router/Query, sonner, date-fns, localStorage/sessionStorage, matchMedia
 - `package.json` — script `test`, `test:watch`, `test:coverage`
 
 **36 test su 3 file:**
 
-| File | Test | Copertura |
-|------|------|-----------|
-| `src/hooks/usePersonalRecords.test.ts` | 11 | `computePRs` (max weight, ordina PR, Epley 1RM, reps>10, history, trim, vuoto) + `isNewPR` (nuovo/non-nuovo/first/case-insensitive) |
-| `src/lib/muscleColors.test.ts` | 11 | `muscleColor` (valido/null/unknown/trim/vuoto) + `muscleEn` (traduzione/sinonimi/unknown/null/trim) |
-| `src/lib/ranks.test.ts` | 14 | `getRank` (0/10/15/25/50/100/200/300/negativi/float) + `rankName` (it/en) + `nextRankName` (it/en/null) |
+| File                                   | Test | Copertura                                                                                                                           |
+| -------------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `src/hooks/usePersonalRecords.test.ts` | 11   | `computePRs` (max weight, ordina PR, Epley 1RM, reps>10, history, trim, vuoto) + `isNewPR` (nuovo/non-nuovo/first/case-insensitive) |
+| `src/lib/muscleColors.test.ts`         | 11   | `muscleColor` (valido/null/unknown/trim/vuoto) + `muscleEn` (traduzione/sinonimi/unknown/null/trim)                                 |
+| `src/lib/ranks.test.ts`                | 14   | `getRank` (0/10/15/25/50/100/200/300/negativi/float) + `rankName` (it/en) + `nextRankName` (it/en/null)                             |
 
 **Fix source code:**
+
 - `src/hooks/usePersonalRecords.ts` — esportata `computePRs` (era private) per renderla testabile
 
 ---
@@ -2399,7 +2500,7 @@ I test servono a:
 
 2. **Refactoring sicuri** — Vuoi spostare `muscleColor` in un altro file o cambiargli la firma? I test ti dicono se hai rotto qualcosa, senza dover provare manualmente ogni pagina.
 
-3. **Documentazione vivente** — I test documentano come le funzioni *dovrebbero* comportarsi. Un nuovo sviluppatore legge `ranks.test.ts` e capisce subito che a 25 allenamenti diventi "Guerriero", senza leggere l'implementazione.
+3. **Documentazione vivente** — I test documentano come le funzioni _dovrebbero_ comportarsi. Un nuovo sviluppatore legge `ranks.test.ts` e capisce subito che a 25 allenamenti diventi "Guerriero", senza leggere l'implementazione.
 
 **Esempio concreto:** Ieri hai fixato il race condition in `allena.$planId.tsx`. Senza test potevi introdurre un bug silenzioso nel salvataggio sessioni. Con un test sul flusso "crea/riprendi sessione", il CI ti avrebbe bloccato il push.
 
@@ -2427,6 +2528,7 @@ The race condition is in the session creation logic in the useEffect at lines 18
 4. But `orphanQ.data` can change during background refetches, leading to race conditions
 
 The fix should:
+
 1. Use a proper state machine for session creation
 2. Make the orphan check atomic (single operation)
 3. Remove the fragile `sessionCreated.current` ref pattern
@@ -2437,6 +2539,7 @@ Let me re-read the file to plan the refactor carefully.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx"
@@ -2444,6 +2547,7 @@ Let me re-read the file to plan the refactor carefully.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx</path>
 <type>file</type>
@@ -2472,23 +2576,23 @@ Let me re-read the file to plan the refactor carefully.
 22: import type { Json } from "@/integrations/supabase/types";
 23: import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
 24: import { useLanguage } from "@/lib/i18n";
-25: 
+25:
 26: export const Route = createFileRoute("/app/allena/$planId")({
 27:   component: ActiveSession,
 28: });
-29: 
+29:
 30: // ── Persistenza modulo (indipendente da React) ──────────────────────────
 31: // Salviamo lo stato in un closure module-level + localStorage.
 32: // In questo modo la persistenza NON dipende dal ciclo di vita di React
 33: // (effetti, useCallback, ecc.) e funziona anche su chiusura tab improvvisa.
 34: const WS_KEY = "gw_ws";
 35: let _cached: string | null = null;
-36: 
+36:
 37: function persist(stateStr: string) {
 38:   _cached = stateStr;
 39:   try { localStorage.setItem(WS_KEY, stateStr); } catch {}
 40: }
-41: 
+41:
 42: function restore(): string | null {
 43:   if (_cached) return _cached;
 44:   try {
@@ -2497,19 +2601,19 @@ Let me re-read the file to plan the refactor carefully.
 47:     return raw;
 48:   } catch { return null; }
 49: }
-50: 
+50:
 51: function clearPersisted() {
 52:   _cached = null;
 53:   try { localStorage.removeItem(WS_KEY); } catch {}
 54: }
-55: 
+55:
 56: // Sempre attivo: prima di chiudere la pagina, salva l'ultimo stato.
 57: if (typeof window !== "undefined") {
 58:   window.addEventListener("beforeunload", () => {
 59:     if (_cached) try { localStorage.setItem(WS_KEY, _cached); } catch {}
 60:   });
 61: }
-62: 
+62:
 63: type Exercise = {
 64:   id: string;
 65:   name: string;
@@ -2519,11 +2623,11 @@ Let me re-read the file to plan the refactor carefully.
 69:   weight: number;
 70:   notes: string | null;
 71: };
-72: 
+72:
 73: type LoggedSet = { reps: number; weight: number; done: boolean };
-74: 
+74:
 75: type OrphanSession = { id: string; started_at: string; workout_state: Json | null };
-76: 
+76:
 77: type WorkoutState = {
 78:   sessionId: string;
 79:   planId?: string;
@@ -2532,16 +2636,16 @@ Let me re-read the file to plan the refactor carefully.
 82:   currentIdx: number;
 83:   localExercises: Exercise[];
 84: };
-85: 
+85:
 86: function ActiveSession() {
 87:   const { planId } = Route.useParams();
 88:   const { user } = Route.useRouteContext();
 89:   const navigate = useNavigate();
-90: 
+90:
 91:   const { display: fmtWeight } = useWeightUnit();
 92:   const { t, language } = useLanguage();
 93:   const intlLocale = language === "en" ? "en-US" : "it-IT";
-94: 
+94:
 95:   const planQ = useQuery({
 96:     queryKey: ["session-plan", planId],
 97:     queryFn: async () => {
@@ -2558,7 +2662,7 @@ Let me re-read the file to plan the refactor carefully.
 108:       return { plan, exercises: (ex ?? []) as Exercise[] };
 109:     },
 110:   });
-111: 
+111:
 112:   // TASK 3 — Query per sessioni orfane (started_at valorizzato, completed_at NULL).
 113:   const orphanQ = useQuery({
 114:     queryKey: ["orphan-session", user.id, planId],
@@ -2577,7 +2681,7 @@ Let me re-read the file to plan the refactor carefully.
 127:     },
 128:     staleTime: 0,
 129:   });
-130: 
+130:
 131:   const [currentIdx, setCurrentIdx] = useState(0);
 132:   const [logs, setLogs] = useState<Record<string, LoggedSet[]>>({});
 133:   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -2586,14 +2690,14 @@ Let me re-read the file to plan the refactor carefully.
 136:   const [userDecision, setUserDecision] = useState<"resume" | "start-new" | null>(null);
 137:   const [orphanIdAtDecision, setOrphanIdAtDecision] = useState<string | null>(null);
 138:   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
-139: 
+139:
 140:   // Copia mutabile degli esercizi (per la sostituzione in sessione).
 141:   const [localExercises, setLocalExercises] = useState<Exercise[]>([]);
 142:   const [showReplace, setShowReplace] = useState(false);
 143:   const [searchQuery, setSearchQuery] = useState("");
-144: 
+144:
 145:   const { data: workCtx, setData: setWorkCtx } = useWorkoutStash();
-146: 
+146:
 147:   const latestDraftRef = useRef<WorkoutState | null>(null);
 148:   const persistDraft = useCallback((state: WorkoutState | null) => {
 149:     if (!state?.sessionId) return;
@@ -2607,7 +2711,7 @@ Let me re-read the file to plan the refactor carefully.
 157:     console.log("[PERSIST] stageDraft saving to LS", state.sessionId, "logs:", Object.keys(state.logs ?? {}).length, "exercises");
 158:     persist(JSON.stringify(state));
 159:   }, []);
-160: 
+160:
 161:   // ── Persistenza su DB (workout_state JSONB) ─────────────────────────
 162:   const dbTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 163:   const saveWorkoutStateToDb = useCallback(async (state: WorkoutState | null) => {
@@ -2618,14 +2722,14 @@ Let me re-read the file to plan the refactor carefully.
 168:       .eq("id", state.sessionId);
 169:     if (error) console.warn("DB workout_state save failed:", error.message);
 170:   }, []);
-171: 
+171:
 172:   // Sincronizza localExercises dal piano al caricamento.
 173:   useEffect(() => {
 174:     if (planQ.data?.exercises && localExercises.length === 0) {
 175:       setLocalExercises(planQ.data.exercises);
 176:     }
 177:   }, [planQ.data]);
-178: 
+178:
 179:   // ── TASK 3: State-machine per la creazione della sessione ──────────────────
 180:   // Regole:
 181:   // - Skip se già eseguita (ref flag anti-StrictMode).
@@ -2643,7 +2747,7 @@ Let me re-read the file to plan the refactor carefully.
 193:     // aspettiamo che finisca prima di decidere. Su mount successivi (navigazione
 194:     // client-side) la cache di React Query può contenere null non aggiornato.
 195:     if (!orphanQ.data && orphanQ.isFetching) return;
-196: 
+196:
 197:     const orphan = orphanQ.data;
 198:     if (orphan && !userDecision) {
 199:       const last = JSON.parse(sessionStorage.getItem("gw_last") ?? "null") as WorkoutState | null;
@@ -2657,16 +2761,16 @@ Let me re-read the file to plan the refactor carefully.
 207:       }
 208:       return; // aspetta click utente
 209:     }
-210: 
+210:
 211:     sessionCreated.current = true;
-212: 
+212:
 213:     let cancelled = false;
-214: 
+214:
 215:     console.log("[SESSION] resolve decision:", userDecision, "orphanId:", orphanIdAtDecision);
 216:     (async () => {
 217:       try {
 218:         let resolvedId: string | null = null;
-219: 
+219:
 220:         if (userDecision === "resume" && orphanIdAtDecision) {
 221:           // Caso A: l'utente vuole riprendere l'orfana, riusiamo l'id snapshot.
 222:           // NOTA: NON usiamo `orphan` (orphanQ.data) perché un background refetch
@@ -2687,7 +2791,7 @@ Let me re-read the file to plan the refactor carefully.
 237:           if (cancelled) return;
 238:           if (error) throw error;
 239:           resolvedId = data?.id ?? null;
-240: 
+240:
 241:           // Solo DOPO che il nuovo insert è andato bene, cancello l'orfana vecchia.
 242:           if (userDecision === "start-new" && orphanIdAtDecision) {
 243:             const { error: delErr } = await supabase
@@ -2700,7 +2804,7 @@ Let me re-read the file to plan the refactor carefully.
 250:             }
 251:           }
 252:         }
-253: 
+253:
 254:         if (!cancelled && resolvedId) {
 255:           console.log("[SESSION] setting sessionId:", resolvedId);
 256:           setSessionId(resolvedId);
@@ -2720,7 +2824,7 @@ Let me re-read the file to plan the refactor carefully.
 270:         toast.error(err instanceof Error ? err.message : t("Errore di sessione", "Session error"));
 271:       }
 272:     })();
-273: 
+273:
 274:     return () => {
 275:       cancelled = true;
 276:     };
@@ -2736,7 +2840,7 @@ Let me re-read the file to plan the refactor carefully.
 286:     user.id,
 287:     workCtx,
 288:   ]);
-289: 
+289:
 290:   // Init logs dal piano (snapshot dei default di serie).
 291:   useEffect(() => {
 292:     if (!planQ.data?.exercises) return;
@@ -2754,27 +2858,27 @@ Let me re-read the file to plan the refactor carefully.
 304:       return next;
 305:     });
 306:   }, [planQ.data]);
-307: 
+307:
 308:   // ── Restore ──────────────────────────────────────────────────────────
 309:   const restoredRef = useRef(false);
 310:   const skipNextPersistRef = useRef(false);
 311:   useEffect(() => {
 312:     if (!sessionId) { console.log("[RESTORE] no sessionId yet"); return; }
 313:     if (restoredRef.current) { console.log("[RESTORE] already restored"); return; }
-314: 
+314:
 315:     if (orphanQ.isLoading) { console.log("[RESTORE] waiting for orphanQ"); return; }
 316:     if (!orphanQ.data && orphanQ.isFetching) { console.log("[RESTORE] waiting for orphanQ"); return; }
-317: 
+317:
 318:     restoredRef.current = true;
 319:     skipNextPersistRef.current = true;
-320: 
+320:
 321:     console.log("[RESTORE] attempting restore for sessionId:", sessionId, "planId:", planId, "userId:", user.id);
 322:     let saved: WorkoutState | null = null;
 323:     try {
 324:       const raw = restore();
 325:       if (raw) saved = JSON.parse(raw) as WorkoutState;
 326:     } catch {}
-327: 
+327:
 328:     console.log("[RESTORE] localStorage found:", !!saved, "sessionId:", saved?.sessionId);
 329:     if (!saved) { console.log("[RESTORE] no valid state to restore"); return; }
 330:     console.log("[RESTORE] sessionId match:", saved.sessionId === sessionId);
@@ -2783,7 +2887,7 @@ Let me re-read the file to plan the refactor carefully.
 333:     if (saved.planId !== planId) { console.log("[RESTORE] no valid state to restore"); return; }
 334:     console.log("[RESTORE] userId match:", saved.userId === user.id);
 335:     if (saved.userId !== user.id) { console.log("[RESTORE] no valid state to restore"); return; }
-336: 
+336:
 337:     console.log("[RESTORE] restoring with", Object.keys(saved?.logs ?? {}).length, "exercises");
 338:     latestDraftRef.current = {
 339:       sessionId, planId, userId: user.id,
@@ -2810,7 +2914,7 @@ Let me re-read the file to plan the refactor carefully.
 360:       });
 361:     }
 362:   }, [sessionId, orphanQ.data, orphanQ.isLoading, orphanQ.isFetching, planId, user.id, planQ.data?.exercises]);
-363: 
+363:
 364:   // ── Persistenza ──────────────────────────────────────────────────────
 365:   useEffect(() => {
 366:     if (!sessionId || !restoredRef.current) return;
@@ -2821,24 +2925,24 @@ Let me re-read the file to plan the refactor carefully.
 371:     }
 372:     persistDraft(latestDraftRef.current);
 373:   }, [sessionId, planId, user.id, logs, currentIdx, localExercises, persistDraft]);
-374: 
+374:
 375:   useEffect(() => {
 376:     const flushDraft = () => { console.log("[FLUSH] flushing draft on close"); persistDraft(latestDraftRef.current); };
 377:     const flushDb = () => {
 378:       if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
 379:       saveWorkoutStateToDb(latestDraftRef.current);
 380:     };
-381: 
+381:
 382:     const onVisibilityChange = () => {
 383:       if (document.visibilityState === "hidden") { flushDraft(); flushDb(); }
 384:     };
 385:     const onBeforeUnload = () => { flushDraft(); flushDb(); };
-386: 
+386:
 387:     window.addEventListener("pagehide", flushDraft);
 388:     window.addEventListener("pagehide", flushDb);
 389:     window.addEventListener("beforeunload", onBeforeUnload);
 390:     document.addEventListener("visibilitychange", onVisibilityChange);
-391: 
+391:
 392:     return () => {
 393:       flushDraft();
 394:       window.removeEventListener("pagehide", flushDraft);
@@ -2847,7 +2951,7 @@ Let me re-read the file to plan the refactor carefully.
 397:       document.removeEventListener("visibilitychange", onVisibilityChange);
 398:     };
 399:   }, [persistDraft, saveWorkoutStateToDb]);
-400: 
+400:
 401:   // ── Persistenza su DB (debounce) ──────────────────────────────────────
 402:   useEffect(() => {
 403:     if (!sessionId || !restoredRef.current) return;
@@ -2856,10 +2960,10 @@ Let me re-read the file to plan the refactor carefully.
 406:     dbTimerRef.current = setTimeout(() => saveWorkoutStateToDb(state), 2000);
 407:     return () => { if (dbTimerRef.current) clearTimeout(dbTimerRef.current); };
 408:   }, [sessionId, planId, user.id, logs, currentIdx, localExercises, saveWorkoutStateToDb]);
-409: 
+409:
 410:   const exercises = localExercises.length > 0 ? localExercises : (planQ.data?.exercises ?? []);
 411:   const current = exercises[currentIdx];
-412: 
+412:
 413:   function buildDraft(patch: Partial<WorkoutState> = {}): WorkoutState | null {
 414:     if (!sessionId) return null;
 415:     return {
@@ -2872,7 +2976,7 @@ Let me re-read the file to plan the refactor carefully.
 422:       ...patch,
 423:     };
 424:   }
-425: 
+425:
 426:   // Query di ricerca esercizi per la sostituzione.
 427:   const searchQ = useQuery({
 428:     queryKey: ["exercise-search", searchQuery],
@@ -2888,7 +2992,7 @@ Let me re-read the file to plan the refactor carefully.
 438:     enabled: showReplace && searchQuery.length >= 1,
 439:     staleTime: 60_000,
 440:   });
-441: 
+441:
 442:   // Handlers della dialog orfana.
 443:   function decideResume() {
 444:     if (!orphanQ.data?.id) return;
@@ -2900,7 +3004,7 @@ Let me re-read the file to plan the refactor carefully.
 450:     setOrphanIdAtDecision(orphanQ.data.id);
 451:     setUserDecision("start-new");
 452:   }
-453: 
+453:
 454:   // Mostra la dialog solo se c'è un'orfana e l'utente non ha ancora deciso.
 455:   const showOrphanModal = !!orphanQ.data && !userDecision;
 456:   // Blocca la chiusura dell'AlertDialog tramite escape / click esterno:
@@ -2911,7 +3015,7 @@ Let me re-read the file to plan the refactor carefully.
 461:   const blockForcedClose = (next: boolean) => {
 462:     if (!next && !userDecision && orphanQ.data?.id) return;
 463:   };
-464: 
+464:
 465:   async function cancelSession() {
 466:     const ok = await confirmDialog(
 467:       t("Annullare l'allenamento?", "Cancel the workout?"),
@@ -2925,7 +3029,7 @@ Let me re-read the file to plan the refactor carefully.
 475:     clearPersisted();
 476:     navigate({ to: "/app" });
 477:   }
-478: 
+478:
 479:   async function finishWorkout() {
 480:     if (!sessionId) return;
 481:     setFinishing(true);
@@ -2970,7 +3074,7 @@ Let me re-read the file to plan the refactor carefully.
 520:     sessionStorage.removeItem("gw_last");
 521:     console.log("[CLEANUP] removing LS key");
 522:     clearPersisted();
-523: 
+523:
 524:     // Check for new PRs
 525:     try {
 526:       const { data: existingLogs } = await supabase
@@ -2978,14 +3082,14 @@ Let me re-read the file to plan the refactor carefully.
 528:         .select("exercise_name, weight")
 529:         .eq("user_id", user.id)
 530:         .not("session_id", "eq", sessionId);
-531: 
+531:
 532:       const prMap = new Map<string, number>();
 533:       for (const log of existingLogs ?? []) {
 534:         const name = log.exercise_name.trim().toLowerCase();
 535:         const current = prMap.get(name) ?? 0;
 536:         if (log.weight > current) prMap.set(name, log.weight);
 537:       }
-538: 
+538:
 539:       const newPRs: string[] = [];
 540:       for (const row of rows) {
 541:         const name = row.exercise_name.trim().toLowerCase();
@@ -2995,7 +3099,7 @@ Let me re-read the file to plan the refactor carefully.
 545:           prMap.set(name, row.weight);
 546:         }
 547:       }
-548: 
+548:
 549:       if (newPRs.length > 0) {
 550:         const unique = [...new Set(newPRs)];
 551:         for (const ex of unique) {
@@ -3005,11 +3109,11 @@ Let me re-read the file to plan the refactor carefully.
 555:     } catch {
 556:       // PR check is best-effort, don't block workout save
 557:     }
-558: 
+558:
 559:     toast.success(t("Allenamento salvato!", "Workout saved!"));
 560:     navigate({ to: "/app" });
 561:   }
-562: 
+562:
 563:   function moveExercise(dir: "up" | "down") {
 564:     const idx = currentIdx;
 565:     const targetIdx = dir === "up" ? idx - 1 : idx + 1;
@@ -3022,7 +3126,7 @@ Let me re-read the file to plan the refactor carefully.
 572:     });
 573:     setCurrentIdx(targetIdx);
 574:   }
-575: 
+575:
 576:   function replaceExercise(name: string, muscleGroup: string | null) {
 577:     const newExercise: Exercise = {
 578:       id: `custom-${Date.now()}`,
@@ -3060,7 +3164,7 @@ Let me re-read the file to plan the refactor carefully.
 610:     setShowReplace(false);
 611:     setSearchQuery("");
 612:   }
-613: 
+613:
 614:   // Dialog sempre montata (anche in loading) per evitare race se l'utente
 615:   // clicca su "Riprendi" mentre il resto della pagina sta ancora caricando.
 616:   const orphanDialog = (
@@ -3096,7 +3200,7 @@ Let me re-read the file to plan the refactor carefully.
 646:       </AlertDialogContent>
 647:     </AlertDialog>
 648:   );
-649: 
+649:
 650:   if (!current) {
 651:     return (
 652:       <div className="container-app flex min-h-screen flex-col items-center justify-center text-center">
@@ -3118,11 +3222,11 @@ Let me re-read the file to plan the refactor carefully.
 668:       </div>
 669:     );
 670:   }
-671: 
+671:
 672:   const searchResults = searchQ.data ?? [];
 673:   const setsLog = logs[current.id] ?? [];
 674:   const isLast = currentIdx === exercises.length - 1;
-675: 
+675:
 676:   function updateSet(idx: number, patch: Partial<LoggedSet>) {
 677:     setLogs((prev) => {
 678:       const next = {
@@ -3133,7 +3237,7 @@ Let me re-read the file to plan the refactor carefully.
 683:       return next;
 684:     });
 685:   }
-686: 
+686:
 687:   async function removeSet(idx: number) {
 688:     const ok = await confirmDialog(
 689:       "Rimuovere questa serie?",
@@ -3149,7 +3253,7 @@ Let me re-read the file to plan the refactor carefully.
 699:       return next;
 700:     });
 701:   }
-702: 
+702:
 703:   if (!current) {
 704:     return (
 705:       <div className="min-h-screen bg-background pb-32">
@@ -3159,7 +3263,7 @@ Let me re-read the file to plan the refactor carefully.
 709:       </div>
 710:     );
 711:   }
-712: 
+712:
 713:   return (
 714:     <div className="min-h-screen bg-background pb-32">
 715:       <div className="container-app pt-6">
@@ -3172,7 +3276,7 @@ Let me re-read the file to plan the refactor carefully.
 722:           </div>
 723:           <div className="w-9" />
 724:         </div>
-725: 
+725:
 726:         {/* Progress */}
 727:         <div className="mb-6 h-1 w-full overflow-hidden rounded-full bg-muted">
 728:           <div
@@ -3180,7 +3284,7 @@ Let me re-read the file to plan the refactor carefully.
 730:             style={{ width: `${((currentIdx + 1) / exercises.length) * 100}%` }}
 731:           />
 732:         </div>
-733: 
+733:
 734:         <div
 735:           className="mb-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest"
 736:           style={{
@@ -3228,7 +3332,7 @@ Let me re-read the file to plan the refactor carefully.
 778:           {t("Target", "Target")}: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
 779:         </p>
 780:         {current.notes && <p className="mt-2 rounded-xl bg-muted p-3 text-sm">{current.notes}</p>}
-781: 
+781:
 782:         <div className="mt-6 space-y-2">
 783:           <div className="grid grid-cols-[2.5rem_1fr_1fr_2.5rem_2rem] gap-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
 784:             <div>{t("Set", "Set")}</div>
@@ -3288,14 +3392,14 @@ Let me re-read the file to plan the refactor carefully.
 838:             + {t("Serie extra", "Extra set")}
 839:           </button>
 840:         </div>
-841: 
+841:
 842:         {/* Storico: le ultime volte per questo esercizio */}
 843:         <ExerciseHistory exerciseName={current.name} />
-844: 
+844:
 845:         {/* TASK 4 timer (estratto) */}
 846:         <RestTimer />
 847:       </div>
-848: 
+848:
 849:       {/* Footer */}
 850:       <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border bg-background/95 backdrop-blur">
 851:         <div className="container-app flex gap-2 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
@@ -3348,9 +3452,9 @@ Let me re-read the file to plan the refactor carefully.
 898:           )}
 899:         </div>
 900:       </div>
-901: 
+901:
 902:       {orphanDialog}
-903: 
+903:
 904:       {/* Sostituisci esercizio dialog */}
 905:       <AlertDialog open={showReplace} onOpenChange={setShowReplace}>
 906:         <AlertDialogContent className="max-h-[80vh] overflow-y-auto">
@@ -3417,12 +3521,12 @@ Let me re-read the file to plan the refactor carefully.
 967:           </div>
 968:         </AlertDialogContent>
 969:       </AlertDialog>
-970: 
+970:
 971:       {ConfirmDialog}
 972:     </div>
 973:   );
 974: }
-975: 
+975:
 976: function StepperInput({
 977:   value,
 978:   onChange,
@@ -3434,11 +3538,11 @@ Let me re-read the file to plan the refactor carefully.
 984: }) {
 985:   const [text, setText] = useState(String(value));
 986:   const focusedRef = useRef(false);
-987: 
+987:
 988:   useEffect(() => {
 989:     if (!focusedRef.current) setText(String(value));
 990:   }, [value]);
-991: 
+991:
 992:   return (
 993:     <div className="flex items-center justify-center gap-1">
 994:       <button
@@ -3498,17 +3602,19 @@ Let me analyze the race condition issue in detail:
 1. The main race condition is in the session creation `useEffect` (lines 189-288)
 2. It depends on `orphanQ.data` which can change during background refetches
 3. `sessionCreated.current` ref is used as a lock but it's fragileThe key issues:
-1. `orphanQ.data` can go from non-null to null during background refetches, causing the effect to re-run and potentially create a duplicate session
-2. The effect has too many dependencies and re-runs frequently
-3. `sessionCreated.current` is set to `true` but the `cancelled` flag from the cleanup function can race with the async operation
+4. `orphanQ.data` can go from non-null to null during background refetches, causing the effect to re-run and potentially create a duplicate session
+5. The effect has too many dependencies and re-runs frequently
+6. `sessionCreated.current` is set to `true` but the `cancelled` flag from the cleanup function can race with the async operation
 
 My plan:
+
 1. Replace the session creation logic with a `useMutation` from TanStack Query
 2. Split the "orphan detection" into a separate, atomic operation
 3. Use a simple state machine: `idle -> checking -> orphan-found -> creating -> active`
 4. Remove the fragile `sessionCreated.current` ref
 
 Let me think about the state machine:
+
 - `idle`: Initial state, waiting for data
 - `checking`: Querying for orphans
 - `orphan-found`: Orphan exists, waiting for user decision
@@ -3516,12 +3622,14 @@ Let me think about the state machine:
 - `active`: Session active, ready for workout
 
 Actually, let me think more carefully. The current code has several concerns mixed together:
+
 1. Detecting orphan sessions
 2. User decision (resume or new)
 3. Creating/resuming the session
 4. Restoring state from localStorage
 
 The simplest approach that fixes the race condition is:
+
 1. Use `useMutation` for session creation (atomic, no double-fire)
 2. Move orphan detection into a separate query that doesn't trigger auto-creation
 3. Let user explicitly trigger "resume" or "start new" from the dialog
@@ -3529,15 +3637,16 @@ The simplest approach that fixes the race condition is:
 But wait, the current behavior auto-resumes if there's a match in sessionStorage. That's a nice UX. Let me preserve that.
 
 The real fix is:
+
 1. Replace the fragile `sessionCreated.current` ref with a mutation that has built-in deduplication
 2. Make the orphan check + decision flow explicit and not dependent on `orphanQ.data` changing
-
 
 3. Each mutation attempt should be idempotent—calling it multiple times produces the same result without side effects
 
 **Tool: todowrite**
 
 **Input:**
+
 ```json
 {
   "todos": [
@@ -3566,6 +3675,7 @@ The real fix is:
 ```
 
 **Output:**
+
 ```
 [
   {
@@ -3605,6 +3715,7 @@ Now let me implement the fix. The strategy is:
 4. The mutation handles both "create new" and "resume orphan" atomically
 
 Key changes:
+
 - Remove `sessionCreated.current` ref
 - Remove `userDecision` and `orphanIdAtDecision` state (they can race)
 - Replace with a single mutation that takes `{ action: 'resume', orphanId }` or `{ action: 'new' }`
@@ -3617,6 +3728,7 @@ La strategia: sostituire il `useEffect` fragile con un `useMutation` atomico che
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -3626,6 +3738,7 @@ La strategia: sostituire il `useEffect` fragile con un `useMutation` atomico che
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -3643,6 +3756,7 @@ Now let me replace the fragile session creation useEffect with a mutation:
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -3652,6 +3766,7 @@ Now let me replace the fragile session creation useEffect with a mutation:
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -3669,6 +3784,7 @@ Now replace the big race-prone useEffect with a mutation:
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -3678,6 +3794,7 @@ Now replace the big race-prone useEffect with a mutation:
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -3695,6 +3812,7 @@ Now update the orphan dialog section to use the new state:
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -3704,6 +3822,7 @@ Now update the orphan dialog section to use the new state:
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -3721,6 +3840,7 @@ Now update the orphan dialog JSX to use `orphanQ.data` → `orphanId`:
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -3730,6 +3850,7 @@ Now update the orphan dialog JSX to use `orphanQ.data` → `orphanId`:
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -3745,6 +3866,7 @@ Now let me update the todo list and run lint + tests to verify.
 **Tool: todowrite**
 
 **Input:**
+
 ```json
 {
   "todos": [
@@ -3773,6 +3895,7 @@ Now let me update the todo list and run lint + tests to verify.
 ```
 
 **Output:**
+
 ```
 [
   {
@@ -3809,6 +3932,7 @@ Now let me run lint and tests to verify.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run && npx eslint src/routes/app/allena.\\$planId.tsx --quiet 2>&1"
@@ -3816,6 +3940,7 @@ Now let me run lint and tests to verify.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -3931,6 +4056,7 @@ Test passano, solo errori Prettier. Auto-fix:
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx prettier --write src/routes/app/allena.\\$planId.tsx && npx vitest run"
@@ -3938,6 +4064,7 @@ Test passano, solo errori Prettier. Auto-fix:
 ```
 
 **Output:**
+
 ```
 src/routes/app/allena.$planId.tsx 701ms
 
@@ -3963,6 +4090,7 @@ Let me also check if there are no more lint errors on the file.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx eslint src/routes/app/allena.\\$planId.tsx --quiet 2>&1"
@@ -3970,6 +4098,7 @@ Let me also check if there are no more lint errors on the file.
 ```
 
 **Output:**
+
 ```
 
 /home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx
@@ -3996,6 +4125,7 @@ Errori `no-empty` pre-esistenti nei catch block del persistence layer:
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -4005,19 +4135,20 @@ Errori `no-empty` pre-esistenti nei catch block del persistence layer:
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx</path>
 <type>file</type>
 <content>
 35: let _cached: string | null = null;
-36: 
+36:
 37: function persist(stateStr: string) {
 38:   _cached = stateStr;
 39:   try {
 40:     localStorage.setItem(WS_KEY, stateStr);
 41:   } catch {}
 42: }
-43: 
+43:
 44: function restore(): string | null {
 45:   if (_cached) return _cached;
 46:   try {
@@ -4028,14 +4159,14 @@ Errori `no-empty` pre-esistenti nei catch block del persistence layer:
 51:     return null;
 52:   }
 53: }
-54: 
+54:
 55: function clearPersisted() {
 56:   _cached = null;
 57:   try {
 58:     localStorage.removeItem(WS_KEY);
 59:   } catch {}
 60: }
-61: 
+61:
 62: // Sempre attivo: prima di chiudere la pagina, salva l'ultimo stato.
 63: if (typeof window !== "undefined") {
 64:   window.addEventListener("beforeunload", () => {
@@ -4045,7 +4176,7 @@ Errori `no-empty` pre-esistenti nei catch block del persistence layer:
 68:       } catch {}
 69:   });
 70: }
-71: 
+71:
 72: type Exercise = {
 73:   id: string;
 74:   name: string;
@@ -4065,6 +4196,7 @@ The empty catch blocks are intentional for localStorage operations that may fail
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -4074,6 +4206,7 @@ The empty catch blocks are intentional for localStorage operations that may fail
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -4089,6 +4222,7 @@ Let me fix the other empty catch blocks too.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -4098,6 +4232,7 @@ Let me fix the other empty catch blocks too.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -4113,6 +4248,7 @@ Now let me fix the third empty catch block.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -4122,6 +4258,7 @@ Now let me fix the third empty catch block.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -4137,6 +4274,7 @@ Now let me find and fix the fourth empty catch block (the one at line 362).
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -4146,6 +4284,7 @@ Now let me find and fix the fourth empty catch block (the one at line 362).
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx</path>
 <type>file</type>
@@ -4176,6 +4315,7 @@ Let me find the actual line with the empty catch block.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -4185,6 +4325,7 @@ Let me find the actual line with the empty catch block.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx</path>
 <type>file</type>
@@ -4193,7 +4334,7 @@ Let me find the actual line with the empty catch block.
 366:       const raw = restore();
 367:       if (raw) saved = JSON.parse(raw) as WorkoutState;
 368:     } catch {}
-369: 
+369:
 370:     console.log("[RESTORE] localStorage found:", !!saved, "sessionId:", saved?.sessionId);
 371:     if (!saved) {
 372:       console.log("[RESTORE] no valid state to restore");
@@ -4215,6 +4356,7 @@ Found it. Let me fix this empty catch block too.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -4224,6 +4366,7 @@ Found it. Let me fix this empty catch block too.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -4239,6 +4382,7 @@ Now let me run lint and tests again to verify everything passes.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx eslint src/routes/app/allena.\\$planId.tsx --quiet 2>&1 && npx vitest run"
@@ -4246,6 +4390,7 @@ Now let me run lint and tests again to verify everything passes.
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -4270,6 +4415,7 @@ Lint clean, tests pass. Let me update the todo list and provide a summary.
 **Tool: todowrite**
 
 **Input:**
+
 ```json
 {
   "todos": [
@@ -4298,6 +4444,7 @@ Lint clean, tests pass. Let me update the todo list and provide a summary.
 ```
 
 **Output:**
+
 ```
 [
   {
@@ -4334,6 +4481,7 @@ Let me provide a summary of what was done.
 ## ✅ Task 2 completato — Fix race condition
 
 **Prima** (110 righe, `useEffect` fragile):
+
 ```
 useEffect → controlla orphanQ.data → controlla userDecision → controlla sessionId
 → sessionCreated.current ref → async IIFE → cancelled flag → cleanup...
@@ -4341,6 +4489,7 @@ useEffect → controlla orphanQ.data → controlla userDecision → controlla se
 ```
 
 **Dopo** (80 righe, mutation atomica):
+
 ```
 useMutation createSession → { action: "resume" | "new" }
   ↓
@@ -4352,14 +4501,14 @@ orphan? → sessionStorage match? → auto-resume
 
 **Cosa è cambiato:**
 
-| Prima | Dopo |
-|-------|------|
-| `sessionCreated.current` ref fragile | `orphanHandledRef` one-shot (run-once) |
-| `userDecision` + `orphanIdAtDecision` state (race-prone) | `createSession.mutate()` atomico |
-| `cancelled` flag in async IIFE | Mutation guard di TanStack Query |
-| 9 dipendenze useEffect | useEffect one-shot con 5 dipendenze |
+| Prima                                                                     | Dopo                                                      |
+| ------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `sessionCreated.current` ref fragile                                      | `orphanHandledRef` one-shot (run-once)                    |
+| `userDecision` + `orphanIdAtDecision` state (race-prone)                  | `createSession.mutate()` atomico                          |
+| `cancelled` flag in async IIFE                                            | Mutation guard di TanStack Query                          |
+| 9 dipendenze useEffect                                                    | useEffect one-shot con 5 dipendenze                       |
 | `orphanQ.data` poteva diventare null durante refetch → sessione duplicata | `orphanQ.data` letto una volta, decisione presa una volta |
-| Cleanup manuale `sessionStorage` in 3 posti | Gestito centralized in `onSuccess` |
+| Cleanup manuale `sessionStorage` in 3 posti                               | Gestito centralized in `onSuccess`                        |
 
 **Bug fix**: il race condition dove un background refetch di `orphanQ` poteva azzerare `orphanQ.data` tra un render e l'esecuzione async, causando la creazione di sessioni duplicate, è eliminato. La decisione (resume/new) viene presa una sola volta e il mutation è idempotente.
 
@@ -4380,6 +4529,7 @@ The user wants me to do Task 3 from my original improvement list: Type generatio
 > 3. **Type safety** — `useCircle.ts` usa `any` per tipi DB, cast manuali `(data ?? []) as Type[]` | Rigenera tipi Supabase dopo migration (`supabase gen types`) + Zod validation su API boundary
 
 So the task is:
+
 1. Rigenerare i tipi Supabase dal DB
 2. Aggiungere Zod validation ai boundary API
 
@@ -4388,6 +4538,7 @@ Let me start by checking the current state of the Supabase types file and then g
 **Tool: todowrite**
 
 **Input:**
+
 ```json
 {
   "todos": [
@@ -4416,6 +4567,7 @@ Let me start by checking the current state of the Supabase types file and then g
 ```
 
 **Output:**
+
 ```
 [
   {
@@ -4452,6 +4604,7 @@ Let me first check the current Supabase types file and the migrations to underst
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/integrations/supabase/types.ts",
@@ -4460,6 +4613,7 @@ Let me first check the current Supabase types file and the migrations to underst
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/integrations/supabase/types.ts</path>
 <type>file</type>
@@ -4471,7 +4625,7 @@ Let me first check the current Supabase types file and the migrations to underst
 5:   | null
 6:   | { [key: string]: Json | undefined }
 7:   | Json[]
-8: 
+8:
 9: export type Database = {
 10:   // Allows to automatically instantiate createClient with right options
 11:   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
@@ -4580,6 +4734,7 @@ Let me check if supabase CLI is available and try to regenerate the types.
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && which supabase 2>/dev/null || npx supabase --version 2>&1"
@@ -4587,6 +4742,7 @@ Let me check if supabase CLI is available and try to regenerate the types.
 ```
 
 **Output:**
+
 ```
 /home/daniel/.npm-global/bin/supabase
 
@@ -4603,6 +4759,7 @@ Supabase CLI is available. Let me try to generate the types. But first, let me c
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && cat supabase/.temp/project-ref 2>/dev/null || echo \"no project ref\""
@@ -4610,6 +4767,7 @@ Supabase CLI is available. Let me try to generate the types. But first, let me c
 ```
 
 **Output:**
+
 ```
 xzqmpwcuomflsyqeczno
 ```
@@ -4625,6 +4783,7 @@ There's a project ref. Let me try to generate the types. But first, let me check
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && supabase projects list 2>&1 | head -5"
@@ -4632,11 +4791,12 @@ There's a project ref. Let me try to generate the types. But first, let me check
 ```
 
 **Output:**
+
 ```
 [?25l[90m│[39m
 [35m◒[39m  Fetching projects[1G[J[35m◐[39m  Fetching projects[1G[J[35m◓[39m  Fetching projects[1G[J[35m◑[39m  Fetching projects[1G[J[35m◒[39m  Fetching projects[1G[J[35m◐[39m  Fetching projects[1G[J[35m◓[39m  Fetching projects[1G[J[35m◑[39m  Fetching projects[1G[J[35m◒[39m  Fetching projects.[1G[J[35m◐[39m  Fetching projects.[1G[J[35m◓[39m  Fetching projects.[1G[J[35m◑[39m  Fetching projects.[1G[J[35m◒[39m  Fetching projects.[1G[J[35m◐[39m  Fetching projects.[1G[J[35m◓[39m  Fetching projects.[1G[J[35m◑[39m  Fetching projects.[1G[J[35m◒[39m  Fetching projects..[1G[J[35m◐[39m  Fetching projects..[1G[J[35m◓[39m  Fetching projects..[1G[J[35m◑[39m  Fetching projects..[1G[J[35m◒[39m  Fetching projects..[1G[J[35m◐[39m  Fetching projects..[1G[J[35m◓[39m  Fetching projects..[1G[J[35m◑[39m  Fetching projects..[1G[J[35m◒[39m  Fetching projects...[1G[J[35m◐[39m  Fetching projects...[1G[J[35m◓[39m  Fetching projects...[1G[J[35m◑[39m  Fetching projects...[1G[J[35m◒[39m  Fetching projects...[1G[J[35m◐[39m  Fetching projects...[1G[J[35m◓[39m  Fetching projects...[1G[J[35m◑[39m  Fetching projects...[1G[J[35m◒[39m  Fetching projects...[1G[J[35m◐[39m  Fetching projects[1G[J[35m◓[39m  Fetching projects[1G[J[35m◑[39m  Fetching projects[1G[J[35m◒[39m  Fetching projects[1G[J[35m◐[39m  Fetching projects[1G[J[35m◓[39m  Fetching projects[1G[J[35m◑[39m  Fetching projects[1G[J[35m◒[39m  Fetching projects[1G[J[35m◐[39m  Fetching projects.[1G[J[35m◓[39m  Fetching projects.[1G[J[35m◑[39m  Fetching projects.[1G[J[35m◒[39m  Fetching projects.[1G[J[35m◐[39m  Fetching projects.[1G[J[35m◓[39m  Fetching projects.[1G[J[35m◑[39m  Fetching projects.[1G[J[35m◒[39m  Fetching projects.[1G[J[35m◐[39m  Fetching projects..[1G[J[35m◓[39m  Fetching projects..[1G[J[35m◑[39m  Fetching projects..[1G[J[35m◒[39m  Fetching projects..[1G[J[35m◐[39m  Fetching projects..[1G[J[35m◓[39m  Fetching projects..[1G[J[35m◑[39m  Fetching projects..[1G[J[35m◒[39m  Fetching projects..[1G[J[35m◐[39m  Fetching projects...[1G[J[35m◓[39m  Fetching projects...[1G[J[35m◑[39m  Fetching projects...[1G[J[35m◒[39m  Fetching projects...[1G[J[35m◐[39m  Fetching projects...[1G[J[35m◓[39m  Fetching projects...[1G[J[35m◑[39m  Fetching projects...[1G[J[35m◒[39m  Fetching projects...[1G[J[35m◐[39m  Fetching projects...[1G[J[35m◓[39m  Fetching projects[1G[J[35m◑[39m  Fetching projects[1G[J[35m◒[39m  Fetching projects[1G[J[?25h
-  
-   LINKED | ORG ID               | REFERENCE ID         | NAME                   | REGION               | CREATED AT (UTC)    
+
+   LINKED | ORG ID               | REFERENCE ID         | NAME                   | REGION               | CREATED AT (UTC)
   --------|----------------------|----------------------|------------------------|----------------------|---------------------
 
 ```
@@ -4652,6 +4812,7 @@ The command is running but seems to be taking a while. Let me try to generate ty
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && timeout 30 supabase gen types typescript --project-id xzqmpwcuomflsyqeczno > src/integrations/supabase/types.ts 2>&1; echo \"EXIT: $?\"",
@@ -4660,6 +4821,7 @@ The command is running but seems to be taking a while. Let me try to generate ty
 ```
 
 **Output:**
+
 ```
 EXIT: 1
 
@@ -4678,6 +4840,7 @@ La generazione remota richiede auth interattiva. Procediamo con la parte Zod che
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/integrations/supabase/types.ts",
@@ -4687,6 +4850,7 @@ La generazione remota richiede auth interattiva. Procediamo con la parte Zod che
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/integrations/supabase/types.ts</path>
 <type>file</type>
@@ -4907,6 +5071,7 @@ Let me continue reading the types file to see all the tables.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/integrations/supabase/types.ts",
@@ -4916,6 +5081,7 @@ Let me continue reading the types file to see all the tables.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/integrations/supabase/types.ts</path>
 <type>file</type>
@@ -5144,6 +5310,7 @@ Ora creo lo schema Zod per i boundary API principali:
 **Tool: write**
 
 **Input:**
+
 ```json
 {
   "content": "import { z } from \"zod\";\n\n// ── Session ────────────────────────────────────────────────────────────────\nexport const SessionRowSchema = z.object({\n  id: z.string().uuid(),\n  plan_id: z.string().uuid().nullable(),\n  plan_name: z.string().nullable(),\n  started_at: z.string().datetime(),\n  completed_at: z.string().datetime().nullable(),\n  total_volume: z.number(),\n  user_id: z.string().uuid(),\n  workout_state: z.any().nullable(),\n});\n\nexport const SessionInsertSchema = z.object({\n  user_id: z.string().uuid(),\n  plan_id: z.string().uuid().nullable().optional(),\n  plan_name: z.string().nullable().optional(),\n  started_at: z.string().datetime().optional(),\n  total_volume: z.number().optional(),\n  workout_state: z.any().nullable().optional(),\n});\n\nexport const SessionUpdateSchema = z.object({\n  completed_at: z.string().datetime().nullable().optional(),\n  total_volume: z.number().optional(),\n  workout_state: z.any().nullable().optional(),\n});\n\n// ── Session Log ────────────────────────────────────────────────────────────\nexport const SessionLogInsertSchema = z.object({\n  session_id: z.string().uuid(),\n  user_id: z.string().uuid(),\n  exercise_name: z.string().min(1),\n  muscle_group: z.string().nullable().optional(),\n  set_number: z.number().int().positive(),\n  reps: z.number().int().min(0),\n  weight: z.number().min(0),\n});\n\n// ── Plan ───────────────────────────────────────────────────────────────────\nexport const PlanInsertSchema = z.object({\n  user_id: z.string().uuid(),\n  name: z.string().min(1).max(100),\n});\n\n// ── Exercise ───────────────────────────────────────────────────────────────\nexport const ExerciseRowSchema = z.object({\n  id: z.string().uuid(),\n  plan_id: z.string().uuid(),\n  user_id: z.string().uuid(),\n  name: z.string(),\n  muscle_group: z.string().nullable(),\n  sets: z.number(),\n  reps: z.number(),\n  weight: z.number(),\n  position: z.number(),\n  notes: z.string().nullable(),\n  exercise_library_id: z.string().nullable(),\n  created_at: z.string().datetime(),\n});\n\nexport const ExerciseInsertSchema = z.object({\n  plan_id: z.string().uuid(),\n  user_id: z.string().uuid(),\n  name: z.string().min(1),\n  muscle_group: z.string().nullable().optional(),\n  sets: z.number().int().min(1).optional(),\n  reps: z.number().int().min(0).optional(),\n  weight: z.number().min(0).optional(),\n  position: z.number().int().min(0).optional(),\n  notes: z.string().nullable().optional(),\n  exercise_library_id: z.string().nullable().optional(),\n});\n\n// ── Profile ────────────────────────────────────────────────────────────────\nexport const ProfileUpdateSchema = z.object({\n  display_name: z.string().max(50).nullable().optional(),\n  avatar_url: z.string().url().nullable().optional(),\n  weekly_goal: z.number().int().min(1).max(7).nullable().optional(),\n  weight_unit: z.enum([\"kg\"]).optional(),\n  onboarded: z.boolean().optional(),\n});\n\n// ── Circle ─────────────────────────────────────────────────────────────────\nexport const CircleInsertSchema = z.object({\n  name: z.string().min(1).max(50),\n});\n\nexport const CircleInviteCodeSchema = z\n  .string()\n  .length(6)\n  .regex(/^[A-Z0-9]{6}$/);\n\n// ── Validation helpers ─────────────────────────────────────────────────────\nexport function validateSession(data: unknown) {\n  return SessionRowSchema.parse(data);\n}\n\nexport function validateSessions(data: unknown) {\n  return z.array(SessionRowSchema).parse(data);\n}\n\nexport function validateSessionLogs(data: unknown) {\n  return z.array(SessionLogInsertSchema).parse(data);\n}\n\nexport function validateExercise(data: unknown) {\n  return ExerciseRowSchema.parse(data);\n}\n\nexport function validateExercises(data: unknown) {\n  return z.array(ExerciseRowSchema).parse(data);\n}\n",
@@ -5152,6 +5319,7 @@ Ora creo lo schema Zod per i boundary API principali:
 ```
 
 **Output:**
+
 ```
 Wrote file successfully.
 ```
@@ -5162,12 +5330,12 @@ Wrote file successfully.
 
 _Thinking:_
 
-Now let me update the key files to use Zod validation. The most impactful places are:1. `allena.$planId.tsx` - session creation, log insertion
-2. `useCircle.ts` - circle operations3. `usePersonalRecords.ts` - log fetchingLet me start with the most critical one: `allena.$planId.tsx` where session logs are inserted.
+Now let me update the key files to use Zod validation. The most impactful places are:1. `allena.$planId.tsx` - session creation, log insertion 2. `useCircle.ts` - circle operations3. `usePersonalRecords.ts` - log fetchingLet me start with the most critical one: `allena.$planId.tsx` where session logs are inserted.
 
 **Tool: todowrite**
 
 **Input:**
+
 ```json
 {
   "todos": [
@@ -5196,6 +5364,7 @@ Now let me update the key files to use Zod validation. The most impactful places
 ```
 
 **Output:**
+
 ```
 [
   {
@@ -5234,6 +5403,7 @@ Applico la validazione ai punti critici. Prima: `finishWorkout` in `allena.$plan
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -5243,15 +5413,16 @@ Applico la validazione ai punti critici. Prima: `finishWorkout` in `allena.$plan
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx</path>
 <type>file</type>
 <content>
 530:     staleTime: 60_000,
 531:   });
-532: 
+532:
 533:   // Handlers della dialog orfana — definiti sopra con il mutation.
-534: 
+534:
 535:   async function cancelSession() {
 536:     const ok = await confirmDialog(
 537:       t("Annullare l'allenamento?", "Cancel the workout?"),
@@ -5265,7 +5436,7 @@ Applico la validazione ai punti critici. Prima: `finishWorkout` in `allena.$plan
 545:     clearPersisted();
 546:     navigate({ to: "/app" });
 547:   }
-548: 
+548:
 549:   async function finishWorkout() {
 550:     if (!sessionId) return;
 551:     setFinishing(true);
@@ -5313,6 +5484,7 @@ Let me see the rest of the finishWorkout function.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -5322,6 +5494,7 @@ Let me see the rest of the finishWorkout function.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx</path>
 <type>file</type>
@@ -5344,7 +5517,7 @@ Let me see the rest of the finishWorkout function.
 593:     sessionStorage.removeItem("gw_last");
 594:     console.log("[CLEANUP] removing LS key");
 595:     clearPersisted();
-596: 
+596:
 597:     // Check for new PRs
 598:     try {
 599:       const { data: existingLogs } = await supabase
@@ -5352,14 +5525,14 @@ Let me see the rest of the finishWorkout function.
 601:         .select("exercise_name, weight")
 602:         .eq("user_id", user.id)
 603:         .not("session_id", "eq", sessionId);
-604: 
+604:
 605:       const prMap = new Map<string, number>();
 606:       for (const log of existingLogs ?? []) {
 607:         const name = log.exercise_name.trim().toLowerCase();
 608:         const current = prMap.get(name) ?? 0;
 609:         if (log.weight > current) prMap.set(name, log.weight);
 610:       }
-611: 
+611:
 612:       const newPRs: string[] = [];
 613:       for (const row of rows) {
 614:         const name = row.exercise_name.trim().toLowerCase();
@@ -5369,7 +5542,7 @@ Let me see the rest of the finishWorkout function.
 618:           prMap.set(name, row.weight);
 619:         }
 620:       }
-621: 
+621:
 622:       if (newPRs.length > 0) {
 623:         const unique = [...new Set(newPRs)];
 624:         for (const ex of unique) {
@@ -5394,6 +5567,7 @@ Let me update the `finishWorkout` function to validate the rows before inserting
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -5403,6 +5577,7 @@ Let me update the `finishWorkout` function to validate the rows before inserting
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5420,6 +5595,7 @@ Now add validation before the insert:
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/routes/app/allena.$planId.tsx",
@@ -5429,6 +5605,7 @@ Now add validation before the insert:
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5446,6 +5623,7 @@ Ora applico validazione in `usePersonalRecords.ts`:
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/usePersonalRecords.ts",
@@ -5455,6 +5633,7 @@ Ora applico validazione in `usePersonalRecords.ts`:
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5470,6 +5649,7 @@ Now let me update the queryFn to validate the data.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/usePersonalRecords.ts",
@@ -5479,6 +5659,7 @@ Now let me update the queryFn to validate the data.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5496,6 +5677,7 @@ Ora applico validazione in `useCircle.ts`:
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/useCircle.ts",
@@ -5505,6 +5687,7 @@ Ora applico validazione in `useCircle.ts`:
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5520,6 +5703,7 @@ Now let me add Zod schemas for the circle data and validate the RPC responses.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/useCircle.ts",
@@ -5529,6 +5713,7 @@ Now let me add Zod schemas for the circle data and validate the RPC responses.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5550,6 +5735,7 @@ hai finito?
 _Thinking:_
 
 The user is asking if I'm done. Let me check what's left and finish up the task. I need to:
+
 1. Apply the validation functions to the actual query/mutation code in useCircle.ts
 2. Run lint and tests
 3. Update the todo list
@@ -5559,6 +5745,7 @@ No, manca da collegare le funzioni di validazione al codice esistente e fare il 
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/useCircle.ts",
@@ -5568,6 +5755,7 @@ No, manca da collegare le funzioni di validazione al codice esistente e fare il 
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/hooks/useCircle.ts</path>
 <type>file</type>
@@ -5589,10 +5777,10 @@ No, manca da collegare le funzioni di validazione al codice esistente e fare il 
 109:     },
 110:     staleTime: 1000 * 30, // 30 secondi
 111:   });
-112: 
+112:
 113:   const invalidateCircles = () =>
 114:     qc.invalidateQueries({ queryKey: CIRCLES_KEY(userId) });
-115: 
+115:
 116:   // ── Mutation: entra in una cerchia ────────────────────────────────────────
 117:   // Usa la RPC SECURITY DEFINER `join_circle_by_code` perché la policy
 118:   // `circles_select` non permette a un NON-membro di SELECT una cerchia.
@@ -5618,6 +5806,7 @@ Let me find the `useMessages` function to apply validation there too.
 **Tool: read**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/useCircle.ts",
@@ -5627,13 +5816,14 @@ Let me find the `useMessages` function to apply validation there too.
 ```
 
 **Output:**
+
 ```
 <path>/home/daniel/github/gymBro/src/hooks/useCircle.ts</path>
 <type>file</type>
 <content>
 255:   // ── Query: messaggi di una cerchia ─────────────────────────────────────
 256:   const MESSAGES_KEY = (circleId: string) => ["circle-messages", circleId] as const;
-257: 
+257:
 258:   function useMessages(circleId: string) {
 259:     return useQuery({
 260:       queryKey: MESSAGES_KEY(circleId),
@@ -5648,7 +5838,7 @@ Let me find the `useMessages` function to apply validation there too.
 269:       refetchInterval: 5_000,
 270:     });
 271:   }
-272: 
+272:
 273:   // ── Mutation: invia un messaggio ──────────────────────────────────────
 274:   const sendMut = useMutation({
 275:     mutationFn: async ({
@@ -5677,6 +5867,7 @@ Now let me apply the validation functions to the queries.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/useCircle.ts",
@@ -5686,6 +5877,7 @@ Now let me apply the validation functions to the queries.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5701,6 +5893,7 @@ Now let me update the useMessages function to validate the data.
 **Tool: edit**
 
 **Input:**
+
 ```json
 {
   "filePath": "/home/daniel/github/gymBro/src/hooks/useCircle.ts",
@@ -5710,6 +5903,7 @@ Now let me update the useMessages function to validate the data.
 ```
 
 **Output:**
+
 ```
 Edit applied successfully.
 ```
@@ -5727,6 +5921,7 @@ Ora lint + test:
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run && npx eslint src/lib/validators.ts src/hooks/usePersonalRecords.ts src/hooks/useCircle.ts src/routes/app/allena.\\$planId.tsx --quiet 2>&1"
@@ -5734,6 +5929,7 @@ Ora lint + test:
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -5773,6 +5969,7 @@ Test passano, solo Prettier:
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx prettier --write src/hooks/useCircle.ts src/lib/validators.ts src/hooks/usePersonalRecords.ts && npx eslint src/hooks/useCircle.ts src/lib/validators.ts src/hooks/usePersonalRecords.ts src/routes/app/allena.\\$planId.tsx --quiet 2>&1"
@@ -5780,6 +5977,7 @@ Test passano, solo Prettier:
 ```
 
 **Output:**
+
 ```
 src/hooks/useCircle.ts 304ms
 src/lib/validators.ts 112ms (unchanged)
@@ -5798,6 +5996,7 @@ Lint is clean now. Let me also run the tests one more time to make sure everythi
 **Tool: bash**
 
 **Input:**
+
 ```json
 {
   "command": "cd /home/daniel/github/gymBro && npx vitest run"
@@ -5805,6 +6004,7 @@ Lint is clean now. Let me also run the tests one more time to make sure everythi
 ```
 
 **Output:**
+
 ```
 
  RUN  v4.1.10 /home/daniel/github/gymBro
@@ -5829,6 +6029,7 @@ Everything passes. Let me update the todo list and provide a summary.
 **Tool: todowrite**
 
 **Input:**
+
 ```json
 {
   "todos": [
@@ -5857,6 +6058,7 @@ Everything passes. Let me update the todo list and provide a summary.
 ```
 
 **Output:**
+
 ```
 [
   {
@@ -5894,26 +6096,26 @@ Let me provide a summary of what was done.
 
 **Creato:** `src/lib/validators.ts`
 
-| Schema | Valida |
-|--------|--------|
-| `SessionRowSchema` | Righe sessione dal DB |
-| `SessionInsertSchema` | Inserimento sessione |
-| `SessionUpdateSchema` | Aggiornamento sessione |
-| `SessionLogInsertSchema` | Inserimento log serie |
-| `PlanInsertSchema` | Creazione scheda |
-| `ExerciseRowSchema` | Esercizi dal DB |
-| `ExerciseInsertSchema` | Inserimento esercizio |
-| `ProfileUpdateSchema` | Aggiornamento profilo |
-| `CircleInsertSchema` | Creazione cerchia |
+| Schema                   | Valida                         |
+| ------------------------ | ------------------------------ |
+| `SessionRowSchema`       | Righe sessione dal DB          |
+| `SessionInsertSchema`    | Inserimento sessione           |
+| `SessionUpdateSchema`    | Aggiornamento sessione         |
+| `SessionLogInsertSchema` | Inserimento log serie          |
+| `PlanInsertSchema`       | Creazione scheda               |
+| `ExerciseRowSchema`      | Esercizi dal DB                |
+| `ExerciseInsertSchema`   | Inserimento esercizio          |
+| `ProfileUpdateSchema`    | Aggiornamento profilo          |
+| `CircleInsertSchema`     | Creazione cerchia              |
 | `CircleInviteCodeSchema` | Codice invito (6 char, A-Z0-9) |
 
 **Applicato a 3 punti critici:**
 
-| File | Prima | Dopo |
-|------|-------|------|
+| File                               | Prima                       | Dopo                                                   |
+| ---------------------------------- | --------------------------- | ------------------------------------------------------ |
 | `allena.$planId.tsx:finishWorkout` | `rows` inseriti senza check | `SessionLogInsertSchema.safeParse()` prima dell'insert |
-| `usePersonalRecords.ts` | `(data ?? []) as LogRow[]` | `z.array(LogRowSchema).safeParse()` con fallback `[]` |
-| `useCircle.ts` | `(data ?? []) as Circle[]` | `validateCircles()` / `validateMessages()` con warning |
+| `usePersonalRecords.ts`            | `(data ?? []) as LogRow[]`  | `z.array(LogRowSchema).safeParse()` con fallback `[]`  |
+| `useCircle.ts`                     | `(data ?? []) as Circle[]`  | `validateCircles()` / `validateMessages()` con warning |
 
 **Nota:** la rigenerazione tipi Supabase (`supabase gen types`) richiede auth interattiva — va eseguita manualmente con `supabase gen types typescript --project-id xzqmpwcuomflsyqeczno > src/integrations/supabase/types.ts`.
 
@@ -5940,6 +6142,7 @@ The user wants a comprehensive summary of all the changes made and the reasoning
 ### Task 1: Test Setup
 
 **Cosa ho fatto:**
+
 - Installato `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@playwright/test`
 - Creato `vitest.config.ts` (jsdom, alias `@/`, coverage V8)
 - Creato `vitest.setup.ts` (mock Supabase, TanStack, sonner, date-fns, localStorage/sessionStorage)
@@ -5948,6 +6151,7 @@ The user wants a comprehensive summary of all the changes made and the reasoning
 - Scritto 36 test su 3 file
 
 **Perché:**
+
 - Il codebase aveva **zero test** — ogni refactoring poteva introdurre bug silenziosi
 - `computePRs` calcola il 1RM con la formula Epley — un errore qui significa PR sbagliati per l'utente
 - I test documentano il comportamento atteso (rank a 25 allenamenti = "Guerriero", muscleColor gestisce trim, ecc.)
@@ -5958,6 +6162,7 @@ The user wants a comprehensive summary of all the changes made and the reasoning
 ### Task 2: Fix Race Condition in `allena.$planId.tsx`
 
 **Cosa ho fatto:**
+
 - Sostituito il `useEffect` da 110 righe con 9 dipendenze fragile con un `useMutation` atomico
 - Rimosso `sessionCreated.current` ref (lock manuale anti-StrictMode)
 - Rimosso `userDecision` + `orphanIdAtDecision` state (race-prone)
@@ -5965,11 +6170,13 @@ The user wants a comprehensive summary of all the changes made and the reasoning
 - Flusso: orphan detection → sessionStorage match → auto-resume O show dialog → user decide → `createSession.mutate()`
 
 **Bug risolto:**
+
 - `orphanQ.data` poteva diventare `null` durante un background refetch di React Query
 - Questo causava la creazione di sessioni **duplicate** (l'effect vedeva null → creava nuova sessione → poi l'orfana riappariva)
 - Il `sessionCreated.current` ref non proteggeva perché il cleanup della cancel function poteva arrivare prima del `setSessionId`
 
 **Perché:**
+
 - `useMutation` ha un built-in guard anti-double-fire (gestito da TanStack Query)
 - La decisione (resume/new) viene presa una sola volta, non rivista ad ogni refetch
 - Il codice passa da 110 righe con 9 dipendenze a 80 righe con 5 dipendenze — più facile da ragionare
@@ -5979,12 +6186,14 @@ The user wants a comprehensive summary of all the changes made and the reasoning
 ### Task 3: Zod Validation ai Boundary API
 
 **Cosa ho fatto:**
+
 - Creato `src/lib/validators.ts` con 10 schema Zod (Session, SessionLog, Plan, Exercise, Profile, Circle, CircleInviteCode)
 - Applicato `safeParse` prima degli insert in `finishWorkout` (session logs)
 - Sostituito i cast `as LogRow[]` in `usePersonalRecords.ts` con `z.array(LogRowSchema).safeParse()`
 - Sostituito i cast `as Circle[]` e `as CircleMessage[]` in `useCircle.ts` con `validateCircles()` / `validateMessages()`
 
 **Perché:**
+
 - Il codebase usava `as Type[]` ovunque — se il DB cambia (migration), TypeScript non si accorge di nulla e il runtime rompe
 - Zod intercetta i campi mancanti/malformati a runtime con un messaggio chiaro (es. `exercise_name: string` obbligatorio)
 - `safeParse` invece di `parse` → non crasha l'app, logga un warning e torna `[]` (graceful degradation)
@@ -5994,18 +6203,17 @@ The user wants a comprehensive summary of all the changes made and the reasoning
 
 ### File modificati
 
-| File | Tipo modifica |
-|------|---------------|
-| `vitest.config.ts` | **Nuovo** — config test |
-| `vitest.setup.ts` | **Nuovo** — mock globali |
-| `package.json` | Aggiunti script test |
-| `src/hooks/usePersonalRecords.ts` | Esportata `computePRs`, aggiunta Zod validation |
-| `src/hooks/usePersonalRecords.test.ts` | **Nuovo** — 11 test |
-| `src/lib/muscleColors.test.ts` | **Nuovo** — 11 test |
-| `src/lib/ranks.test.ts` | **Nuovo** — 14 test |
-| `src/lib/validators.ts` | **Nuovo** — 10 schema Zod |
-| `src/routes/app/allena.$planId.tsx` | Fix race condition + Zod validation |
-| `src/hooks/useCircle.ts` | Zod validation su queries |
+| File                                   | Tipo modifica                                   |
+| -------------------------------------- | ----------------------------------------------- |
+| `vitest.config.ts`                     | **Nuovo** — config test                         |
+| `vitest.setup.ts`                      | **Nuovo** — mock globali                        |
+| `package.json`                         | Aggiunti script test                            |
+| `src/hooks/usePersonalRecords.ts`      | Esportata `computePRs`, aggiunta Zod validation |
+| `src/hooks/usePersonalRecords.test.ts` | **Nuovo** — 11 test                             |
+| `src/lib/muscleColors.test.ts`         | **Nuovo** — 11 test                             |
+| `src/lib/ranks.test.ts`                | **Nuovo** — 14 test                             |
+| `src/lib/validators.ts`                | **Nuovo** — 10 schema Zod                       |
+| `src/routes/app/allena.$planId.tsx`    | Fix race condition + Zod validation             |
+| `src/hooks/useCircle.ts`               | Zod validation su queries                       |
 
 ---
-

@@ -38,11 +38,7 @@ export function WeightUnitProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return (
-    <WeightUnitContext.Provider value={value}>
-      {children}
-    </WeightUnitContext.Provider>
-  );
+  return <WeightUnitContext.Provider value={value}>{children}</WeightUnitContext.Provider>;
 }
 
 export function useWeightUnit(): WeightUnitContextValue {

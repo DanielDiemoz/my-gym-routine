@@ -154,9 +154,14 @@ function EmptyState({ onJoin, onCreate }: { onJoin: () => void; onCreate: () => 
       <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
         <Users className="h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
       </div>
-      <p className="mt-6 text-base font-semibold">{t("Non sei ancora in nessuna cerchia", "You're not in any circle yet")}</p>
+      <p className="mt-6 text-base font-semibold">
+        {t("Non sei ancora in nessuna cerchia", "You're not in any circle yet")}
+      </p>
       <p className="mt-2 max-w-xs text-sm text-muted-foreground">
-        {t("Entra con un codice di invito o creane una nuova.", "Join with an invite code or create a new one.")}
+        {t(
+          "Entra con un codice di invito o creane una nuova.",
+          "Join with an invite code or create a new one.",
+        )}
       </p>
 
       <div className="mt-10 grid w-full max-w-xs grid-cols-2 gap-3">
@@ -274,7 +279,8 @@ function CircleCard({
             {unreadCount > 0 && <MessageCircle className="h-3 w-3 text-destructive" />}
           </div>
           <div className="text-xs text-muted-foreground">
-            {circle.member_count ?? 1} {circle.member_count === 1 ? t("membro", "member") : t("membri", "members")}
+            {circle.member_count ?? 1}{" "}
+            {circle.member_count === 1 ? t("membro", "member") : t("membri", "members")}
           </div>
         </div>
       </div>
@@ -324,7 +330,9 @@ function CerchieModal({
       >
         <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border sm:hidden" />
         <h3 className="text-xl font-bold">
-          {sheet === "join" ? t("Entra in una cerchia", "Join a circle") : t("Crea una cerchia", "Create a circle")}
+          {sheet === "join"
+            ? t("Entra in una cerchia", "Join a circle")
+            : t("Crea una cerchia", "Create a circle")}
         </h3>
         <div className="mt-5">{children}</div>
       </div>
@@ -447,7 +455,10 @@ function CreatedCircleCard({ circle, onDone }: { circle: Circle; onDone: () => v
         </p>
         <code className="mt-2 block text-3xl font-black tracking-[0.3em]">{circle.code}</code>
         <p className="mt-2 text-xs text-muted-foreground">
-          {t("Condividi questo codice per invitare nuovi compagni.", "Share this code to invite new buddies.")}
+          {t(
+            "Condividi questo codice per invitare nuovi compagni.",
+            "Share this code to invite new buddies.",
+          )}
         </p>
         <div className="mt-4 flex justify-center">
           <CopyCodeButton text={circle.code} />

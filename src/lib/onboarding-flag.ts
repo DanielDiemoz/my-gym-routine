@@ -13,5 +13,7 @@ export function resetOnboardingFlag() {
 }
 
 declare global {
-  interface Window { __gymbro_onboarded?: true; }
+  interface Window {
+    __gymbro_onboarded?: true;
+  }
 }

@@ -1,13 +1,16 @@
 {
-  "name": "GymBro",
+  "name": "GymBro — App Palestra Gratuita",
   "short_name": "GymBro",
-  "description": "Crea schede, allenati e tieni traccia dei tuoi progressi.",
+  "description": "Crea schede allenamento, traccia i tuoi workout e monitora i progressi. App palestra gratuita senza abbonamento.",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
+  "categories": ["fitness", "health", "sports"],
   "background_color": "#0a0a0a",
   "theme_color": "#0a0a0a",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon.svg",

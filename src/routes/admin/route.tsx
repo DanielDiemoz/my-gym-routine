@@ -38,9 +38,9 @@ function AdminLayout() {
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <h1 className="text-lg font-bold">Admin</h1>
-            </div>
+            <Shield className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-bold">Admin</h1>
+          </div>
           <button
             onClick={handleLogout}
             className="flex h-8 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"

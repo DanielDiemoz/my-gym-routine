@@ -243,7 +243,9 @@ function Dashboard() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             {format(new Date(), "EEEE d MMM", { locale: dateLocale })}
           </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Ciao", "Hi")}, {name.split(" ")[0]}</h1>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">
+            {t("Ciao", "Hi")}, {name.split(" ")[0]}
+          </h1>
         </div>
         <div className="flex items-center gap-2 pt-1">
           <PWAInstallButton />
@@ -308,11 +310,9 @@ function Dashboard() {
       {/* Workout calendar */}
       <div className="mt-4">
         <WorkoutCalendar
-          workoutDays={
-            ((streakQ.data ?? []) as Array<{ completed_at: string | null }>)
-              .filter((s) => s.completed_at !== null)
-              .map((s) => new Date(s.completed_at!))
-          }
+          workoutDays={((streakQ.data ?? []) as Array<{ completed_at: string | null }>)
+            .filter((s) => s.completed_at !== null)
+            .map((s) => new Date(s.completed_at!))}
         />
       </div>
 
@@ -330,7 +330,9 @@ function Dashboard() {
             className="block rounded-2xl border-2 border-dashed border-border p-6 text-center"
           >
             <Dumbbell className="mx-auto h-6 w-6 text-muted-foreground" />
-            <p className="mt-2 text-sm font-semibold">{t("Crea la tua prima scheda", "Create your first plan")}</p>
+            <p className="mt-2 text-sm font-semibold">
+              {t("Crea la tua prima scheda", "Create your first plan")}
+            </p>
           </Link>
         ) : (
           <div className="space-y-2">
@@ -481,7 +483,9 @@ function PersonalRecordsCard({ userId }: { userId: string }) {
         {top3.map((pr) => (
           <div key={pr.exercise} className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground truncate">{pr.exercise}</span>
-            <span className="text-xs font-bold text-primary">{fmtWeight(pr.maxWeight, { digits: 1 })}</span>
+            <span className="text-xs font-bold text-primary">
+              {fmtWeight(pr.maxWeight, { digits: 1 })}
+            </span>
           </div>
         ))}
       </div>
