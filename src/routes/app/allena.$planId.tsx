@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -87,6 +87,8 @@ function ActiveSession() {
   const { planId } = Route.useParams();
   const { user } = Route.useRouteContext();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const cancelledRef = useRef(false);
 
   const { display: fmtWeight } = useWeightUnit();
   const { t, language } = useLanguage();
@@ -373,8 +375,13 @@ function ActiveSession() {
   }, [sessionId, planId, user.id, logs, currentIdx, localExercises, persistDraft]);
 
   useEffect(() => {
-    const flushDraft = () => { console.log("[FLUSH] flushing draft on close"); persistDraft(latestDraftRef.current); };
+    const flushDraft = () => {
+      if (cancelledRef.current) return;
+      console.log("[FLUSH] flushing draft on close");
+      persistDraft(latestDraftRef.current);
+    };
     const flushDb = () => {
+      if (cancelledRef.current) return;
       if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
       saveWorkoutStateToDb(latestDraftRef.current);
     };
@@ -469,10 +476,24 @@ function ActiveSession() {
     );
     if (!ok) return;
     if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
-    if (sessionId) await supabase.from("sessions").delete().eq("id", sessionId);
+    const { error } = await supabase
+      .from("sessions")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("plan_id", planId)
+      .is("completed_at", null);
+    if (error) {
+      toast.error(t("Errore nell'annullamento", "Error cancelling workout"));
+      return;
+    }
     sessionStorage.removeItem("gw_last");
     console.log("[CLEANUP] removing LS key");
     clearPersisted();
+    setWorkCtx(null);
+    cancelledRef.current = true;
+    qc.invalidateQueries({ queryKey: ["active-session", user.id] });
+    qc.invalidateQueries({ queryKey: ["has-active-session", user.id, planId] });
+    qc.invalidateQueries({ queryKey: ["orphan-session", user.id, planId] });
     navigate({ to: "/app" });
   }
 
