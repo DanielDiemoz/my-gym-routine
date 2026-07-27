@@ -15,18 +15,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { z } from "zod";
 
-// ── Tipi locali ───────────────────────────────────────────────────────────────
-// Usiamo tipi espliciti perché il types.ts generato da Lovable non conosce
-// ancora circles/circle_members finché non si rigenera dopo la migration.
-
+// ── Tipi + Zod validation ──────────────────────────────────────────────────
 export interface Circle {
   id: string;
   name: string;
   code: string;
   owner_id: string;
   created_at: string;
-  /** Numero di membri (aggiunto client-side dopo fetch separata o join). */
   member_count?: number;
 }
 
@@ -45,6 +42,43 @@ export interface CircleMessage {
   created_at: string;
   display_name: string | null;
   avatar_url: string | null;
+}
+
+const CircleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  code: z.string(),
+  owner_id: z.string(),
+  created_at: z.string(),
+  member_count: z.number().optional(),
+});
+
+const CircleMessageSchema = z.object({
+  id: z.string(),
+  circle_id: z.string(),
+  user_id: z.string(),
+  content: z.string(),
+  created_at: z.string(),
+  display_name: z.string().nullable(),
+  avatar_url: z.string().nullable(),
+});
+
+function validateCircles(data: unknown): Circle[] {
+  const result = z.array(CircleSchema).safeParse(data);
+  if (!result.success) {
+    console.warn("Invalid circles data:", result.error.issues);
+    return [];
+  }
+  return result.data;
+}
+
+function validateMessages(data: unknown): CircleMessage[] {
+  const result = z.array(CircleMessageSchema).safeParse(data);
+  if (!result.success) {
+    console.warn("Invalid circle messages:", result.error.issues);
+    return [];
+  }
+  return result.data;
 }
 
 const fromCircles = () => supabase.from("circles");
@@ -71,13 +105,12 @@ export function useCircle(userId: string) {
       if (error) {
         throw new Error(error.message || "Errore nel caricamento delle cerchie");
       }
-      return (data ?? []) as Circle[];
+      return validateCircles(data);
     },
-    staleTime: 1000 * 30, // 30 secondi
+    staleTime: 1000 * 30,
   });
 
-  const invalidateCircles = () =>
-    qc.invalidateQueries({ queryKey: CIRCLES_KEY(userId) });
+  const invalidateCircles = () => qc.invalidateQueries({ queryKey: CIRCLES_KEY(userId) });
 
   // ── Mutation: entra in una cerchia ────────────────────────────────────────
   // Usa la RPC SECURITY DEFINER `join_circle_by_code` perché la policy
@@ -86,10 +119,9 @@ export function useCircle(userId: string) {
   // il membro (idempotente via ON CONFLICT DO NOTHING).
   const joinMut = useMutation({
     mutationFn: async (code: string): Promise<string> => {
-      const { data: circleId, error } = await supabase.rpc(
-        "join_circle_by_code",
-        { invite_code: code },
-      );
+      const { data: circleId, error } = await supabase.rpc("join_circle_by_code", {
+        invite_code: code,
+      });
       if (error) {
         // Il messaggio Postgres (`'Codice non trovato...'`) viene propagato
         // tale e quale → lo mostriamo direttamente come toast.
@@ -212,9 +244,7 @@ export function useCircle(userId: string) {
       toast.success("Nickname aggiornato.");
     },
     onError: (err: unknown) => {
-      toast.error(
-        err instanceof Error ? err.message : "Errore durante l'aggiornamento",
-      );
+      toast.error(err instanceof Error ? err.message : "Errore durante l'aggiornamento");
     },
   });
 
@@ -229,7 +259,7 @@ export function useCircle(userId: string) {
           p_circle_id: circleId,
         });
         if (error) throw error;
-        return (data ?? []) as CircleMessage[];
+        return validateMessages(data);
       },
       staleTime: 1000 * 10,
       refetchInterval: 5_000,
@@ -260,9 +290,7 @@ export function useCircle(userId: string) {
       });
     },
     onError: (err: unknown) => {
-      toast.error(
-        err instanceof Error ? err.message : "Errore nell'invio del messaggio",
-      );
+      toast.error(err instanceof Error ? err.message : "Errore nell'invio del messaggio");
     },
   });
 
@@ -343,8 +371,7 @@ export function useCircle(userId: string) {
     /** Recupera i messaggi di una cerchia */
     useMessages,
     /** Invia un messaggio in una cerchia */
-    sendMessage: (circleId: string, content: string) =>
-      sendMut.mutateAsync({ circleId, content }),
+    sendMessage: (circleId: string, content: string) => sendMut.mutateAsync({ circleId, content }),
     isSending: sendMut.isPending,
     /** Recupera il conteggio dei messaggi non letti per una cerchia */
     useUnreadCount,

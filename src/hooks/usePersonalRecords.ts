@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemo } from "react";
+import { z } from "zod";
+
+const LogRowSchema = z.object({
+  exercise_name: z.string(),
+  weight: z.number(),
+  reps: z.number(),
+  created_at: z.string(),
+});
 
 type LogRow = {
   exercise_name: string;
@@ -18,7 +26,7 @@ export type ExercisePR = {
   history: { weight: number; reps: number; date: string }[];
 };
 
-function computePRs(logs: LogRow[]): ExercisePR[] {
+export function computePRs(logs: LogRow[]): ExercisePR[] {
   const byExercise = new Map<string, LogRow[]>();
 
   for (const log of logs) {
@@ -88,7 +96,12 @@ export function usePersonalRecords(userId: string) {
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return computePRs((data ?? []) as LogRow[]);
+      const validated = z.array(LogRowSchema).safeParse(data ?? []);
+      if (!validated.success) {
+        console.warn("Invalid session_logs data:", validated.error.issues);
+        return [];
+      }
+      return computePRs(validated.data);
     },
     staleTime: 1000 * 60,
   });
@@ -101,11 +114,9 @@ export function usePersonalRecords(userId: string) {
 export function isNewPR(
   exerciseName: string,
   weight: number,
-  currentPRs: ExercisePR[]
+  currentPRs: ExercisePR[],
 ): { isNew: boolean; oldPR: number } {
-  const pr = currentPRs.find(
-    (p) => p.exercise.toLowerCase() === exerciseName.toLowerCase()
-  );
+  const pr = currentPRs.find((p) => p.exercise.toLowerCase() === exerciseName.toLowerCase());
   if (!pr) return { isNew: weight > 0, oldPR: 0 };
   return { isNew: weight > pr.maxWeight, oldPR: pr.maxWeight };
 }

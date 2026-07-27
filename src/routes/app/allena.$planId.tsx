@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
 import type { Json } from "@/integrations/supabase/types";
 import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
 import { useLanguage } from "@/lib/i18n";
+import { SessionLogInsertSchema } from "@/lib/validators";
 
 export const Route = createFileRoute("/app/allena/$planId")({
   component: ActiveSession,
@@ -36,7 +37,11 @@ let _cached: string | null = null;
 
 function persist(stateStr: string) {
   _cached = stateStr;
-  try { localStorage.setItem(WS_KEY, stateStr); } catch {}
+  try {
+    localStorage.setItem(WS_KEY, stateStr);
+  } catch {
+    /* localStorage may be full or unavailable (private browsing) */
+  }
 }
 
 function restore(): string | null {
@@ -45,18 +50,29 @@ function restore(): string | null {
     const raw = localStorage.getItem(WS_KEY);
     if (raw) _cached = raw;
     return raw;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function clearPersisted() {
   _cached = null;
-  try { localStorage.removeItem(WS_KEY); } catch {}
+  try {
+    localStorage.removeItem(WS_KEY);
+  } catch {
+    /* localStorage may be unavailable */
+  }
 }
 
 // Sempre attivo: prima di chiudere la pagina, salva l'ultimo stato.
 if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", () => {
-    if (_cached) try { localStorage.setItem(WS_KEY, _cached); } catch {}
+    if (_cached)
+      try {
+        localStorage.setItem(WS_KEY, _cached);
+      } catch {
+        /* best-effort persistence on page close */
+      }
   });
 }
 
@@ -132,9 +148,8 @@ function ActiveSession() {
   const [logs, setLogs] = useState<Record<string, LoggedSet[]>>({});
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [finishing, setFinishing] = useState(false);
-  const sessionCreated = useRef(false);
-  const [userDecision, setUserDecision] = useState<"resume" | "start-new" | null>(null);
-  const [orphanIdAtDecision, setOrphanIdAtDecision] = useState<string | null>(null);
+  const [showOrphanModal, setShowOrphanModal] = useState(false);
+  const [orphanId, setOrphanId] = useState<string | null>(null);
   const { confirm: confirmDialog, ConfirmDialog } = useConfirmDialog();
 
   // Copia mutabile degli esercizi (per la sostituzione in sessione).
@@ -145,16 +160,31 @@ function ActiveSession() {
   const { data: workCtx, setData: setWorkCtx } = useWorkoutStash();
 
   const latestDraftRef = useRef<WorkoutState | null>(null);
-  const persistDraft = useCallback((state: WorkoutState | null) => {
-    if (!state?.sessionId) return;
-    console.log("[PERSIST] saving to LS", state.sessionId, "logs:", Object.keys(state.logs ?? {}).length, "exercises");
-    persist(JSON.stringify(state));
-    setWorkCtx(JSON.stringify(state));
-  }, [setWorkCtx]);
+  const persistDraft = useCallback(
+    (state: WorkoutState | null) => {
+      if (!state?.sessionId) return;
+      console.log(
+        "[PERSIST] saving to LS",
+        state.sessionId,
+        "logs:",
+        Object.keys(state.logs ?? {}).length,
+        "exercises",
+      );
+      persist(JSON.stringify(state));
+      setWorkCtx(JSON.stringify(state));
+    },
+    [setWorkCtx],
+  );
   const stageDraft = useCallback((state: WorkoutState | null) => {
     if (!state?.sessionId) return;
     latestDraftRef.current = state;
-    console.log("[PERSIST] stageDraft saving to LS", state.sessionId, "logs:", Object.keys(state.logs ?? {}).length, "exercises");
+    console.log(
+      "[PERSIST] stageDraft saving to LS",
+      state.sessionId,
+      "logs:",
+      Object.keys(state.logs ?? {}).length,
+      "exercises",
+    );
     persist(JSON.stringify(state));
   }, []);
 
@@ -176,116 +206,110 @@ function ActiveSession() {
     }
   }, [planQ.data]);
 
-  // ── TASK 3: State-machine per la creazione della sessione ──────────────────
-  // Regole:
-  // - Skip se già eseguita (ref flag anti-StrictMode).
-  // - Aspetta planQ espresso e orphanQ risolto.
-  // - Se esiste un'orfana, l'utente DEVE scegliere (riprendi o inizia nuovo).
-  // - Pattern "create-first, delete-later": se start-new, inserisco la nuova
-  //   sessione PRIMA e cancello la vecchia DOPO (in caso di errore sul nuovo
-  //   insert, l'orfana resta intatta per un successivo retry).
-  // - Snapshot `orphanIdAtDecision` per evitare race su refetch di React Query
-  //   scegliendo l'id "vecchio" piuttosto che uno aggiornato.
+  // ── Session creation mutation (replaces race-prone useEffect) ──────────
+  // This mutation is atomic and idempotent:
+  //   - "resume": reuses the orphanId snapshot, no DB write needed
+  //   - "new": inserts a new session, then deletes the orphan (best-effort)
+  // The mutation guard prevents double-fire even in StrictMode.
+  const createSession = useMutation({
+    mutationFn: async (
+      opts: { action: "resume"; orphanId: string } | { action: "new"; planName: string },
+    ) => {
+      if (opts.action === "resume") {
+        return opts.orphanId;
+      }
+      // Insert new session first (safe even if orphan still exists)
+      const { data, error } = await supabase
+        .from("sessions")
+        .insert({ user_id: user.id, plan_id: planId, plan_name: opts.planName })
+        .select("id")
+        .single();
+      if (error) throw error;
+
+      // Best-effort cleanup of orphan (non-blocking)
+      if (opts.orphanId) {
+        supabase
+          .from("sessions")
+          .delete()
+          .eq("id", opts.orphanId)
+          .then(({ error: delErr }) => {
+            if (delErr) console.warn("Orphan cleanup failed:", delErr.message);
+          });
+      }
+      return data.id as string;
+    },
+    onSuccess: (resolvedId: string) => {
+      setSessionId(resolvedId);
+      setShowOrphanModal(false);
+      sessionStorage.setItem(
+        "gw_last",
+        JSON.stringify({
+          sessionId: resolvedId,
+          planId,
+          userId: user.id,
+          logs: {},
+          currentIdx: 0,
+          localExercises: [],
+        }),
+      );
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : t("Errore di sessione", "Session error"));
+    },
+  });
+
+  // ── Orphan detection: one-shot query that decides the flow ────────────
+  // We use a single useEffect that runs once when data is ready, then
+  // decides: auto-resume (sessionStorage match), show dialog, or create new.
+  const orphanHandledRef = useRef(false);
   useEffect(() => {
-    if (sessionCreated.current) return;
-    if (!planQ.data?.plan || orphanQ.isLoading || sessionId) return;
-    // Se orphanQ.data è null ma un background refetch è in corso (isFetching),
-    // aspettiamo che finisca prima di decidere. Su mount successivi (navigazione
-    // client-side) la cache di React Query può contenere null non aggiornato.
-    if (!orphanQ.data && orphanQ.isFetching) return;
+    if (orphanHandledRef.current) return;
+    if (!planQ.data?.plan) return;
+    if (orphanQ.isLoading || orphanQ.isFetching) return;
 
     const orphan = orphanQ.data;
-    if (orphan && !userDecision) {
-      const last = JSON.parse(sessionStorage.getItem("gw_last") ?? "null") as WorkoutState | null;
-      const ctxData = JSON.parse(workCtx ?? "null") as WorkoutState | null;
-      const match = (last?.sessionId === orphan.id && last?.planId === planId) ||
-                    ctxData?.sessionId === orphan.id;
-      if (match) {
-        setOrphanIdAtDecision(orphan.id);
-        setUserDecision("resume");
-        return;
-      }
-      return; // aspetta click utente
+    if (!orphan) {
+      // No orphan → create new session immediately
+      orphanHandledRef.current = true;
+      createSession.mutate({ action: "new", planName: planQ.data.plan.name });
+      return;
     }
 
-    sessionCreated.current = true;
+    // Orphan exists → check if it matches sessionStorage (auto-resume)
+    const last = JSON.parse(sessionStorage.getItem("gw_last") ?? "null") as WorkoutState | null;
+    const ctxData = JSON.parse(workCtx ?? "null") as WorkoutState | null;
+    const matchesSessionStorage =
+      (last?.sessionId === orphan.id && last?.planId === planId) ||
+      ctxData?.sessionId === orphan.id;
 
-    let cancelled = false;
+    if (matchesSessionStorage) {
+      orphanHandledRef.current = true;
+      createSession.mutate({ action: "resume", orphanId: orphan.id });
+      return;
+    }
 
-    console.log("[SESSION] resolve decision:", userDecision, "orphanId:", orphanIdAtDecision);
-    (async () => {
-      try {
-        let resolvedId: string | null = null;
+    // Otherwise, show dialog and let user decide
+    orphanHandledRef.current = true;
+    setOrphanId(orphan.id);
+    setShowOrphanModal(true);
+  }, [planQ.data, orphanQ.data, orphanQ.isLoading, orphanQ.isFetching, planId, workCtx]);
 
-        if (userDecision === "resume" && orphanIdAtDecision) {
-          // Caso A: l'utente vuole riprendere l'orfana, riusiamo l'id snapshot.
-          // NOTA: NON usiamo `orphan` (orphanQ.data) perché un background refetch
-          // di React Query può renderlo null tra il render e l'esecuzione async.
-          // `orphanIdAtDecision` è lo snapshot stabile preso al momento della decisione.
-          resolvedId = orphanIdAtDecision;
-        } else if (planQ.data?.plan) {
-          // Caso B/C: nessuna orfana OPPURE "Inizia nuovo". Insert SEMPRE PRIMA.
-          const { data, error } = await supabase
-            .from("sessions")
-            .insert({
-              user_id: user.id,
-              plan_id: planId,
-              plan_name: planQ.data.plan.name,
-            })
-            .select("id")
-            .single();
-          if (cancelled) return;
-          if (error) throw error;
-          resolvedId = data?.id ?? null;
+  function decideResume() {
+    if (!orphanId) return;
+    setShowOrphanModal(false);
+    createSession.mutate({ action: "resume", orphanId });
+  }
 
-          // Solo DOPO che il nuovo insert è andato bene, cancello l'orfana vecchia.
-          if (userDecision === "start-new" && orphanIdAtDecision) {
-            const { error: delErr } = await supabase
-              .from("sessions")
-              .delete()
-              .eq("id", orphanIdAtDecision);
-            if (delErr) {
-              // Non bloccare: l'utente ha già la nuova sessione attiva.
-              console.warn("Cleanup vecchia sessione fallito:", delErr.message);
-            }
-          }
-        }
+  function decideStartNew() {
+    if (!orphanId || !planQ.data?.plan) return;
+    setShowOrphanModal(false);
+    createSession.mutate({ action: "new", planName: planQ.data.plan.name });
+  }
 
-        if (!cancelled && resolvedId) {
-          console.log("[SESSION] setting sessionId:", resolvedId);
-          setSessionId(resolvedId);
-          sessionStorage.setItem("gw_last", JSON.stringify({
-            sessionId: resolvedId,
-            planId,
-            userId: user.id,
-            logs: {},
-            currentIdx: 0,
-            localExercises: [],
-          }));
-        }
-      } catch (err) {
-        if (cancelled) return;
-        // Rollback del lock: l'utente può ricaricare per riprovare.
-        sessionCreated.current = false;
-        toast.error(err instanceof Error ? err.message : t("Errore di sessione", "Session error"));
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    planQ.data,
-    orphanQ.data,
-    orphanQ.isLoading,
-    orphanQ.isFetching,
-    userDecision,
-    orphanIdAtDecision,
-    sessionId,
-    planId,
-    user.id,
-    workCtx,
-  ]);
+  // Force-close blocker: user MUST pick resume or new
+  const blockForcedClose = (next: boolean) => {
+    if (!next && showOrphanModal) return;
+  };
 
   // Init logs dal piano (snapshot dei default di serie).
   useEffect(() => {
@@ -309,34 +333,69 @@ function ActiveSession() {
   const restoredRef = useRef(false);
   const skipNextPersistRef = useRef(false);
   useEffect(() => {
-    if (!sessionId) { console.log("[RESTORE] no sessionId yet"); return; }
-    if (restoredRef.current) { console.log("[RESTORE] already restored"); return; }
+    if (!sessionId) {
+      console.log("[RESTORE] no sessionId yet");
+      return;
+    }
+    if (restoredRef.current) {
+      console.log("[RESTORE] already restored");
+      return;
+    }
 
-    if (orphanQ.isLoading) { console.log("[RESTORE] waiting for orphanQ"); return; }
-    if (!orphanQ.data && orphanQ.isFetching) { console.log("[RESTORE] waiting for orphanQ"); return; }
+    if (orphanQ.isLoading) {
+      console.log("[RESTORE] waiting for orphanQ");
+      return;
+    }
+    if (!orphanQ.data && orphanQ.isFetching) {
+      console.log("[RESTORE] waiting for orphanQ");
+      return;
+    }
 
     restoredRef.current = true;
     skipNextPersistRef.current = true;
 
-    console.log("[RESTORE] attempting restore for sessionId:", sessionId, "planId:", planId, "userId:", user.id);
+    console.log(
+      "[RESTORE] attempting restore for sessionId:",
+      sessionId,
+      "planId:",
+      planId,
+      "userId:",
+      user.id,
+    );
     let saved: WorkoutState | null = null;
     try {
       const raw = restore();
       if (raw) saved = JSON.parse(raw) as WorkoutState;
-    } catch {}
+    } catch {
+      /* corrupted localStorage data, will start fresh */
+    }
 
     console.log("[RESTORE] localStorage found:", !!saved, "sessionId:", saved?.sessionId);
-    if (!saved) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (!saved) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
     console.log("[RESTORE] sessionId match:", saved.sessionId === sessionId);
-    if (saved.sessionId !== sessionId) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (saved.sessionId !== sessionId) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
     console.log("[RESTORE] planId match:", saved.planId === planId);
-    if (saved.planId !== planId) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (saved.planId !== planId) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
     console.log("[RESTORE] userId match:", saved.userId === user.id);
-    if (saved.userId !== user.id) { console.log("[RESTORE] no valid state to restore"); return; }
+    if (saved.userId !== user.id) {
+      console.log("[RESTORE] no valid state to restore");
+      return;
+    }
 
     console.log("[RESTORE] restoring with", Object.keys(saved?.logs ?? {}).length, "exercises");
     latestDraftRef.current = {
-      sessionId, planId, userId: user.id,
+      sessionId,
+      planId,
+      userId: user.id,
       logs: saved.logs ?? {},
       currentIdx: saved.currentIdx ?? 0,
       localExercises: saved.localExercises ?? [],
@@ -359,12 +418,27 @@ function ActiveSession() {
         return merged;
       });
     }
-  }, [sessionId, orphanQ.data, orphanQ.isLoading, orphanQ.isFetching, planId, user.id, planQ.data?.exercises]);
+  }, [
+    sessionId,
+    orphanQ.data,
+    orphanQ.isLoading,
+    orphanQ.isFetching,
+    planId,
+    user.id,
+    planQ.data?.exercises,
+  ]);
 
   // ── Persistenza ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!sessionId || !restoredRef.current) return;
-    latestDraftRef.current = { sessionId, planId, userId: user.id, logs, currentIdx, localExercises };
+    latestDraftRef.current = {
+      sessionId,
+      planId,
+      userId: user.id,
+      logs,
+      currentIdx,
+      localExercises,
+    };
     if (skipNextPersistRef.current) {
       skipNextPersistRef.current = false;
       return;
@@ -373,16 +447,25 @@ function ActiveSession() {
   }, [sessionId, planId, user.id, logs, currentIdx, localExercises, persistDraft]);
 
   useEffect(() => {
-    const flushDraft = () => { console.log("[FLUSH] flushing draft on close"); persistDraft(latestDraftRef.current); };
+    const flushDraft = () => {
+      console.log("[FLUSH] flushing draft on close");
+      persistDraft(latestDraftRef.current);
+    };
     const flushDb = () => {
       if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
       saveWorkoutStateToDb(latestDraftRef.current);
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "hidden") { flushDraft(); flushDb(); }
+      if (document.visibilityState === "hidden") {
+        flushDraft();
+        flushDb();
+      }
     };
-    const onBeforeUnload = () => { flushDraft(); flushDb(); };
+    const onBeforeUnload = () => {
+      flushDraft();
+      flushDb();
+    };
 
     window.addEventListener("pagehide", flushDraft);
     window.addEventListener("pagehide", flushDb);
@@ -401,10 +484,19 @@ function ActiveSession() {
   // ── Persistenza su DB (debounce) ──────────────────────────────────────
   useEffect(() => {
     if (!sessionId || !restoredRef.current) return;
-    const state: WorkoutState = { sessionId, planId, userId: user.id, logs, currentIdx, localExercises };
+    const state: WorkoutState = {
+      sessionId,
+      planId,
+      userId: user.id,
+      logs,
+      currentIdx,
+      localExercises,
+    };
     if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
     dbTimerRef.current = setTimeout(() => saveWorkoutStateToDb(state), 2000);
-    return () => { if (dbTimerRef.current) clearTimeout(dbTimerRef.current); };
+    return () => {
+      if (dbTimerRef.current) clearTimeout(dbTimerRef.current);
+    };
   }, [sessionId, planId, user.id, logs, currentIdx, localExercises, saveWorkoutStateToDb]);
 
   const exercises = localExercises.length > 0 ? localExercises : (planQ.data?.exercises ?? []);
@@ -439,28 +531,7 @@ function ActiveSession() {
     staleTime: 60_000,
   });
 
-  // Handlers della dialog orfana.
-  function decideResume() {
-    if (!orphanQ.data?.id) return;
-    setOrphanIdAtDecision(orphanQ.data.id);
-    setUserDecision("resume");
-  }
-  function decideStartNew() {
-    if (!orphanQ.data?.id) return;
-    setOrphanIdAtDecision(orphanQ.data.id);
-    setUserDecision("start-new");
-  }
-
-  // Mostra la dialog solo se c'è un'orfana e l'utente non ha ancora deciso.
-  const showOrphanModal = !!orphanQ.data && !userDecision;
-  // Blocca la chiusura dell'AlertDialog tramite escape / click esterno:
-  // l'utente DEVE premere "Riprendi" o "Inizia nuovo". Nessuna dispersione.
-  // ATTENZIONE: il `return;` è INTENZIONALE — `showOrphanModal` resta `true`
-  // fintanto che l'utente non ha scelto esplicitamente. Non aggiornare lo
-  // stato in questa callback, altrimenti la forzatura sparisce.
-  const blockForcedClose = (next: boolean) => {
-    if (!next && !userDecision && orphanQ.data?.id) return;
-  };
+  // Handlers della dialog orfana — definiti sopra con il mutation.
 
   async function cancelSession() {
     const ok = await confirmDialog(
@@ -511,12 +582,24 @@ function ActiveSession() {
       setFinishing(false);
       return;
     }
+
+    // Validate rows before insert — catches corrupt state early
+    const parsed = SessionLogInsertSchema.safeParse(rows[0]);
+    if (!parsed.success) {
+      toast.error(t("Dati serie non validi", "Invalid set data"));
+      setFinishing(false);
+      return;
+    }
+
     await supabase.from("session_logs").insert(rows);
-    await supabase.from("sessions").update({
-      completed_at: new Date().toISOString(),
-      total_volume: totalVolume,
-      workout_state: null,
-    }).eq("id", sessionId);
+    await supabase
+      .from("sessions")
+      .update({
+        completed_at: new Date().toISOString(),
+        total_volume: totalVolume,
+        workout_state: null,
+      })
+      .eq("id", sessionId);
     sessionStorage.removeItem("gw_last");
     console.log("[CLEANUP] removing LS key");
     clearPersisted();
@@ -586,17 +669,19 @@ function ActiveSession() {
     setLocalExercises((prev) => {
       const next = [...prev];
       next[currentIdx] = newExercise;
-      stageDraft(buildDraft({
-        localExercises: next,
-        logs: {
-          ...logs,
-          [newExercise.id]: Array.from({ length: newExercise.sets }, () => ({
-            reps: newExercise.reps,
-            weight: Number(newExercise.weight),
-            done: false,
-          })),
-        },
-      }));
+      stageDraft(
+        buildDraft({
+          localExercises: next,
+          logs: {
+            ...logs,
+            [newExercise.id]: Array.from({ length: newExercise.sets }, () => ({
+              reps: newExercise.reps,
+              weight: Number(newExercise.weight),
+              done: false,
+            })),
+          },
+        }),
+      );
       return next;
     });
     setLogs((prev) => ({
@@ -611,8 +696,6 @@ function ActiveSession() {
     setSearchQuery("");
   }
 
-  // Dialog sempre montata (anche in loading) per evitare race se l'utente
-  // clicca su "Riprendi" mentre il resto della pagina sta ancora caricando.
   const orphanDialog = (
     <AlertDialog open={showOrphanModal} onOpenChange={blockForcedClose}>
       <AlertDialogContent>
@@ -621,14 +704,21 @@ function ActiveSession() {
           <AlertDialogDescription>
             {orphanQ.data ? (
               <>
-                {t("Hai una sessione interrotta iniziata il", "You have a paused session started on")}{" "}
+                {t(
+                  "Hai una sessione interrotta iniziata il",
+                  "You have a paused session started on",
+                )}{" "}
                 <strong>
                   {new Date(orphanQ.data.started_at).toLocaleString(intlLocale, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   })}
                 </strong>
-                . {t("Vuoi riprenderla o iniziarne una nuova?", "Do you want to resume it or start a new one?")}
+                .{" "}
+                {t(
+                  "Vuoi riprenderla o iniziarne una nuova?",
+                  "Do you want to resume it or start a new one?",
+                )}
               </>
             ) : (
               t("Caricamento…", "Loading…")
@@ -636,10 +726,10 @@ function ActiveSession() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={decideStartNew} disabled={!orphanQ.data?.id}>
+          <AlertDialogCancel onClick={decideStartNew} disabled={!orphanId}>
             {t("Inizia nuovo", "Start new")}
           </AlertDialogCancel>
-          <AlertDialogAction onClick={decideResume} disabled={!orphanQ.data?.id}>
+          <AlertDialogAction onClick={decideResume} disabled={!orphanId}>
             {t("Riprendi", "Resume")}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -650,19 +740,21 @@ function ActiveSession() {
   if (!current) {
     return (
       <div className="container-app flex min-h-screen flex-col items-center justify-center text-center">
-          {planQ.data && exercises.length === 0 ? (
-            <>
-              <p className="text-sm text-muted-foreground">{t("Questa scheda non ha esercizi.", "This plan has no exercises.")}</p>
-              <button
-                onClick={() => navigate({ to: "/app/schede/$planId", params: { planId } })}
-                className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
-              >
-                {t("Aggiungi esercizi", "Add exercises")}
-              </button>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t("Caricamento…", "Loading…")}</p>
-          )}
+        {planQ.data && exercises.length === 0 ? (
+          <>
+            <p className="text-sm text-muted-foreground">
+              {t("Questa scheda non ha esercizi.", "This plan has no exercises.")}
+            </p>
+            <button
+              onClick={() => navigate({ to: "/app/schede/$planId", params: { planId } })}
+              className="mt-4 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground"
+            >
+              {t("Aggiungi esercizi", "Add exercises")}
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t("Caricamento…", "Loading…")}</p>
+        )}
         {orphanDialog}
         {ConfirmDialog}
       </div>
@@ -738,7 +830,9 @@ function ActiveSession() {
             color: muscleColor(current.muscle_group),
           }}
         >
-          {current.muscle_group ? t(current.muscle_group, MUSCLE_EN[current.muscle_group] ?? current.muscle_group) : t("Esercizio", "Exercise")}
+          {current.muscle_group
+            ? t(current.muscle_group, MUSCLE_EN[current.muscle_group] ?? current.muscle_group)
+            : t("Esercizio", "Exercise")}
         </div>
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-black tracking-tight">{current.name}</h1>
@@ -775,7 +869,8 @@ function ActiveSession() {
           </div>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
-          {t("Target", "Target")}: {current.sets} × {current.reps} @ {fmtWeight(Number(current.weight))}
+          {t("Target", "Target")}: {current.sets} × {current.reps} @{" "}
+          {fmtWeight(Number(current.weight))}
         </p>
         {current.notes && <p className="mt-2 rounded-xl bg-muted p-3 text-sm">{current.notes}</p>}
 
@@ -804,7 +899,9 @@ function ActiveSession() {
               <button
                 onClick={() => updateSet(i, { done: !s.done })}
                 className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
-                  s.done ? "bg-primary text-primary-foreground" : "border border-border text-muted-foreground"
+                  s.done
+                    ? "bg-primary text-primary-foreground"
+                    : "border border-border text-muted-foreground"
                 }`}
               >
                 <Check className="h-4 w-4" />
@@ -857,9 +954,9 @@ function ActiveSession() {
                 setCurrentIdx(nextIdx);
               }}
               className="rounded-full border border-border px-5 py-3.5 text-sm font-semibold"
-              >
-                {t("Indietro", "Back")}
-              </button>
+            >
+              {t("Indietro", "Back")}
+            </button>
           )}
           {!isLast ? (
             <>
@@ -869,7 +966,7 @@ function ActiveSession() {
                   stageDraft(buildDraft({ currentIdx: nextIdx }));
                   setCurrentIdx(nextIdx);
                 }}
-                 className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+                className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
               >
                 {t("Prossimo esercizio", "Next exercise")}
               </button>
@@ -877,7 +974,10 @@ function ActiveSession() {
                 onClick={async () => {
                   const ok = await confirmDialog(
                     t("Salvare l'allenamento?", "Save the workout?"),
-                    t("Verranno salvate solo le serie completate.", "Only completed sets will be saved."),
+                    t(
+                      "Verranno salvate solo le serie completate.",
+                      "Only completed sets will be saved.",
+                    ),
                   );
                   if (ok) finishWorkout();
                 }}
@@ -891,7 +991,7 @@ function ActiveSession() {
             <button
               onClick={finishWorkout}
               disabled={finishing}
-               className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+              className="flex-1 rounded-full bg-primary py-3.5 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98] disabled:opacity-60"
             >
               {finishing ? "..." : t("Termina allenamento", "Finish workout")}
             </button>
@@ -907,7 +1007,11 @@ function ActiveSession() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("Sostituisci esercizio", "Replace exercise")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("Cerca un esercizio dalla libreria per sostituire", "Search the library to replace")} "{current.name}".
+              {t(
+                "Cerca un esercizio dalla libreria per sostituire",
+                "Search the library to replace",
+              )}{" "}
+              "{current.name}".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="relative mb-1 mt-1">
@@ -926,12 +1030,18 @@ function ActiveSession() {
           </p>
           <div className="space-y-1">
             {searchQuery.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">{t("Inizia a digitare per cercare", "Start typing to search")}</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("Inizia a digitare per cercare", "Start typing to search")}
+              </p>
             ) : searchQ.isLoading ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">{t("Ricerca…", "Searching…")}</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("Ricerca…", "Searching…")}
+              </p>
             ) : searchResults.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">{t("Nessun esercizio trovato", "No exercise found")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("Nessun esercizio trovato", "No exercise found")}
+                </p>
                 <button
                   type="button"
                   onClick={() => replaceExercise(searchQuery, null)}
@@ -957,7 +1067,9 @@ function ActiveSession() {
                         color: muscleColor(ex.muscle_group),
                       }}
                     >
-                      {ex.muscle_group ? t(ex.muscle_group, MUSCLE_EN[ex.muscle_group] ?? ex.muscle_group) : ex.muscle_group}
+                      {ex.muscle_group
+                        ? t(ex.muscle_group, MUSCLE_EN[ex.muscle_group] ?? ex.muscle_group)
+                        : ex.muscle_group}
                     </span>
                   </div>
                   <RotateCcw className="h-4 w-4 shrink-0 text-muted-foreground" />
