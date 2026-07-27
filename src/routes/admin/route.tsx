@@ -1,7 +1,7 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Shield, ArrowLeft } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Shield, LogOut } from "lucide-react";
+import { resetAdminCache } from "@/lib/admin-role";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -25,22 +25,29 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
+  const navigate = useNavigate();
+
+  async function handleLogout() {
+    resetAdminCache();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Link
-              to="/app"
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-muted transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               <h1 className="text-lg font-bold">Admin</h1>
             </div>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="flex h-8 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Esci</span>
+          </button>
         </div>
       </header>
       <main className="mx-auto max-w-7xl p-4">

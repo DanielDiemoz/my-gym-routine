@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Users, Copy, Plus, Hash, LogIn, Check, MessageCircle } from "lucide-react";
-import { toast } from "sonner";
+import { Users, Copy, Plus, LogIn, MessageCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
 import { useCircle, type Circle } from "@/hooks/useCircle";
@@ -280,40 +279,15 @@ function CircleCard({
         </div>
       </div>
       {isOwner ? (
-        <CodeBadge code={circle.code} />
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-primary">
+          {t("Owner", "Owner")}
+        </span>
       ) : (
         <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           {t("Membro", "Member")}
         </span>
       )}
     </Link>
-  );
-}
-
-function CodeBadge({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
-  const { t } = useLanguage();
-  function copy(e: React.MouseEvent) {
-    // Evita la navigazione del <Link> genitore.
-    e.preventDefault();
-    e.stopPropagation();
-    navigator.clipboard
-      .writeText(code)
-      .then(() => {
-        setCopied(true);
-        toast.success(t("Codice copiato!", "Code copied!"));
-        setTimeout(() => setCopied(false), 1500);
-      })
-      .catch(() => toast.error(t("Impossibile copiare il codice", "Unable to copy code")));
-  }
-  return (
-    <button
-      onClick={copy}
-      className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest hover:bg-muted"
-    >
-      {copied ? <Check className="h-3 w-3" /> : <Hash className="h-3 w-3" />}
-      {code}
-    </button>
   );
 }
 

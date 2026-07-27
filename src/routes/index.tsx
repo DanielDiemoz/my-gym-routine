@@ -13,12 +13,15 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   ssr: false,
   beforeLoad: async () => {
-    // Se l'utente ha già una sessione attiva, va direttamente all'app
-    // invece di mostrare la landing page. ssr:false è necessario perché
-    // sul server la sessione Supabase non è disponibile (cookie non letti),
-    // quindi il redirect deve avvenire solo lato client.
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/app" });
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      throw redirect({ to: profile?.role === "admin" ? "/admin" : "/app" });
+    }
   },
   component: LandingPage,
 });

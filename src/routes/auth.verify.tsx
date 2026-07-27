@@ -2,7 +2,7 @@ import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { FormEvent, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, ArrowLeft, RefreshCw, KeyRound, Timer, ShieldX, AlertCircle } from "lucide-react";
+import { ArrowLeft, RefreshCw, KeyRound, Timer, ShieldX, AlertCircle } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { OTP_LENGTH } from "@/lib/otp";
 import { useLanguage } from "@/lib/i18n";
@@ -15,7 +15,14 @@ export const Route = createFileRoute("/auth/verify")({
   }),
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
-    if (data.user) throw redirect({ to: "/app" });
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      throw redirect({ to: profile?.role === "admin" ? "/admin" : "/app" });
+    }
   },
   component: VerifyPage,
 });
@@ -353,13 +360,37 @@ function VerifyPage() {
   return (
     <div className="w-full max-w-md mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center space-y-2">
-        <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
-          {lockoutTimer > 0 ? (
+        {lockoutTimer > 0 ? (
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-2">
             <ShieldX className="h-6 w-6 text-destructive animate-pulse" />
-          ) : (
-            <KeyRound className="h-6 w-6" />
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="mb-4 flex justify-center overflow-hidden">
+            <div className="relative h-16 w-24">
+              <svg viewBox="0 0 96 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+                <g style={{ animation: "paperPlaneFly 2.5s cubic-bezier(0.22,1,0.36,1) infinite" }}>
+                  <path d="M8 32 L88 8 L56 32 L88 56 Z" className="fill-primary" opacity="0.9" />
+                  <path d="M56 32 L88 8 L72 32 L88 56 Z" className="fill-primary/50" />
+                  <circle cx="6" cy="32" r="2" className="fill-primary/25" style={{ animation: "trailFade 2.5s ease-out infinite" }} />
+                  <circle cx="0" cy="32" r="1.5" className="fill-primary/15" style={{ animation: "trailFade 2.5s ease-out 0.15s infinite" }} />
+                </g>
+              </svg>
+              <style>{`
+                @keyframes paperPlaneFly {
+                  0% { transform: translateX(60px) translateY(8px) rotate(8deg); opacity: 0; }
+                  20% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
+                  60% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 1; }
+                  75% { transform: translateX(0) translateY(0) rotate(0deg); opacity: 0; }
+                  100% { transform: translateX(60px) translateY(8px) rotate(8deg); opacity: 0; }
+                }
+                @keyframes trailFade {
+                  0% { opacity: 0.4; transform: translateX(-4px); }
+                  100% { opacity: 0; transform: translateX(-12px); }
+                }
+              `}</style>
+            </div>
+          </div>
+        )}
           <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
             {lockoutTimer > 0 ? t("Account Bloccato", "Account Locked") : t("Verifica il tuo account", "Verify your account")}
           </h1>

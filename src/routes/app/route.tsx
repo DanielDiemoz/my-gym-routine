@@ -24,13 +24,15 @@ export const Route = createFileRoute("/app")({
 
     const { data: dbProfile, error: profileError } = await supabase
       .from("profiles")
-      .select("onboarded, display_name")
+      .select("onboarded, display_name, role")
       .eq("id", data.user.id)
       .maybeSingle();
 
     if (profileError) {
       console.error("Error fetching profile:", profileError);
     }
+
+    if (dbProfile?.role === "admin") throw redirect({ to: "/admin" });
 
     return { user: data.user, profile: dbProfile ?? null };
   },

@@ -230,9 +230,9 @@ function AdminDashboard() {
   const onboardedUsers = users.filter((u) => u.onboarded).length;
   const totalSessions = sessions.length;
   const completedSessions = sessions.filter((s) => s.completed_at).length;
-  const activeUsersThisWeek = new Set(
+  const activeUsers = new Set(
     sessions
-      .filter((s) => subDays(new Date(), 7) <= new Date(s.started_at))
+      .filter((s) => new Date(s.started_at) >= dateFilter)
       .map((s) => s.user_id)
   ).size;
   const geminiCalls = geminiUsage.length;
@@ -289,7 +289,7 @@ function AdminDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{totalSessions}</div>
             <p className="text-xs text-muted-foreground">
-              {completedSessions} completati · {activeUsersThisWeek} utenti attivi (7gg)
+              {completedSessions} completati · {activeUsers} utenti attivi ({dateRange === "all" ? "totale" : dateRange === "7d" ? "7gg" : dateRange === "30d" ? "30gg" : "90gg"})
             </p>
           </CardContent>
         </Card>
