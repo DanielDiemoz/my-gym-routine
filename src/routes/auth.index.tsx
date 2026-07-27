@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, Lock, ArrowRight, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useLanguage, tx } from "@/lib/i18n";
+import { isAdmin, resetAdminCache } from "@/lib/admin-role";
 
 function getEmailVerificationUrl(email: string) {
   const url = new URL("/auth/verify", window.location.origin);
@@ -71,7 +72,10 @@ function AuthIndexPage() {
   }, [mode]);
 
   function onLoginSuccess() {
-    navigate({ to: "/app" });
+    resetAdminCache();
+    isAdmin().then((admin) => {
+      navigate({ to: admin ? "/admin" : "/app" });
+    });
   }
 
   async function handleResendUnverified() {
@@ -341,7 +345,10 @@ function SignupForm({ onSuccess }: SignupFormProps) {
         navigate({ to: "/auth/verify", search: { email } });
       } else {
         toast.success(t("Registrazione completata!", "Registration complete!"));
-        navigate({ to: "/app" });
+        resetAdminCache();
+        isAdmin().then((admin) => {
+          navigate({ to: admin ? "/admin" : "/app" });
+        });
       }
     } catch (err) {
       console.error("Signup error:", err);

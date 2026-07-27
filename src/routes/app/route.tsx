@@ -15,12 +15,15 @@ import { WorkoutProvider } from "@/lib/workout-context";
 import { EmailMigrationGate } from "@/components/EmailMigrationGate";
 import { isLegacyEmail } from "@/lib/legacy-email";
 import { useLanguage } from "@/lib/i18n";
+import { isAdmin } from "@/lib/admin-role";
 
 export const Route = createFileRoute("/app")({
   ssr: false,
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+
+    if (await isAdmin()) throw redirect({ to: "/admin" });
 
     const { data: dbProfile, error: profileError } = await supabase
       .from("profiles")
