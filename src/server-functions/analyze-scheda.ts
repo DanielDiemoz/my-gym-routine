@@ -7,14 +7,23 @@ const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 async function getAuthContext() {
-  const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL ||
+    (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined);
   const SUPABASE_KEY =
-    process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  if (!SUPABASE_URL || !SUPABASE_KEY) return { supabase: null, userId: null };
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined);
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.error("[getAuthContext] Missing SUPABASE_URL or SUPABASE_KEY");
+    return { supabase: null, userId: null };
+  }
 
   const request = getRequest();
   const authHeader = request?.headers?.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return { supabase: null, userId: null };
+  if (!authHeader?.startsWith("Bearer ")) {
+    console.error("[getAuthContext] No Bearer token in request headers");
+    return { supabase: null, userId: null };
+  }
 
   const token = authHeader.replace("Bearer ", "");
   const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
@@ -24,8 +33,12 @@ async function getAuthContext() {
     },
   });
 
-  const { data } = await supabase.auth.getUser();
-  return { supabase, userId: data.user?.id ?? null };
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    console.error("[getAuthContext] getUser failed:", error?.message ?? "no user");
+    return { supabase: supabase as any, userId: null };
+  }
+  return { supabase: supabase as any, userId: data.user.id };
 }
 
 async function logGeminiUsage({
@@ -138,15 +151,21 @@ function humanizeGeminiError(status: number, body: string): string {
   if (status === 403) {
     return "Chiave API non valida o disabilitata. Verifica la chiave su Google AI Studio.";
   }
-  if (status === 400) {
-    if (body.includes("invalid image")) {
-      return "Immagine non valida. Prova con un'altra foto in formato JPEG o PNG.";
+    if (status === 400) {
+      if (body.includes("invalid image")) {
+        return "Immagine non valida. Prova con un'altra foto in formato JPEG o PNG.";
+      }
+      if (body.includes("payload")) {
+        return "L'immagine e' troppo grande. Prova con una foto di qualita' inferiore.";
+      }
+      if (body.includes("not found") || body.includes("not supported")) {
+        return "Modello AI momentaneamente non disponibile. Se il problema persiste, contatta l'amministratore.";
+      }
+      if (body.includes("API_KEY")) {
+        return "Chiave API non valida. Verifica la chiave su Google AI Studio e riprova.";
+      }
+      return `Richiesta non valida (errore API: ${body.slice(0, 120)}). Riprova.`;
     }
-    if (body.includes("payload")) {
-      return "L'immagine e' troppo grande. Prova con una foto di qualita' inferiore.";
-    }
-    return "Richiesta non valida. Riprova con un'altra foto.";
-  }
   if (status === 404) {
     return "Modello AI non disponibile. Riprova tra qualche minuto.";
   }
