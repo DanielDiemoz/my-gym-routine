@@ -152,6 +152,37 @@ function Storico() {
     );
   }
 
+  if ((q.data ?? []).length === 0) {
+    return (
+      <div className="container-app pt-10">
+        <header className="mb-6 flex items-start justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              {t("Cronologia", "History")}
+            </p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Storico", "History")}</h1>
+          </div>
+          <ProfileMenu />
+        </header>
+
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
+            <Calendar className="h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
+          </div>
+          <p className="mt-6 text-base font-semibold">
+            {t("Nessun allenamento ancora", "No workouts yet")}
+          </p>
+          <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+            {t(
+              "Avvia un allenamento e completalo per vedere qui la cronologia dei tuoi progressi.",
+              "Start a workout and complete it to see your progress history here.",
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const totalVolume = (q.data ?? []).reduce((s, x) => s + Number(x.total_volume), 0);
 
   const handleToggle = (id: string) => {
