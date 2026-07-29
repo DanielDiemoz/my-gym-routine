@@ -233,8 +233,17 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
                 </div>
               )}
 
-              {inputMode === "image" ? (
+                  {inputMode === "image" ? (
                 <div className="space-y-3">
+                  <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p>
+                      {t(
+                        "Carica una foto che rappresenti 1 SOLO giorno di allenamento. Se la scheda ha più giorni, ritaglia l'immagine per mostrare solo un giorno alla volta.",
+                        "Upload a photo showing ONLY 1 workout day. If the plan has multiple days, crop the image to show one day at a time.",
+                      )}
+                    </p>
+                  </div>
                   {preview && (
                     <img
                       src={preview}

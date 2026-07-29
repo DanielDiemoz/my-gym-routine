@@ -110,7 +110,8 @@ const RULES = `Regole:
 - muscle_group DEVE essere uno tra: Petto, Schiena, Gambe, Spalle, Braccia, Core, Glutei, Altro
 - Se una riga contiene varianti (es. "panca piana / inclinata"), crea esercizi separati
 - Ignora elementi non esercizi (intestazioni, date, firme, logo)
-- Ignora il numero della serie se c'e' gia' un numero accanto (es. "1. Panca piana" -> solo "Panca piana")`;
+- Ignora il numero della serie se c'e' gia' un numero accanto (es. "1. Panca piana" -> solo "Panca piana")
+- Se l'immagine contiene piu' giorni di allenamento, analizza SOLO il primo giorno e ignora gli altri`;
 
 const IMAGE_PROMPT = `Sei un assistente specializzato nell'analisi di schede di allenamento per palestra.
 
