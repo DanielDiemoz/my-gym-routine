@@ -21,7 +21,7 @@ import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCircle, type Circle } from "@/hooks/useCircle";
 import { MemberWorkouts } from "@/components/MemberWorkouts";
-import { CircleChat, ChatBubbleButton } from "@/components/CircleChat";
+
 import { formatVolume } from "@/lib/calories";
 import { useLanguage } from "@/lib/i18n";
 import { getRank, rankName } from "@/lib/ranks";
@@ -263,7 +263,6 @@ function CircleDetailPage() {
           <ChevronLeft className="h-5 w-5" /> {t("Cerchie", "Circles")}
         </Link>
         <div className="flex items-center gap-2">
-          <CircleChat circleId={circle.id} circleName={circle.name} userId={user.id} />
           {isOwner ? (
             <button
               onClick={async () => {

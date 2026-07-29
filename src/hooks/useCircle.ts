@@ -1,15 +1,6 @@
 /**
  * useCircle.ts
  * Hook centralizzato per la feature "Cerchie".
- *
- * Espone:
- *   - myCircles     : cerchie di cui l'utente è membro (o owner)
- *   - joinCircle    : entra in una cerchia tramite codice
- *   - createCircle  : crea nuova cerchia (chiunque può crearla; il creatore
- *                     diventa owner e ottiene i privilegi di gestione)
- *   - leaveCircle   : esci da una cerchia
- *   - deleteCircle  : elimina una cerchia (solo owner)
- *   - chat functions: messages, sendMessage, unreadCount, markAsRead
  */
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,16 +26,6 @@ export interface CircleMember {
   circle_id: string;
   user_id: string;
   joined_at: string;
-}
-
-export interface CircleMessage {
-  id: string;
-  circle_id: string;
-  user_id: string;
-  content: string;
-  created_at: string;
-  display_name: string | null;
-  avatar_url: string | null;
 }
 
 const fromCircles = () => supabase.from("circles");
@@ -214,102 +195,6 @@ export function useCircle(userId: string) {
     },
   });
 
-  // ── Query: messaggi di una cerchia ─────────────────────────────────────
-  const MESSAGES_KEY = (circleId: string) => ["circle-messages", circleId] as const;
-
-  function useMessages(circleId: string) {
-    return useQuery({
-      queryKey: MESSAGES_KEY(circleId),
-      queryFn: async (): Promise<CircleMessage[]> => {
-        const { data, error } = await supabase.rpc("get_circle_messages", {
-          p_circle_id: circleId,
-        });
-        if (error) throw error;
-        return (data ?? []) as CircleMessage[];
-      },
-      staleTime: 1000 * 10,
-      refetchInterval: 5_000,
-    });
-  }
-
-  // ── Mutation: invia un messaggio ──────────────────────────────────────
-  const sendMut = useMutation({
-    mutationFn: async ({
-      circleId,
-      content,
-    }: {
-      circleId: string;
-      content: string;
-    }): Promise<CircleMessage> => {
-      const { data, error } = await supabase.rpc("send_circle_message", {
-        p_circle_id: circleId,
-        p_content: content,
-      });
-      if (error) throw new Error(error.message);
-      const msgs = (data ?? []) as CircleMessage[];
-      return msgs[0];
-    },
-    onSuccess: (_data, variables) => {
-      qc.invalidateQueries({ queryKey: MESSAGES_KEY(variables.circleId) });
-      qc.invalidateQueries({
-        queryKey: ["circle-unread", variables.circleId],
-      });
-    },
-    onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : "Errore nell'invio del messaggio");
-    },
-  });
-
-  // ── Query: conteggio messaggi non letti per una cerchia ──────────────
-  function useUnreadCount(circleId: string) {
-    return useQuery({
-      queryKey: ["circle-unread", circleId] as const,
-      queryFn: async (): Promise<number> => {
-        const { data, error } = await supabase.rpc("get_unread_count", {
-          p_circle_id: circleId,
-        });
-        if (error) throw error;
-        return (data ?? 0) as number;
-      },
-      staleTime: 1000 * 10,
-      refetchInterval: 10_000,
-    });
-  }
-
-  // ── Mutation: segna una cerchia come letta ────────────────────────────
-  const markReadMut = useMutation({
-    mutationFn: async (circleId: string) => {
-      const { error } = await supabase.rpc("mark_circle_read", {
-        p_circle_id: circleId,
-      });
-      if (error) throw error;
-    },
-    onSuccess: (_data, circleId) => {
-      qc.invalidateQueries({ queryKey: ["circle-unread", circleId] });
-    },
-  });
-
-  // ── Query: conteggi non letti per TUTTE le cerchie dell'utente ────────
-  function useAllUnreadCounts() {
-    const circleIds = circlesQ.data?.map((c) => c.id) ?? [];
-    return useQuery({
-      queryKey: ["circle-all-unread", userId] as const,
-      queryFn: async (): Promise<Record<string, number>> => {
-        const counts: Record<string, number> = {};
-        for (const id of circleIds) {
-          const { data, error } = await supabase.rpc("get_unread_count", {
-            p_circle_id: id,
-          });
-          if (!error) counts[id] = (data ?? 0) as number;
-        }
-        return counts;
-      },
-      enabled: circleIds.length > 0,
-      staleTime: 1000 * 10,
-      refetchInterval: 15_000,
-    });
-  }
-
   return {
     /** Cerchie di cui l'utente è membro o owner */
     myCircles: circlesQ.data ?? [],
@@ -334,16 +219,6 @@ export function useCircle(userId: string) {
     updateNickname: (circleId: string, memberId: string, nickname: string) =>
       updateNicknameMut.mutateAsync({ circleId, memberId, nickname }),
     isUpdatingNickname: updateNicknameMut.isPending,
-    /** Recupera i messaggi di una cerchia */
-    useMessages,
-    /** Invia un messaggio in una cerchia */
-    sendMessage: (circleId: string, content: string) => sendMut.mutateAsync({ circleId, content }),
-    isSending: sendMut.isPending,
-    /** Recupera il conteggio dei messaggi non letti per una cerchia */
-    useUnreadCount,
-    /** Segna una cerchia come letta */
-    markAsRead: (circleId: string) => markReadMut.mutateAsync(circleId),
-    /** Recupera i conteggi non letti per tutte le cerchie */
-    useAllUnreadCounts,
+
   };
 }
