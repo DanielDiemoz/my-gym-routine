@@ -59,6 +59,19 @@ type LogRow = {
   created_at: string;
 };
 
+function getSessionGreeting(t: (it: string, en: string) => string, name: string) {
+  const h = new Date().getHours();
+  const period =
+    h >= 5 && h < 12
+      ? { it: "mattutina", en: "morning" }
+      : h >= 12 && h < 18
+        ? { it: "pomeridiana", en: "afternoon" }
+        : h >= 18 && h < 22
+          ? { it: "serale", en: "evening" }
+          : { it: "notturna", en: "night" };
+  return `${t("Sessione", "Session")} ${t(period.it, period.en)}  ${name}?`;
+}
+
 function Dashboard() {
   const { user, profile } = Route.useRouteContext();
   const navigate = useNavigate();
@@ -244,7 +257,7 @@ function Dashboard() {
             {format(new Date(), "EEEE d MMM", { locale: dateLocale })}
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">
-            {t("Ciao", "Hi")}, {name.split(" ")[0]}
+            {getSessionGreeting(t, name.split(" ")[0])}
           </h1>
         </div>
         <div className="flex items-center gap-2 pt-1">
@@ -254,8 +267,8 @@ function Dashboard() {
       </header>
 
       {/* Week ring */}
-      <section className="rounded-3xl bg-primary p-6 text-primary-foreground">
-        <p className="text-xs font-semibold uppercase tracking-widest opacity-70">
+      <section className="rounded-3xl bg-primary p-6 text-primary-foreground dark:text-white">
+        <p className="text-xs font-semibold uppercase tracking-widest opacity-70 dark:text-primary-foreground">
           {t("Questa settimana", "This week")}
         </p>
         <div className="mt-2 flex items-end justify-between">
@@ -267,7 +280,7 @@ function Dashboard() {
             <div key={i} className="flex flex-col items-center gap-1.5">
               <div
                 className={`h-9 w-full rounded-lg ${
-                  d.trained ? "bg-primary-foreground" : "bg-primary-foreground/15"
+                  d.trained ? "bg-primary-foreground dark:bg-white" : "bg-primary-foreground/15"
                 }`}
               />
               <span className="text-[10px] font-semibold uppercase opacity-60">
