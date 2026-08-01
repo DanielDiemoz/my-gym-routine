@@ -113,24 +113,24 @@ function YearHeatmap({
   }, [weeks]);
 
   return (
-    <div className="mb-8">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 className="text-2xl font-black tracking-tight">{yearData.year}</h2>
-        <span className="text-sm font-semibold text-muted-foreground">
+    <div className="mb-4">
+      <div className="mb-2 flex items-baseline justify-between">
+        <h2 className="text-xl font-black tracking-tight">{yearData.year}</h2>
+        <span className="text-xs font-semibold text-muted-foreground">
           {yearData.totalCount}{" "}
           {yearData.totalCount === 1 ? t("allenamento", "workout") : t("allenamenti", "workouts")}
         </span>
       </div>
 
       {/* Month labels */}
-      <div className="mb-1 flex pl-8">
+      <div className="mb-1 flex pl-6">
         {monthPositions.map(({ month, col }) => (
           <div
             key={month}
-            className="text-[10px] text-muted-foreground"
+            className="text-[8px] text-muted-foreground"
             style={{
               position: "relative",
-              left: `${col * 14}px`,
+              left: `${col * 9}px`,
               width: 0,
             }}
           >
@@ -142,31 +142,28 @@ function YearHeatmap({
       {/* Grid */}
       <div className="flex gap-1">
         {/* Weekday labels */}
-        <div className="flex flex-col gap-[3px] pr-1 pt-0">
+        <div className="flex flex-col gap-[2px] pr-1 pt-0">
           {WEEKDAY_LABELS.map((label, i) => (
-            <div
-              key={label}
-              className="flex h-[10px] items-center text-[9px] text-muted-foreground"
-            >
+            <div key={label} className="flex h-[7px] items-center text-[7px] text-muted-foreground">
               {i % 2 === 1 ? label : ""}
             </div>
           ))}
         </div>
 
         {/* Weeks */}
-        <div className="flex gap-[3px]">
+        <div className="flex gap-[2px]">
           {weeks.map((week, wi) => (
-            <div key={wi} className="flex flex-col gap-[3px]">
+            <div key={wi} className="flex flex-col gap-[2px]">
               {week.map((day, di) => {
                 if (!day) {
-                  return <div key={di} className="h-[10px] w-[10px]" />;
+                  return <div key={di} className="h-[7px] w-[7px]" />;
                 }
                 const level = getLevel(day.volume, thresholds);
                 return (
                   <div
                     key={di}
                     title={`${day.date}: ${day.volume.toFixed(0)} kg`}
-                    className={`h-[10px] w-[10px] rounded-sm ${LEVEL_CLASSES[level]}`}
+                    className={`h-[7px] w-[7px] rounded-sm ${LEVEL_CLASSES[level]}`}
                   />
                 );
               })}
@@ -188,12 +185,12 @@ export function WorkoutHeatmap({ years, thresholds }: WorkoutHeatmapProps) {
       ))}
 
       {/* Legend */}
-      <div className="mt-6 flex items-center justify-end gap-1.5">
-        <span className="text-[10px] text-muted-foreground">{t("Meno", "Less")}</span>
+      <div className="mt-4 flex items-center justify-end gap-1.5">
+        <span className="text-[8px] text-muted-foreground">{t("Meno", "Less")}</span>
         {LEVEL_CLASSES.map((cls, i) => (
-          <div key={i} className={`h-[10px] w-[10px] rounded-sm ${cls}`} />
+          <div key={i} className={`h-[7px] w-[7px] rounded-sm ${cls}`} />
         ))}
-        <span className="text-[10px] text-muted-foreground">{t("Più", "More")}</span>
+        <span className="text-[8px] text-muted-foreground">{t("Più", "More")}</span>
       </div>
     </div>
   );

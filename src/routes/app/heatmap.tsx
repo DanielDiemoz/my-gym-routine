@@ -16,12 +16,12 @@ function HeatmapPage() {
 
   if (heatmapQ.isLoading) {
     return (
-      <div className="container-app pt-6">
-        <Skeleton className="mb-6 h-5 w-24" />
-        <Skeleton className="mb-8 h-9 w-48" />
-        <Skeleton className="mb-4 h-40 w-full rounded-2xl" />
-        <Skeleton className="mb-4 h-40 w-full rounded-2xl" />
-        <Skeleton className="h-40 w-full rounded-2xl" />
+      <div className="container-app pt-4">
+        <Skeleton className="mb-4 h-5 w-24" />
+        <Skeleton className="mb-6 h-9 w-48" />
+        <Skeleton className="mb-3 h-32 w-full rounded-2xl" />
+        <Skeleton className="mb-3 h-32 w-full rounded-2xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
       </div>
     );
   }
@@ -51,8 +51,8 @@ function HeatmapPage() {
   const hasAnyWorkout = data.years.some((y) => y.totalCount > 0);
 
   return (
-    <div className="container-app pt-6">
-      <div className="mb-6">
+    <div className="container-app pt-4">
+      <div className="mb-4">
         <Link
           to="/app"
           className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
@@ -61,14 +61,14 @@ function HeatmapPage() {
         </Link>
       </div>
 
-      <header className="mb-6">
+      <header className="mb-4">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-orange-500" />
-          <h1 className="text-3xl font-black tracking-tight">
+          <BarChart3 className="h-5 w-5 text-orange-500" />
+          <h1 className="text-2xl font-black tracking-tight">
             {t("La tua Heatmap", "Your Heatmap")}
           </h1>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-[10px] text-muted-foreground">
           {t("I tuoi ultimi 3 anni di allenamenti", "Your last 3 years of workouts")}
         </p>
       </header>
@@ -76,11 +76,11 @@ function HeatmapPage() {
       {hasAnyWorkout ? (
         <WorkoutHeatmap years={data.years} thresholds={data.thresholds} />
       ) : (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted">
-            <BarChart3 className="h-12 w-12 text-muted-foreground" strokeWidth={1.5} />
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+            <BarChart3 className="h-10 w-10 text-muted-foreground" strokeWidth={1.5} />
           </div>
-          <p className="mt-6 text-base font-semibold">
+          <p className="mt-4 text-base font-semibold">
             {t("Nessun allenamento ancora", "No workouts yet")}
           </p>
           <p className="mt-2 max-w-xs text-sm text-muted-foreground">
