@@ -20,6 +20,7 @@ import {
   Pencil,
   Trash2,
   Trophy,
+  BarChart3,
 } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { ProfileMenu } from "@/components/ProfileMenu";
@@ -328,6 +329,25 @@ function Dashboard() {
             .map((s) => new Date(s.completed_at!))}
         />
       </div>
+
+      {/* Heatmap link */}
+      <Link
+        to="/app/heatmap"
+        className="no-tap-highlight mt-3 flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-3.5 active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500/10">
+            <BarChart3 className="h-5 w-5 text-orange-500" />
+          </div>
+          <div>
+            <div className="text-sm font-semibold">{t("La tua Heatmap", "Your Heatmap")}</div>
+            <div className="text-[10px] text-muted-foreground">
+              {t("3 anni di progressi", "3 years of progress")}
+            </div>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </Link>
 
       {/* Quick start */}
       <section className="mt-8">

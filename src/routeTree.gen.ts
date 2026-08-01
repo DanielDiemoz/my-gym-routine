@@ -22,6 +22,7 @@ import { Route as AppStoricoRouteImport } from './routes/app/storico'
 import { Route as AppProfiloRouteImport } from './routes/app/profilo'
 import { Route as AppPrRouteImport } from './routes/app/pr'
 import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
+import { Route as AppHeatmapRouteImport } from './routes/app/heatmap'
 import { Route as AppSchedeIndexRouteImport } from './routes/app/schede.index'
 import { Route as AppCerchiaIndexRouteImport } from './routes/app/cerchia.index'
 import { Route as AppSchedePlanIdRouteImport } from './routes/app/schede.$planId'
@@ -96,6 +97,11 @@ const AppOnboardingRoute = AppOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppHeatmapRoute = AppHeatmapRouteImport.update({
+  id: '/heatmap',
+  path: '/heatmap',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppSchedeIndexRoute = AppSchedeIndexRouteImport.update({
   id: '/schede/',
   path: '/schede/',
@@ -142,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/app/heatmap': typeof AppHeatmapRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/pr': typeof AppPrRoute
   '/app/profilo': typeof AppProfiloRouteWithChildren
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/heatmap': typeof AppHeatmapRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/pr': typeof AppPrRoute
   '/app/profilo': typeof AppProfiloRouteWithChildren
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteRouteWithChildren
   '/app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/app/heatmap': typeof AppHeatmapRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/pr': typeof AppPrRoute
   '/app/profilo': typeof AppProfiloRouteWithChildren
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/auth'
+    | '/app/heatmap'
     | '/app/onboarding'
     | '/app/pr'
     | '/app/profilo'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/app/heatmap'
     | '/app/onboarding'
     | '/app/pr'
     | '/app/profilo'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/auth'
+    | '/app/heatmap'
     | '/app/onboarding'
     | '/app/pr'
     | '/app/profilo'
@@ -373,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/heatmap': {
+      id: '/app/heatmap'
+      path: '/heatmap'
+      fullPath: '/app/heatmap'
+      preLoaderRoute: typeof AppHeatmapRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/schede/': {
       id: '/app/schede/'
       path: '/schede'
@@ -461,6 +480,7 @@ const AppProfiloRouteWithChildren = AppProfiloRoute._addFileChildren(
 )
 
 interface AppRouteRouteChildren {
+  AppHeatmapRoute: typeof AppHeatmapRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppPrRoute: typeof AppPrRoute
   AppProfiloRoute: typeof AppProfiloRouteWithChildren
@@ -474,6 +494,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppHeatmapRoute: AppHeatmapRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppPrRoute: AppPrRoute,
   AppProfiloRoute: AppProfiloRouteWithChildren,
