@@ -22,6 +22,7 @@ import { Route as AppStoricoRouteImport } from './routes/app/storico'
 import { Route as AppProfiloRouteImport } from './routes/app/profilo'
 import { Route as AppPrRouteImport } from './routes/app/pr'
 import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
+import { Route as AppMuscoliRouteImport } from './routes/app/muscoli'
 import { Route as AppHeatmapRouteImport } from './routes/app/heatmap'
 import { Route as AppSchedeIndexRouteImport } from './routes/app/schede.index'
 import { Route as AppCerchiaIndexRouteImport } from './routes/app/cerchia.index'
@@ -97,6 +98,11 @@ const AppOnboardingRoute = AppOnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => AppRouteRoute,
 } as any)
+const AppMuscoliRoute = AppMuscoliRouteImport.update({
+  id: '/muscoli',
+  path: '/muscoli',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppHeatmapRoute = AppHeatmapRouteImport.update({
   id: '/heatmap',
   path: '/heatmap',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/app/heatmap': typeof AppHeatmapRoute
+  '/app/muscoli': typeof AppMuscoliRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/pr': typeof AppPrRoute
   '/app/profilo': typeof AppProfiloRouteWithChildren
@@ -170,6 +177,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app/heatmap': typeof AppHeatmapRoute
+  '/app/muscoli': typeof AppMuscoliRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/pr': typeof AppPrRoute
   '/app/profilo': typeof AppProfiloRouteWithChildren
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/app/heatmap': typeof AppHeatmapRoute
+  '/app/muscoli': typeof AppMuscoliRoute
   '/app/onboarding': typeof AppOnboardingRoute
   '/app/pr': typeof AppPrRoute
   '/app/profilo': typeof AppProfiloRouteWithChildren
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/heatmap'
+    | '/app/muscoli'
     | '/app/onboarding'
     | '/app/pr'
     | '/app/profilo'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/app/heatmap'
+    | '/app/muscoli'
     | '/app/onboarding'
     | '/app/pr'
     | '/app/profilo'
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/app/heatmap'
+    | '/app/muscoli'
     | '/app/onboarding'
     | '/app/pr'
     | '/app/profilo'
@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnboardingRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/app/muscoli': {
+      id: '/app/muscoli'
+      path: '/muscoli'
+      fullPath: '/app/muscoli'
+      preLoaderRoute: typeof AppMuscoliRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/app/heatmap': {
       id: '/app/heatmap'
       path: '/heatmap'
@@ -481,6 +500,7 @@ const AppProfiloRouteWithChildren = AppProfiloRoute._addFileChildren(
 
 interface AppRouteRouteChildren {
   AppHeatmapRoute: typeof AppHeatmapRoute
+  AppMuscoliRoute: typeof AppMuscoliRoute
   AppOnboardingRoute: typeof AppOnboardingRoute
   AppPrRoute: typeof AppPrRoute
   AppProfiloRoute: typeof AppProfiloRouteWithChildren
@@ -495,6 +515,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppHeatmapRoute: AppHeatmapRoute,
+  AppMuscoliRoute: AppMuscoliRoute,
   AppOnboardingRoute: AppOnboardingRoute,
   AppPrRoute: AppPrRoute,
   AppProfiloRoute: AppProfiloRouteWithChildren,

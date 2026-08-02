@@ -187,7 +187,7 @@ const STRUCTURED_DATA = {
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="it">
+    <html lang="it" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
