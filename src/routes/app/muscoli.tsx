@@ -3,7 +3,6 @@ import { ChevronLeft, Activity } from "lucide-react";
 import { useState } from "react";
 import { useMuscleStimulusData } from "@/hooks/useMuscleStimulusData";
 import { BodyMap } from "@/components/BodyMap";
-import { BodyMapLegend } from "@/components/BodyMapLegend";
 import { useLanguage } from "@/lib/i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -127,7 +126,6 @@ function MuscoliPage() {
       {hasAnyData ? (
         <>
           <BodyMap data={data} metric={metric} />
-          <BodyMapLegend muscles={data.muscles} metric={metric} />
         </>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-center">

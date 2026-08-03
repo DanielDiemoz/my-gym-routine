@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
-import { startOfWeek, endOfWeek, subDays } from "date-fns";
+import { subDays } from "date-fns";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { useCircle, type Circle } from "@/hooks/useCircle";
@@ -173,41 +173,36 @@ function CircleDetailPage() {
     return (nicknameMap?.get(profileId) || displayName || "?").trim().slice(0, 2).toUpperCase();
   }
 
-  // Aggregazione stats per membro (copertura settimanale + volume).
+  // Aggregazione stats per membro (volume totale + sessioni totali).
   const memberStats = useMemo(() => {
     if (!detailQ.data)
       return new Map<
         string,
-        { weeklyVolume: number; weeklySessions: number; weeklyGoal: number }
+        { totalVolume: number; totalSessions: number; weeklyGoal: number }
       >();
     const { profiles, sessions } = detailQ.data;
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });
     const goalMap = new Map(profiles.map((p) => [p.id, p.weekly_goal ?? 3]));
     const stats = new Map<
       string,
-      { weeklyVolume: number; weeklySessions: number; weeklyGoal: number }
+      { totalVolume: number; totalSessions: number; weeklyGoal: number }
     >();
 
     for (const s of sessions) {
-      const d = new Date(s.started_at);
-      if (d >= weekStart && d <= weekEnd) {
-        const stat = stats.get(s.user_id) ?? {
-          weeklyVolume: 0,
-          weeklySessions: 0,
-          weeklyGoal: goalMap.get(s.user_id) ?? 3,
-        };
-        stat.weeklyVolume += Number(s.total_volume || 0);
-        stat.weeklySessions += 1;
-        stats.set(s.user_id, stat);
-      }
+      const stat = stats.get(s.user_id) ?? {
+        totalVolume: 0,
+        totalSessions: 0,
+        weeklyGoal: goalMap.get(s.user_id) ?? 3,
+      };
+      stat.totalVolume += Number(s.total_volume || 0);
+      stat.totalSessions += 1;
+      stats.set(s.user_id, stat);
     }
 
     for (const p of profiles) {
       if (!stats.has(p.id)) {
         stats.set(p.id, {
-          weeklyVolume: 0,
-          weeklySessions: 0,
+          totalVolume: 0,
+          totalSessions: 0,
           weeklyGoal: goalMap.get(p.id) ?? 3,
         });
       }
@@ -217,25 +212,23 @@ function CircleDetailPage() {
   }, [detailQ.data]);
 
   const aggregate = useMemo(() => {
-    if (!detailQ.data) return { weeklyKg: 0, weekSessions: 0, weekGoal: 0 };
-    let weeklyKg = 0;
-    let weekSessions = 0;
-    let weekGoal = 0;
+    if (!detailQ.data) return { totalKg: 0, totalSessions: 0 };
+    let totalKg = 0;
+    let totalSessions = 0;
     for (const st of memberStats.values()) {
-      weeklyKg += st.weeklyVolume;
-      weekSessions += st.weeklySessions;
-      weekGoal += st.weeklyGoal;
+      totalKg += st.totalVolume;
+      totalSessions += st.totalSessions;
     }
-    return { weeklyKg, weekSessions, weekGoal };
+    return { totalKg, totalSessions };
   }, [detailQ.data, memberStats]);
 
   const sortedMembers = useMemo(() => {
     if (!detailQ.data) return [];
     const { profiles } = detailQ.data;
     return [...profiles].sort((a, b) => {
-      const sa = memberStats.get(a.id) ?? { weeklyVolume: 0, weeklySessions: 0, weeklyGoal: 3 };
-      const sb = memberStats.get(b.id) ?? { weeklyVolume: 0, weeklySessions: 0, weeklyGoal: 3 };
-      return sb.weeklyVolume - sa.weeklyVolume;
+      const sa = memberStats.get(a.id) ?? { totalVolume: 0, totalSessions: 0, weeklyGoal: 3 };
+      const sb = memberStats.get(b.id) ?? { totalVolume: 0, totalSessions: 0, weeklyGoal: 3 };
+      return sb.totalVolume - sa.totalVolume;
     });
   }, [detailQ.data, memberStats]);
 
@@ -351,15 +344,15 @@ function CircleDetailPage() {
             {t("kg totali cerchia", "circle total kg")}
           </p>
           <p className="mt-1 text-2xl font-bold text-foreground">
-            {Math.round(aggregate.weeklyKg).toLocaleString(intlLocale)}
+            {Math.round(aggregate.totalKg).toLocaleString(intlLocale)}
           </p>
         </div>
         <div className="rounded-xl border-[0.5px] border-border bg-muted px-4 py-3">
           <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-            {t("allenamenti sett.", "weekly workouts")}
+            {t("allenamenti totali", "total workouts")}
           </p>
           <p className="mt-1 text-2xl font-bold text-foreground">
-            {aggregate.weekSessions}/{aggregate.weekGoal}
+            {aggregate.totalSessions}
           </p>
         </div>
       </div>
@@ -370,15 +363,12 @@ function CircleDetailPage() {
         <div className="space-y-2">
           {sortedMembers.map((p, idx) => {
             const s = memberStats.get(p.id) ?? {
-              weeklyVolume: 0,
-              weeklySessions: 0,
+              totalVolume: 0,
+              totalSessions: 0,
               weeklyGoal: 3,
             };
             const isThisUser = p.id === user.id;
             const isCircleOwner = p.id === circle.owner_id;
-            const progress = Math.min(s.weeklySessions / s.weeklyGoal, 1);
-            const ringCirc = 2 * Math.PI * 22;
-            const ringColor = `oklch(${0.7 - 0.2 * progress} ${0.24 * progress} 280)`;
             return (
               <Link
                 key={p.id}
@@ -394,27 +384,6 @@ function CircleDetailPage() {
 
                 {/* Immagine rank con anello di progresso settimanale */}
                 <div className="relative h-12 w-12 shrink-0">
-                  <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48" aria-hidden="true">
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r="22"
-                      fill="none"
-                      stroke="var(--color-border)"
-                      strokeWidth="3"
-                    />
-                    <circle
-                      cx="24"
-                      cy="24"
-                      r="22"
-                      fill="none"
-                      stroke={ringColor}
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeDasharray={ringCirc}
-                      strokeDashoffset={ringCirc * (1 - progress)}
-                    />
-                  </svg>
                   <div className="absolute inset-[3px] flex items-center justify-center overflow-hidden rounded-full bg-muted">
                     {(() => {
                       const total = detailQ.data?.totalWorkoutsMap?.get(p.id) ?? 0;
@@ -452,7 +421,7 @@ function CircleDetailPage() {
                     )}
                   </div>
                   <p className="mt-1 font-mono text-xs text-foreground/80">
-                    {formatVolume(s.weeklyVolume)} · {s.weeklySessions}/{s.weeklyGoal}
+                    {formatVolume(s.totalVolume)} · {s.totalSessions} {t("allenamenti", "workouts")}
                   </p>
                 </div>
 

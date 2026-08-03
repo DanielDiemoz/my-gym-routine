@@ -1,8 +1,8 @@
-import type { Slug } from "react-muscle-highlighter";
+import type { MuscleGroup } from "@musclemap/core";
 
 /**
  * Mapping delle etichette granulari dell'exercise_library ai 9 gruppi
- * muscolari principali definiti in muscleColors.ts.
+ * muscolari principali.
  */
 export const FINE_TO_MAIN: Record<string, string> = {
   Pettorali: "Petto",
@@ -52,29 +52,33 @@ export function normalizeMuscleGroup(raw?: string | null): string {
 }
 
 /**
- * Mapping dai 9 gruppi principali agli slug di react-muscle-highlighter.
- * Ogni gruppo può corrispondere a più regioni anatomiche.
+ * Mapping dai 9 gruppi principali ai MuscleGroup di @musclemap/core.
+ * Ogni gruppo italiano può attivare più MuscleGroup.
  */
-export const MAIN_TO_SLUGS: Record<string, Slug[]> = {
-  Petto: ["chest"],
-  Schiena: ["upper-back", "lower-back", "trapezius"],
-  Gambe: ["quadriceps", "hamstring", "calves", "adductors", "tibialis"],
-  Spalle: ["deltoids"],
-  Braccia: ["biceps", "triceps", "forearm"],
-  Addome: ["abs", "obliques"],
-  Core: ["abs", "obliques"],
-  Glutei: ["gluteal"],
+export const MAIN_TO_MUSCLEMAP: Record<string, MuscleGroup[]> = {
+  Petto: ["CHEST"],
+  Schiena: ["TRAPEZIUS", "LATS", "BACK_UPPER", "BACK_LOWER"],
+  Gambe: ["QUADS", "HAMSTRINGS", "CALVES", "ADDUCTORS"],
+  Spalle: ["SHOULDERS_FRONT", "SHOULDERS_SIDE", "SHOULDERS_REAR"],
+  Braccia: ["BICEPS", "TRICEPS", "FOREARMS"],
+  Addome: ["CORE", "OBLIQUES"],
+  Core: ["CORE", "OBLIQUES"],
+  Glutei: ["GLUTES"],
   Altro: [],
 };
 
 /**
- * Scala monocromatica basata sul primary color (violet, hue 280).
- * 5 livelli da chiaro a scuro.
+ * Converte un valore raw (volume o sets) in uno score MuscleMap 0-100.
+ * Usa le soglie per mappare i 5 livelli di intensità su una scala continua.
  */
-export const MONOCHROMATIC_COLORS = [
-  "#c4b5fd", // violet-300
-  "#a78bfa", // violet-400
-  "#8b5cf6", // violet-500 (≈ primary)
-  "#7c3aed", // violet-600
-  "#6d28d9", // violet-700
-];
+export function toMuscleMapScore(
+  rawValue: number,
+  thresholds: [number, number, number, number],
+): number {
+  if (rawValue === 0) return 0;
+  if (rawValue <= thresholds[0]) return 20;
+  if (rawValue <= thresholds[1]) return 40;
+  if (rawValue <= thresholds[2]) return 60;
+  if (rawValue <= thresholds[3]) return 80;
+  return 100;
+}

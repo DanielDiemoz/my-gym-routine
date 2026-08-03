@@ -13,5 +13,8 @@ export default defineConfig({
         overlay: false,
       },
     },
+    optimizeDeps: {
+      include: ["@musclemap/react", "@musclemap/core", "@musclemap/assets"],
+    },
   },
 });

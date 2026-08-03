@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MuscleMap Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 1.5rem; max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; margin-bottom: 0.25rem; color: #a78bfa; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 1.5rem; }
+    h2 { font-size: 1rem; margin: 1.5rem 0 0.75rem; color: #ccc; border-bottom: 1px solid #222; padding-bottom: 0.4rem; }
+    .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
+    .gallery figure { background: #111; border-radius: 0.75rem; overflow: hidden; border: 1px solid #222; }
+    .gallery img { width: 100%; display: block; }
+    .gallery figcaption { padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #999; text-align: center; }
+    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0; }
+    .feature { background: #111; border: 1px solid #222; border-radius: 0.5rem; padding: 0.75rem; }
+    .feature .label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #7c3aed; margin-bottom: 0.25rem; }
+    .feature .value { font-size: 0.85rem; color: #ddd; }
+    code { background: #1a1a1a; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-size: 0.8rem; color: #a78bfa; }
+    pre { background: #111; border: 1px solid #222; border-radius: 0.5rem; padding: 1rem; overflow-x: auto; font-size: 0.78rem; line-height: 1.5; margin: 0.75rem 0; color: #ccc; }
+    .muscles { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.5rem 0; }
+    .muscle-tag { background: #1a1a1a; border: 1px solid #333; padding: 0.2rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; color: #aaa; }
+    a { color: #a78bfa; }
+    .npm { background: #111; border: 1px solid #222; border-radius: 0.5rem; padding: 0.6rem 0.75rem; font-family: monospace; font-size: 0.8rem; color: #888; margin: 0.5rem 0; }
+  </style>
+</head>
+<body>
+  <h1>MuscleMap</h1>
+  <p class="subtitle">Premium, data-driven muscle heatmaps for the web</p>
+
+  <div class="npm">pnpm add @musclemap/react @musclemap/core @musclemap/assets</div>
+
+  <h2>Screenshots</h2>
+  <div class="gallery">
+    <figure>
+      <img src="https://raw.githubusercontent.com/Jsplice/MuscleMap/main/docs/media/hero-front.png" alt="Male front">
+      <figcaption>Male — Front (Photoreal)</figcaption>
+    </figure>
+    <figure>
+      <img src="https://raw.githubusercontent.com/Jsplice/MuscleMap/main/docs/media/hero-back.png" alt="Male back">
+      <figcaption>Male — Back (Photoreal)</figcaption>
+    </figure>
+    <figure>
+      <img src="https://raw.githubusercontent.com/Jsplice/MuscleMap/main/docs/media/hero-female-front.png" alt="Female front">
+      <figcaption>Female — Front (Photoreal)</figcaption>
+    </figure>
+    <figure>
+      <img src="https://raw.githubusercontent.com/Jsplice/MuscleMap/main/docs/media/vector-front.png" alt="Vector front">
+      <figcaption>Male — Front (Flat Vector)</figcaption>
+    </figure>
+    <figure>
+      <img src="https://raw.githubusercontent.com/Jsplice/MuscleMap/main/docs/media/view-upper.png" alt="Upper body">
+      <figcaption>Upper Body Region (Cropped)</figcaption>
+    </figure>
+    <figure>
+      <img src="https://raw.githubusercontent.com/Jsplice/MuscleMap/main/docs/media/view-lower.png" alt="Lower body">
+      <figcaption>Lower Body Region (Cropped)</figcaption>
+    </figure>
+  </div>
+
+  <h2>Features</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="label">Two Looks</div>
+      <div class="value">Flat vector silhouette OR photorealistic body with colored muscles on top</div>
+    </div>
+    <div class="feature">
+      <div class="label">Left/Right</div>
+      <div class="value">Each muscle surface individually addressable (e.g. HAMSTRINGS_LEFT)</div>
+    </div>
+    <div class="feature">
+      <div class="label">Region Views</div>
+      <div class="value">Full body, upper body, lower body — real cropped views, not zoom</div>
+    </div>
+    <div class="feature">
+      <div class="label">Color Models</div>
+      <div class="value">Load, Frequency, Balance, Recovery Risk</div>
+    </div>
+    <div class="feature">
+      <div class="label">Monochrome</div>
+      <div class="value">Single brand color: grey → your color (0–100)</div>
+    </div>
+    <div class="feature">
+      <div class="label">Sex</div>
+      <div class="value">Male + Female bodies included</div>
+    </div>
+    <div class="feature">
+      <div class="label">Glow + Tooltips</div>
+      <div class="value">Per-muscle gradient shading, glow halo, hover/tap tooltips</div>
+    </div>
+    <div class="feature">
+      <div class="label">Headless Core</div>
+      <div class="value">UI-free core usable from any framework (React, Vue, Svelte...)</div>
+    </div>
+  </div>
+
+  <h2>Muscle Groups (26)</h2>
+  <div class="muscles">
+    <span class="muscle-tag">CHEST</span><span class="muscle-tag">LATS</span>
+    <span class="muscle-tag">TRAPEZIUS</span><span class="muscle-tag">RHOMBOIDS</span>
+    <span class="muscle-tag">DELTOIDS</span><span class="muscle-tag">BICEPS</span>
+    <span class="muscle-tag">TRICEPS</span><span class="muscle-tag">FOREARM</span>
+    <span class="muscle-tag">ABS</span><span class="muscle-tag">OBLIQUES</span>
+    <span class="muscle-tag">LOWER_BACK</span><span class="muscle-tag">GLUTES</span>
+    <span class="muscle-tag">QUADS</span><span class="muscle-tag">HAMSTRINGS</span>
+    <span class="muscle-tag">CALVES</span><span class="muscle-tag">HIP_FLEXORS</span>
+    <span class="muscle-tag">ADDUCTORS</span><span class="muscle-tag">ABDUCTORS</span>
+  </div>
+
+  <h2>Code Example</h2>
+  <pre>import { MuscleMap } from "@musclemap/react";
+import type { MuscleMapValues } from "@musclemap/core";
+
+const values: MuscleMapValues = {
+  CHEST:     { score: 88 },
+  LATS:      { score: 84 },
+  QUADS:     { score: 66 },
+  CALVES:    { score: 26 },
+  DELTOIDS:  { score: 72 },
+  BICEPS:    { score: 80 },
+  TRICEPS:   { score: 75 },
+  ABS:       { score: 60 },
+};
+
+&lt;MuscleMap
+  values={values}
+  view="BOTH"
+  sex="MALE"
+  colorModel="LOAD"
+  monochromeColor="#7c3aed"  // oppure usa colorModel
+  glow={true}
+  showLegend={true}
+/&gt;</pre>
+
+  <h2>Links</h2>
+  <p style="font-size:0.85rem; line-height:1.6;">
+    <a href="https://github.com/Jsplice/MuscleMap">GitHub</a> ·
+    <a href="https://www.npmjs.com/package/@musclemap/react">npm (@musclemap/react)</a> ·
+    <a href="https://www.npmjs.com/package/@musclemap/core">npm (@musclemap/core)</a> ·
+    <a href="https://www.npmjs.com/package/@musclemap/assets">npm (@musclemap/assets)</a>
+  </p>
+</body>
+</html>
