@@ -219,6 +219,5 @@ export function useCircle(userId: string) {
     updateNickname: (circleId: string, memberId: string, nickname: string) =>
       updateNicknameMut.mutateAsync({ circleId, memberId, nickname }),
     isUpdatingNickname: updateNicknameMut.isPending,
-
   };
 }

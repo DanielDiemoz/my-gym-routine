@@ -221,11 +221,7 @@ function CirclesList({
 
       <div className="space-y-2">
         {circles.map((c) => (
-          <CircleCard
-            key={c.id}
-            circle={c}
-            selfId={selfId}
-          />
+          <CircleCard key={c.id} circle={c} selfId={selfId} />
         ))}
       </div>
 
@@ -242,13 +238,7 @@ function CirclesList({
   );
 }
 
-function CircleCard({
-  circle,
-  selfId,
-}: {
-  circle: Circle;
-  selfId: string;
-}) {
+function CircleCard({ circle, selfId }: { circle: Circle; selfId: string }) {
   const { t } = useLanguage();
   const isOwner = circle.owner_id === selfId;
   return (

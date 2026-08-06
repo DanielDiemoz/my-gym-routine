@@ -1,16 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  Camera,
-  X,
-  Trash2,
-  Plus,
-  ChevronLeft,
-  FileText,
-  AlertTriangle,
-} from "lucide-react";
+import { Camera, X, Trash2, Plus, ChevronLeft, FileText, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { muscleColor } from "@/lib/muscleColors";
+import { inferMuscleGroup } from "@/lib/inferMuscleGroup";
 import { useLanguage } from "@/lib/i18n";
 import { analyzeScheda, type AnalyzeSchedaResult } from "@/server-functions/analyze-scheda";
 
@@ -31,6 +24,9 @@ const MUSCLES: [string, string][] = [
   ["Gambe", "Legs"],
   ["Spalle", "Shoulders"],
   ["Braccia", "Arms"],
+  ["Bicipiti", "Biceps"],
+  ["Tricipiti", "Triceps"],
+  ["Avambracci", "Forearms"],
   ["Core", "Core"],
   ["Glutei", "Glutes"],
   ["Altro", "Other"],
@@ -66,8 +62,16 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
       })
       .then((result) => {
         setPlanName(result.plan_name);
-        setExercises(result.exercises);
-        setScannedCount(result.exercises.length);
+        // Inferisci il muscle_group se l'AI ha prodotto "Braccia"
+        const processedExercises = result.exercises.map((ex) => ({
+          ...ex,
+          muscle_group:
+            ex.muscle_group === "Braccia"
+              ? (inferMuscleGroup(ex.name) ?? ex.muscle_group)
+              : ex.muscle_group,
+        }));
+        setExercises(processedExercises);
+        setScannedCount(processedExercises.length);
         setStep("preview");
         setTimeout(() => setShowExercises(true), 150);
       })
@@ -89,8 +93,16 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
     analyzeScheda({ data: { mode: "text", text: textInput.trim() } })
       .then((result) => {
         setPlanName(result.plan_name);
-        setExercises(result.exercises);
-        setScannedCount(result.exercises.length);
+        // Inferisci il muscle_group se l'AI ha prodotto "Braccia"
+        const processedExercises = result.exercises.map((ex) => ({
+          ...ex,
+          muscle_group:
+            ex.muscle_group === "Braccia"
+              ? (inferMuscleGroup(ex.name) ?? ex.muscle_group)
+              : ex.muscle_group,
+        }));
+        setExercises(processedExercises);
+        setScannedCount(processedExercises.length);
         setStep("preview");
         setTimeout(() => setShowExercises(true), 150);
       })
@@ -241,7 +253,7 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
                 </div>
               )}
 
-                  {inputMode === "image" ? (
+              {inputMode === "image" ? (
                 <div className="space-y-3">
                   <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -448,13 +460,7 @@ export function ScanPreviewDialog({ userId, onClose, onSaved }: Props) {
   );
 }
 
-function MuscleGroupsBar({
-  exercises,
-  visible,
-}: {
-  exercises: Exercise[];
-  visible: boolean;
-}) {
+function MuscleGroupsBar({ exercises, visible }: { exercises: Exercise[]; visible: boolean }) {
   const { t } = useLanguage();
   const uniqueMuscles = [...new Set(exercises.map((e) => e.muscle_group))];
 
@@ -467,9 +473,7 @@ function MuscleGroupsBar({
         transition: "opacity 0.3s ease 0.1s, transform 0.3s ease 0.1s",
       }}
     >
-      <p className="mr-1 text-xs font-semibold text-muted-foreground">
-        {t("Muscoli", "Muscles")}:
-      </p>
+      <p className="mr-1 text-xs font-semibold text-muted-foreground">{t("Muscoli", "Muscles")}:</p>
       {uniqueMuscles.map((muscle) => (
         <span
           key={muscle}

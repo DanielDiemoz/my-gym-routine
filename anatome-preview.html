@@ -1,124 +1,251 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anatome Body Map Preview</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 1rem; }
-    h1 { font-size: 1.25rem; margin-bottom: 1rem; color: #a78bfa; }
-    .controls { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }
-    .control-group { display: flex; flex-direction: column; gap: 0.25rem; }
-    .control-group label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; }
-    select, input[type="text"] { background: #1a1a1a; border: 1px solid #333; color: #e5e5e5; padding: 0.4rem 0.6rem; border-radius: 0.5rem; font-size: 0.85rem; }
-    select:focus, input:focus { outline: none; border-color: #7c3aed; }
-    .presets { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
-    .preset-btn { background: #1a1a1a; border: 1px solid #333; color: #ccc; padding: 0.3rem 0.7rem; border-radius: 1rem; font-size: 0.75rem; cursor: pointer; transition: all 0.15s; }
-    .preset-btn:hover { border-color: #7c3aed; color: #fff; }
-    .preset-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
-    .preview { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
-    .preview img { max-height: 70vh; border-radius: 1rem; background: #111; }
-    .url-box { background: #111; border: 1px solid #333; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.7rem; color: #888; word-break: break-all; margin-top: 1rem; font-family: monospace; }
-    .loading { text-align: center; padding: 3rem; color: #666; }
-  </style>
-</head>
-<body>
-  <h1>Anatome — Muscle Diagram Preview</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anatome Body Map Preview</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: #0a0a0a;
+        color: #e5e5e5;
+        padding: 1rem;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: #a78bfa;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+      .control-group label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #888;
+      }
+      select,
+      input[type="text"] {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        color: #e5e5e5;
+        padding: 0.4rem 0.6rem;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+      }
+      select:focus,
+      input:focus {
+        outline: none;
+        border-color: #7c3aed;
+      }
+      .presets {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+      }
+      .preset-btn {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        color: #ccc;
+        padding: 0.3rem 0.7rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .preset-btn:hover {
+        border-color: #7c3aed;
+        color: #fff;
+      }
+      .preset-btn.active {
+        background: #7c3aed;
+        border-color: #7c3aed;
+        color: #fff;
+      }
+      .preview {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+      }
+      .preview img {
+        max-height: 70vh;
+        border-radius: 1rem;
+        background: #111;
+      }
+      .url-box {
+        background: #111;
+        border: 1px solid #333;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.7rem;
+        color: #888;
+        word-break: break-all;
+        margin-top: 1rem;
+        font-family: monospace;
+      }
+      .loading {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Anatome — Muscle Diagram Preview</h1>
 
-  <div class="controls">
-    <div class="control-group">
-      <label>Gender</label>
-      <select id="gender">
-        <option value="male" selected>Male</option>
-        <option value="female">Female</option>
-      </select>
+    <div class="controls">
+      <div class="control-group">
+        <label>Gender</label>
+        <select id="gender">
+          <option value="male" selected>Male</option>
+          <option value="female">Female</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>View</label>
+        <select id="view">
+          <option value="dual" selected>Dual (Front+Back)</option>
+          <option value="front">Front</option>
+          <option value="back">Back</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Color</label>
+        <input
+          type="color"
+          id="color"
+          value="#7c3aed"
+          style="height: 32px; width: 50px; padding: 2px; cursor: pointer"
+        />
+      </div>
+      <div class="control-group">
+        <label>Muscles (comma separated)</label>
+        <input
+          type="text"
+          id="muscles"
+          value="chest,biceps,abs"
+          placeholder="chest, abs, quadriceps"
+          style="width: 260px"
+        />
+      </div>
     </div>
-    <div class="control-group">
-      <label>View</label>
-      <select id="view">
-        <option value="dual" selected>Dual (Front+Back)</option>
-        <option value="front">Front</option>
-        <option value="back">Back</option>
-      </select>
+
+    <div>
+      <label
+        style="
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: #888;
+          display: block;
+          margin-bottom: 0.4rem;
+        "
+        >Presets</label
+      >
+      <div class="presets" id="presets"></div>
     </div>
-    <div class="control-group">
-      <label>Color</label>
-      <input type="color" id="color" value="#7c3aed" style="height:32px;width:50px;padding:2px;cursor:pointer;">
+
+    <div class="preview" id="preview">
+      <div class="loading">Seleziona i muscoli per generare l'immagine</div>
     </div>
-    <div class="control-group">
-      <label>Muscles (comma separated)</label>
-      <input type="text" id="muscles" value="chest,biceps,abs" placeholder="chest, abs, quadriceps" style="width:260px;">
-    </div>
-  </div>
 
-  <div>
-    <label style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;color:#888;display:block;margin-bottom:0.4rem;">Presets</label>
-    <div class="presets" id="presets"></div>
-  </div>
+    <div class="url-box" id="urlBox"></div>
 
-  <div class="preview" id="preview">
-    <div class="loading">Seleziona i muscoli per generare l'immagine</div>
-  </div>
+    <script>
+      const PRESETS = [
+        { name: "Bench Press", muscles: "chest,triceps,deltoids" },
+        { name: "Squat", muscles: "quadriceps,gluteal,hamstring" },
+        { name: "Deadlift", muscles: "hamstring,gluteal,upper-back,lower-back" },
+        { name: "Pull-up", muscles: "upper-back,biceps,lower-back" },
+        { name: "Overhead Press", muscles: "deltoids,triceps,trapezius" },
+        {
+          name: "Full Body",
+          muscles: "chest,upper-back,quadriceps,biceps,triceps,deltoids,abs,gluteal",
+        },
+        { name: "Upper Body", muscles: "chest,upper-back,deltoids,biceps,triceps,abs,trapezius" },
+        { name: "Lower Body", muscles: "quadriceps,hamstring,gluteal,calves,adductors" },
+        { name: "Arms", muscles: "biceps,triceps,forearm" },
+        { name: "Core", muscles: "abs,obliques,lower-back" },
+        { name: "Push Day", muscles: "chest,deltoids,triceps" },
+        { name: "Pull Day", muscles: "upper-back,biceps,lower-back,forearm" },
+        { name: "Leg Day", muscles: "quadriceps,hamstring,gluteal,calves,adductors" },
+      ];
 
-  <div class="url-box" id="urlBox"></div>
+      const ALL_MUSCLES = [
+        "chest",
+        "abs",
+        "obliques",
+        "biceps",
+        "triceps",
+        "deltoids",
+        "forearm",
+        "upper-back",
+        "lower-back",
+        "trapezius",
+        "quadriceps",
+        "hamstring",
+        "gluteal",
+        "calves",
+        "adductors",
+        "tibialis",
+        "neck",
+        "head",
+      ];
 
-  <script>
-    const PRESETS = [
-      { name: "Bench Press", muscles: "chest,triceps,deltoids" },
-      { name: "Squat", muscles: "quadriceps,gluteal,hamstring" },
-      { name: "Deadlift", muscles: "hamstring,gluteal,upper-back,lower-back" },
-      { name: "Pull-up", muscles: "upper-back,biceps,lower-back" },
-      { name: "Overhead Press", muscles: "deltoids,triceps,trapezius" },
-      { name: "Full Body", muscles: "chest,upper-back,quadriceps,biceps,triceps,deltoids,abs,gluteal" },
-      { name: "Upper Body", muscles: "chest,upper-back,deltoids,biceps,triceps,abs,trapezius" },
-      { name: "Lower Body", muscles: "quadriceps,hamstring,gluteal,calves,adductors" },
-      { name: "Arms", muscles: "biceps,triceps,forearm" },
-      { name: "Core", muscles: "abs,obliques,lower-back" },
-      { name: "Push Day", muscles: "chest,deltoids,triceps" },
-      { name: "Pull Day", muscles: "upper-back,biceps,lower-back,forearm" },
-      { name: "Leg Day", muscles: "quadriceps,hamstring,gluteal,calves,adductors" },
-    ];
+      const presetsEl = document.getElementById("presets");
+      PRESETS.forEach((p) => {
+        const btn = document.createElement("button");
+        btn.className = "preset-btn";
+        btn.textContent = p.name;
+        btn.onclick = () => {
+          document.getElementById("muscles").value = p.muscles;
+          document.querySelectorAll(".preset-btn").forEach((b) => b.classList.remove("active"));
+          btn.classList.add("active");
+          render();
+        };
+        presetsEl.appendChild(btn);
+      });
 
-    const ALL_MUSCLES = [
-      "chest","abs","obliques","biceps","triceps","deltoids","forearm",
-      "upper-back","lower-back","trapezius","quadriceps","hamstring",
-      "gluteal","calves","adductors","tibialis","neck","head"
-    ];
+      function render() {
+        const gender = document.getElementById("gender").value;
+        const view = document.getElementById("view").value;
+        const color = document.getElementById("color").value;
+        const muscles = document.getElementById("muscles").value.trim();
+        if (!muscles) return;
 
-    const presetsEl = document.getElementById("presets");
-    PRESETS.forEach(p => {
-      const btn = document.createElement("button");
-      btn.className = "preset-btn";
-      btn.textContent = p.name;
-      btn.onclick = () => {
-        document.getElementById("muscles").value = p.muscles;
-        document.querySelectorAll(".preset-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        render();
-      };
-      presetsEl.appendChild(btn);
-    });
+        const url = `https://api.anatome.dev/generateImage?muscles=${encodeURIComponent(muscles)}&color=${encodeURIComponent(color)}&gender=${gender}&view=${view}&output=raw`;
 
-    function render() {
-      const gender = document.getElementById("gender").value;
-      const view = document.getElementById("view").value;
-      const color = document.getElementById("color").value;
-      const muscles = document.getElementById("muscles").value.trim();
-      if (!muscles) return;
+        document.getElementById("urlBox").textContent = url;
+        document.getElementById("preview").innerHTML =
+          `<img src="${url}" alt="Muscle diagram" onerror="this.parentElement.innerHTML='<div class=loading>Errore nel caricamento</div>'" />`;
+      }
 
-      const url = `https://api.anatome.dev/generateImage?muscles=${encodeURIComponent(muscles)}&color=${encodeURIComponent(color)}&gender=${gender}&view=${view}&output=raw`;
+      document.getElementById("gender").onchange = render;
+      document.getElementById("view").onchange = render;
+      document.getElementById("color").oninput = render;
+      document.getElementById("muscles").oninput = render;
 
-      document.getElementById("urlBox").textContent = url;
-      document.getElementById("preview").innerHTML = `<img src="${url}" alt="Muscle diagram" onerror="this.parentElement.innerHTML='<div class=loading>Errore nel caricamento</div>'" />`;
-    }
-
-    document.getElementById("gender").onchange = render;
-    document.getElementById("view").onchange = render;
-    document.getElementById("color").oninput = render;
-    document.getElementById("muscles").oninput = render;
-
-    render();
-  </script>
-</body>
+      render();
+    </script>
+  </body>
 </html>

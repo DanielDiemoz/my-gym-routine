@@ -23,7 +23,18 @@ export function BodyMapLegend({ muscles, metric }: BodyMapLegendProps) {
   const formatValue = (value: number) =>
     metric === "volume" ? `${value.toLocaleString("it-IT")} kg` : `${value} serie`;
 
-  const GROUPS_ORDER = ["Petto", "Schiena", "Spalle", "Braccia", "Addome", "Gambe", "Glutei"];
+  const GROUPS_ORDER = [
+    "Petto",
+    "Schiena",
+    "Spalle",
+    "Braccia",
+    "Bicipiti",
+    "Tricipiti",
+    "Avambracci",
+    "Addome",
+    "Gambe",
+    "Glutei",
+  ];
 
   return (
     <div className="mt-6 space-y-5">

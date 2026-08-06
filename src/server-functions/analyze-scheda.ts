@@ -107,7 +107,9 @@ const RULES = `Regole:
 - Se il peso non e' indicato, usa 0
 - Se le serie o ripetizioni non sono chiare, usa 3x10 come default
 - Converti i nomi in italiano se scritti in inglese (es. Bench Press -> Panca piana)
-- muscle_group DEVE essere uno tra: Petto, Schiena, Gambe, Spalle, Braccia, Core, Glutei, Altro
+- muscle_group DEVE essere uno tra: Petto, Schiena, Gambe, Spalle, Braccia, Bicipiti, Tricipiti, Avambracci, Core, Glutei, Altro
+- Per gli esercizi delle braccia, distingui tra: Bicipiti (curl, martello, etc.), Tricipiti (pushdown, estensioni, etc.), Avambracci (wrist curl, etc.)
+- Se non riesci a distinguere il muscolo specifico delle braccia, usa "Braccia"
 - Se una riga contiene varianti (es. "panca piana / inclinata"), crea esercizi separati
 - Ignora elementi non esercizi (intestazioni, date, firme, logo)
 - Ignora il numero della serie se c'e' gia' un numero accanto (es. "1. Panca piana" -> solo "Panca piana")
@@ -141,7 +143,19 @@ ${RULES}
 - Se l'utente descrive un obiettivo (es. "massa per le gambe"), crea una scheda appropriata
 - Puoi aggiungere esercizi complementari se la scheda sembra incompleta`;
 
-const VALID_MUSCLES = ["Petto", "Schiena", "Gambe", "Spalle", "Braccia", "Core", "Glutei", "Altro"];
+const VALID_MUSCLES = [
+  "Petto",
+  "Schiena",
+  "Gambe",
+  "Spalle",
+  "Braccia",
+  "Bicipiti",
+  "Tricipiti",
+  "Avambracci",
+  "Core",
+  "Glutei",
+  "Altro",
+];
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"]);
 
@@ -152,21 +166,21 @@ function humanizeGeminiError(status: number, body: string): string {
   if (status === 403) {
     return "Chiave API non valida o disabilitata. Verifica la chiave su Google AI Studio.";
   }
-    if (status === 400) {
-      if (body.includes("invalid image")) {
-        return "Immagine non valida. Prova con un'altra foto in formato JPEG o PNG.";
-      }
-      if (body.includes("payload")) {
-        return "L'immagine e' troppo grande. Prova con una foto di qualita' inferiore.";
-      }
-      if (body.includes("not found") || body.includes("not supported")) {
-        return "Modello AI momentaneamente non disponibile. Se il problema persiste, contatta l'amministratore.";
-      }
-      if (body.includes("API_KEY")) {
-        return "Chiave API non valida. Verifica la chiave su Google AI Studio e riprova.";
-      }
-      return `Richiesta non valida (errore API: ${body.slice(0, 120)}). Riprova.`;
+  if (status === 400) {
+    if (body.includes("invalid image")) {
+      return "Immagine non valida. Prova con un'altra foto in formato JPEG o PNG.";
     }
+    if (body.includes("payload")) {
+      return "L'immagine e' troppo grande. Prova con una foto di qualita' inferiore.";
+    }
+    if (body.includes("not found") || body.includes("not supported")) {
+      return "Modello AI momentaneamente non disponibile. Se il problema persiste, contatta l'amministratore.";
+    }
+    if (body.includes("API_KEY")) {
+      return "Chiave API non valida. Verifica la chiave su Google AI Studio e riprova.";
+    }
+    return `Richiesta non valida (errore API: ${body.slice(0, 120)}). Riprova.`;
+  }
   if (status === 404) {
     return "Modello AI non disponibile. Riprova tra qualche minuto.";
   }

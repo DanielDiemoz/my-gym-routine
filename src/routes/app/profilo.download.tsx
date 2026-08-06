@@ -1,12 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import {
-  CheckCircle2,
-  Smartphone,
-  Apple,
-  Download,
-  AlertTriangle,
-} from "lucide-react";
+import { CheckCircle2, Smartphone, Apple, Download, AlertTriangle } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { useLanguage } from "@/lib/i18n";
 
@@ -61,96 +55,94 @@ function DownloadPage() {
       </div>
 
       <div className="mt-3 space-y-3">
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                <Smartphone className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Android</h3>
-                <p className="text-xs text-muted-foreground">Chrome, Edge, Samsung Internet</p>
-              </div>
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+              <Smartphone className="h-5 w-5" />
             </div>
-            <PWAInstallButton />
-            <a
-              href={apkUrl}
-              download
-              className="mt-3 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
-            >
-              <Download className="h-4 w-4" />
-              {t("Scarica APK (Android)", "Download APK (Android)")}
-            </a>
-            <div className="flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-              <p className="text-xs text-destructive">
-                {t(
-                  "Durante l'installazione, Android potrebbe mostrare un avviso '",
-                  "During installation, Android may show a warning '",
-                )}
-                <strong>{t("file dannoso", "file may be harmful")}</strong>
-                {t("' o '", "' or '")}
-                <strong>{t("produttore non verificato", "unverified publisher")}</strong>
-                {t(
-                  "'. Non preoccuparti, è normale per app non pubblicate sul Play Store. GymBro è sicura.",
-                  "'. Don't worry, this is normal for apps not published on the Play Store. GymBro is safe.",
-                )}
-              </p>
+            <div>
+              <h3 className="font-semibold">Android</h3>
+              <p className="text-xs text-muted-foreground">Chrome, Edge, Samsung Internet</p>
             </div>
-          </section>
+          </div>
+          <PWAInstallButton />
+          <a
+            href={apkUrl}
+            download
+            className="mt-3 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground transition-all active:scale-[0.98]"
+          >
+            <Download className="h-4 w-4" />
+            {t("Scarica APK (Android)", "Download APK (Android)")}
+          </a>
+          <div className="flex items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <p className="text-xs text-destructive">
+              {t(
+                "Durante l'installazione, Android potrebbe mostrare un avviso '",
+                "During installation, Android may show a warning '",
+              )}
+              <strong>{t("file dannoso", "file may be harmful")}</strong>
+              {t("' o '", "' or '")}
+              <strong>{t("produttore non verificato", "unverified publisher")}</strong>
+              {t(
+                "'. Non preoccuparti, è normale per app non pubblicate sul Play Store. GymBro è sicura.",
+                "'. Don't worry, this is normal for apps not published on the Play Store. GymBro is safe.",
+              )}
+            </p>
+          </div>
+        </section>
 
-          <section className="rounded-2xl border border-border bg-card p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                <Apple className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold">iPhone / iPad</h3>
-                <p className="text-xs text-muted-foreground">Safari</p>
-              </div>
+        <section className="rounded-2xl border border-border bg-card p-5">
+          <div className="mb-3 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+              <Apple className="h-5 w-5" />
             </div>
-            <ol className="space-y-3 text-sm">
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                  1
-                </span>
-                <span>
-                  {t("Apri Safari", "Open Safari")}
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                  2
-                </span>
-                <span>
-                  {t("Tocca il bottone", "Tap the")} <strong>{t("Condividi", "Share")}</strong>{" "}
-                  {t("in basso", "at the bottom")}
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                  3
-                </span>
-                <span>
-                  {t("Scorri e tocca", "Scroll and tap")}{" "}
-                  <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
-                  {t(
-                    " (a volte devi scorrere molto in basso)",
-                    " (sometimes you need to scroll way down)",
-                  )}
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                  4
-                </span>
-                <span>
-                  {t("Tocca", "Tap")} <strong>{t("Aggiungi", "Add")}</strong>{" "}
-                  {t("in alto a destra", "top right")}
-                </span>
-              </li>
-            </ol>
-          </section>
-        </div>
+            <div>
+              <h3 className="font-semibold">iPhone / iPad</h3>
+              <p className="text-xs text-muted-foreground">Safari</p>
+            </div>
+          </div>
+          <ol className="space-y-3 text-sm">
+            <li className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                1
+              </span>
+              <span>{t("Apri Safari", "Open Safari")}</span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                2
+              </span>
+              <span>
+                {t("Tocca il bottone", "Tap the")} <strong>{t("Condividi", "Share")}</strong>{" "}
+                {t("in basso", "at the bottom")}
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                3
+              </span>
+              <span>
+                {t("Scorri e tocca", "Scroll and tap")}{" "}
+                <strong>{t("Aggiungi a Home", "Add to Home screen")}</strong>
+                {t(
+                  " (a volte devi scorrere molto in basso)",
+                  " (sometimes you need to scroll way down)",
+                )}
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                4
+              </span>
+              <span>
+                {t("Tocca", "Tap")} <strong>{t("Aggiungi", "Add")}</strong>{" "}
+                {t("in alto a destra", "top right")}
+              </span>
+            </li>
+          </ol>
+        </section>
+      </div>
     </div>
   );
 }

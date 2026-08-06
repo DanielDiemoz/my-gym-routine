@@ -16,6 +16,7 @@ import {
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { ExerciseAutocomplete, type ExerciseLibraryEntry } from "@/components/ExerciseAutocomplete";
 import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
+import { inferMuscleGroup } from "@/lib/inferMuscleGroup";
 import { useLanguage } from "@/lib/i18n";
 import {
   DndContext,
@@ -55,6 +56,9 @@ const MUSCLES: [string, string][] = [
   ["Gambe", "Legs"],
   ["Spalle", "Shoulders"],
   ["Braccia", "Arms"],
+  ["Bicipiti", "Biceps"],
+  ["Tricipiti", "Triceps"],
+  ["Avambracci", "Forearms"],
   ["Core", "Core"],
   ["Glutei", "Glutes"],
   ["Altro", "Other"],
@@ -399,6 +403,16 @@ function ExerciseSheet({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ex?.id]);
+
+  // Inferisce automaticamente il gruppo muscolare dal nome dell'esercizio
+  useEffect(() => {
+    if (name && !libraryId) {
+      const inferred = inferMuscleGroup(name);
+      if (inferred) {
+        setMuscle(inferred);
+      }
+    }
+  }, [name, libraryId]);
 
   function handlePick(entry: ExerciseLibraryEntry) {
     setName(entry.name);

@@ -22,9 +22,9 @@ export const FINE_TO_MAIN: Record<string, string> = {
   "Deltoidi anteriori": "Spalle",
   "Deltoidi posteriori": "Spalle",
 
-  Bicipiti: "Braccia",
-  Tricipiti: "Braccia",
-  Avambracci: "Braccia",
+  Bicipiti: "Bicipiti",
+  Tricipiti: "Tricipiti",
+  Avambracci: "Avambracci",
 
   Obliqui: "Addome",
   "Addome basso": "Addome",
@@ -61,6 +61,9 @@ export const MAIN_TO_MUSCLEMAP: Record<string, MuscleGroup[]> = {
   Gambe: ["QUADS", "HAMSTRINGS", "CALVES", "ADDUCTORS"],
   Spalle: ["SHOULDERS_FRONT", "SHOULDERS_SIDE", "SHOULDERS_REAR"],
   Braccia: ["BICEPS", "TRICEPS", "FOREARMS"],
+  Bicipiti: ["BICEPS"],
+  Tricipiti: ["TRICEPS"],
+  Avambracci: ["FOREARMS"],
   Addome: ["CORE", "OBLIQUES"],
   Core: ["CORE", "OBLIQUES"],
   Glutei: ["GLUTES"],
@@ -82,3 +85,14 @@ export function toMuscleMapScore(
   if (rawValue <= thresholds[3]) return 80;
   return 100;
 }
+
+/**
+ * Colori monocromatici per i livelli di intensità della mappa muscolare.
+ */
+export const MONOCHROMATIC_COLORS = [
+  "#4f46e5", // blu - basso
+  "#7c3aed", // viola - medio
+  "#a855f7", // viola chiaro - alto
+  "#c084fc", // viola molto chiaro - molto alto
+  "#e9d5ff", // lilla - massimo
+];
