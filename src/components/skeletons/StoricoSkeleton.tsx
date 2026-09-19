@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function StoricoSkeleton() {
   return (
-    <div className="container-app animate-in fade-in pt-10">
+    <div className="container-app animate-in fade-in pt-safe-lg">
       <header className="mb-6 space-y-2">
         <Skeleton className="h-3 w-20" />
         <Skeleton className="h-8 w-32" />

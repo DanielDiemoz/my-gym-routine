@@ -22,7 +22,7 @@ function PersonalRecordsPage() {
 
   if (prsQ.isLoading) {
     return (
-      <div className="container-app pt-6">
+      <div className="container-app pt-safe">
         <Skeleton className="mb-6 h-5 w-24" />
         <Skeleton className="mb-8 h-9 w-48" />
         <div className="space-y-3">
@@ -40,11 +40,11 @@ function PersonalRecordsPage() {
     : prs;
 
   return (
-    <div className="container-app pt-6">
+    <div className="container-app pt-safe">
       <div className="mb-6">
         <Link
           to="/app"
-          className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
+          className="-ml-2.5 inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 px-2.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground active:opacity-60 touch-manipulation"
         >
           <ChevronLeft className="h-5 w-5" /> {t("Dashboard", "Dashboard")}
         </Link>

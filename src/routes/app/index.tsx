@@ -252,7 +252,7 @@ function Dashboard() {
   }
 
   return (
-    <div className="container-app pt-10">
+    <div className="container-app pt-safe-lg">
       <header className="mb-8 flex items-start justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">

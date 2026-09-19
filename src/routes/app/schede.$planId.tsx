@@ -189,15 +189,18 @@ function PlanEditor() {
   }
 
   return (
-    <div className="container-app pt-6">
+    <div className="container-app pt-safe">
       <div className="mb-6 flex items-center justify-between">
         <Link
           to="/app/schede"
-          className="flex items-center gap-1 text-sm font-semibold text-muted-foreground"
+          className="-ml-2.5 inline-flex min-h-[44px] min-w-[44px] items-center gap-1.5 px-2.5 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground active:opacity-60 touch-manipulation"
         >
           <ChevronLeft className="h-5 w-5" /> {t("Schede", "Plans")}
         </Link>
-        <button onClick={deletePlan} className="text-xs font-semibold text-destructive">
+        <button
+          onClick={deletePlan}
+          className="min-h-[44px] px-2 py-2 text-xs font-semibold text-destructive active:opacity-60 touch-manipulation"
+        >
           {t("Elimina", "Delete")}
         </button>
       </div>

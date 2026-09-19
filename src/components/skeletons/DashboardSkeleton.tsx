@@ -6,7 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 export function DashboardSkeleton() {
   return (
-    <div className="container-app animate-in fade-in pt-10">
+    <div className="container-app animate-in fade-in pt-safe-lg">
       <header className="mb-8 flex items-start justify-between">
         <div className="space-y-2">
           <Skeleton className="h-3 w-24" />

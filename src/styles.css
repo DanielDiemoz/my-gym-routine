@@ -154,3 +154,15 @@
 @utility no-tap-highlight {
   -webkit-tap-highlight-color: transparent;
 }
+
+@utility pt-safe {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1.5rem);
+}
+
+@utility pt-safe-sm {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+}
+
+@utility pt-safe-lg {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 2.5rem);
+}

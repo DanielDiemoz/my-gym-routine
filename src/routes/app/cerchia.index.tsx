@@ -65,7 +65,7 @@ function CerchiePage() {
   }
 
   return (
-    <div className="container-app pt-10">
+    <div className="container-app pt-safe-lg">
       <header className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -467,7 +467,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // ─────────────────────────────────────────────────────────────────────────────
 function CerchieSkeleton() {
   return (
-    <div className="container-app pt-10">
+    <div className="container-app pt-safe-lg">
       <header className="mb-6">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="mt-3 h-8 w-32" />

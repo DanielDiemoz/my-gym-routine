@@ -154,7 +154,7 @@ function Storico() {
 
   if ((q.data ?? []).length === 0) {
     return (
-      <div className="container-app pt-10">
+      <div className="container-app pt-safe-lg">
         <header className="mb-6 flex items-start justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -190,7 +190,7 @@ function Storico() {
   };
 
   return (
-    <div className="container-app pt-10">
+    <div className="container-app pt-safe-lg">
       <header className="mb-6 flex items-start justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">

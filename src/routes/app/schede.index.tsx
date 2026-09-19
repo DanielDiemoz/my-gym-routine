@@ -75,7 +75,7 @@ function Schede() {
   }
 
   return (
-    <div className="container-app pt-10">
+    <div className="container-app pt-safe-lg">
       {!!activeQ.data?.plan_id && (
         <Link
           to="/app/allena/$planId"

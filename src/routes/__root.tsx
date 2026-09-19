@@ -249,6 +249,14 @@ function RootComponent() {
     }
   }, []);
 
+  useEffect(() => {
+    // Radix UI (DropdownMenu/Dialog) can leave pointer-events: none on document.body
+    // if unmounted during route navigation on iOS Safari / touch devices. Reset on route change.
+    if (typeof document !== "undefined" && document.body.style.pointerEvents === "none") {
+      document.body.style.pointerEvents = "";
+    }
+  }, [router.state.location.pathname]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
