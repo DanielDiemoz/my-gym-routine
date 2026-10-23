@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   startOfWeek,
@@ -25,6 +26,8 @@ import {
 } from "lucide-react";
 import { PWAInstallButton } from "@/components/PWAInstallButton";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { UnreadDirectMessageBanner } from "@/components/UnreadDirectMessageBanner";
 import { StreakCard } from "@/components/StreakCard";
 import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { useWeightUnit } from "@/hooks/useWeightUnit";
@@ -80,6 +83,7 @@ function Dashboard() {
   const qc = useQueryClient();
   const { display: fmtWeight } = useWeightUnit();
   const { t, dateLocale } = useLanguage();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const profileQ = useQuery({
     queryKey: ["profile", user.id],
@@ -264,9 +268,20 @@ function Dashboard() {
         </div>
         <div className="flex items-center gap-2 pt-1">
           <PWAInstallButton />
-          <ProfileMenu />
+          <NotificationsSheet
+            userId={user.id}
+            open={notificationsOpen}
+            onOpenChange={setNotificationsOpen}
+          />
+          <ProfileMenu onOpenNotifications={() => setNotificationsOpen(true)} userId={user.id} />
         </div>
       </header>
+
+      {/* Banner messaggi diretti non letti dall'Admin */}
+      <UnreadDirectMessageBanner
+        userId={user.id}
+        onOpenNotifications={() => setNotificationsOpen(true)}
+      />
 
       {/* Week ring */}
       <section className="rounded-3xl bg-primary p-6 text-primary-foreground dark:text-white">

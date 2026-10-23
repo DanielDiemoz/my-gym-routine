@@ -7,6 +7,7 @@ import { Plus, ChevronRight, Dumbbell, Play, Sparkles } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
 import { ScanPreviewDialog } from "@/components/ScanPreviewDialog";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/schede/")({
@@ -104,7 +105,10 @@ function Schede() {
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Schede", "Plans")}</h1>
         </div>
-        <ProfileMenu />
+        <div className="flex items-center gap-2">
+          <NotificationsSheet userId={user.id} />
+          <ProfileMenu userId={user.id} />
+        </div>
       </header>
 
       {creating ? (

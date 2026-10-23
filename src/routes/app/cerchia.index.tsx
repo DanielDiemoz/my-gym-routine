@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
 import { useCircle, type Circle } from "@/hooks/useCircle";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/cerchia/")({
@@ -73,7 +74,10 @@ function CerchiePage() {
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Cerchie", "Circles")}</h1>
         </div>
-        <ProfileMenu />
+        <div className="flex items-center gap-2">
+          <NotificationsSheet userId={user.id} />
+          <ProfileMenu userId={user.id} />
+        </div>
       </header>
 
       {!hasCircles ? (

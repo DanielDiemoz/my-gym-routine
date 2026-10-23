@@ -14,6 +14,7 @@ import {
 import { Calendar } from "lucide-react";
 import { WorkoutCard, type WorkoutLog } from "@/components/WorkoutCard";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { NotificationsSheet } from "@/components/NotificationsSheet";
 import { StoricoSkeleton } from "@/components/skeletons/StoricoSkeleton";
 import { useLanguage } from "@/lib/i18n";
 
@@ -162,7 +163,10 @@ function Storico() {
             </p>
             <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Storico", "History")}</h1>
           </div>
-          <ProfileMenu />
+          <div className="flex items-center gap-2">
+            <NotificationsSheet userId={user.id} />
+            <ProfileMenu userId={user.id} />
+          </div>
         </header>
 
         <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -198,7 +202,10 @@ function Storico() {
           </p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Storico", "History")}</h1>
         </div>
-        <ProfileMenu />
+        <div className="flex items-center gap-2">
+          <NotificationsSheet userId={user.id} />
+          <ProfileMenu userId={user.id} />
+        </div>
       </header>
 
       {/* Bottoni Mesi */}

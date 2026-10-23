@@ -1,11 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { Fragment } from "react";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays } from "date-fns";
 import { it } from "date-fns/locale";
-import { Users, Dumbbell, Brain, Calendar, Search, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Users,
+  Dumbbell,
+  Brain,
+  Calendar,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Mail,
+  Send,
+  Megaphone,
+  Trash2,
+  CheckCircle2,
+  Clock,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +40,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { SendNotificationDialog } from "@/components/admin/SendNotificationDialog";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -91,12 +107,30 @@ type GeminiUsage = {
   created_at: string;
 };
 
+type NotificationItem = {
+  id: string;
+  user_id: string | null;
+  sender_id: string | null;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  created_at: string;
+};
+
 function AdminDashboard() {
+  const qc = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d" | "all">("30d");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [expandedSession, setExpandedSession] = useState<string | null>(null);
   const [expandedPlan, setExpandedPlan] = useState<string | null>(null);
+
+  // Dialog and notifications state
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [selectedUserForMessage, setSelectedUserForMessage] = useState<string | null>(null);
+  const [notifSearchQuery, setNotifSearchQuery] = useState("");
+  const [notifTypeFilter, setNotifTypeFilter] = useState<"all" | "direct" | "system">("all");
 
   const dateFilter = (() => {
     const now = new Date();
@@ -156,9 +190,41 @@ function AdminDashboard() {
     },
   });
 
+  // Fetch Notifications
+  const notificationsQuery = useQuery({
+    queryKey: ["admin", "notifications"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.warn("Could not fetch notifications:", error);
+        return [] as NotificationItem[];
+      }
+      return (data ?? []) as NotificationItem[];
+    },
+  });
+
+  const deleteNotificationMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin", "notifications"] });
+      toast.success("Notifica eliminata con successo");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Errore nell'eliminazione");
+    },
+  });
+
   const users = usersQuery.data ?? [];
   const sessions = sessionsQuery.data ?? [];
   const geminiUsage = geminiQuery.data ?? [];
+  const allNotifications = notificationsQuery.data ?? [];
 
   // Fetch session logs for expanded user
   const sessionIdsForExpanded = expandedUser
@@ -230,6 +296,9 @@ function AdminDashboard() {
   const geminiImageCalls = geminiUsage.filter((g) => g.mode === "image").length;
   const geminiTextCalls = geminiUsage.filter((g) => g.mode === "text").length;
 
+  const totalDirectMessages = allNotifications.filter((n) => n.user_id !== null).length;
+  const totalSystemBroadcast = allNotifications.filter((n) => n.user_id === null).length;
+
   // Filter users by search, then sort by completed workouts descending
   const filteredUsers = users
     .filter(
@@ -258,7 +327,7 @@ function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Utenti Totali</CardTitle>
@@ -303,6 +372,19 @@ function AdminDashboard() {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Comunicazioni</CardTitle>
+            <Mail className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{allNotifications.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {totalDirectMessages} diretti · {totalSystemBroadcast} broadcast
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Tabs */}
@@ -311,6 +393,15 @@ function AdminDashboard() {
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Utenti
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Mail className="h-4 w-4" />
+            Notifiche & Messaggi
+            {allNotifications.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                {allNotifications.length}
+              </Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="gemini" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
@@ -353,7 +444,7 @@ function AdminDashboard() {
                   <TableHead className="text-center">Completati</TableHead>
                   <TableHead className="text-center">Gemini</TableHead>
                   <TableHead>Registrato</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
+                  <TableHead className="w-[90px] text-right">Azioni</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -383,38 +474,122 @@ function AdminDashboard() {
                         <TableCell>
                           {format(new Date(user.created_at), "dd MMM yyyy", { locale: it })}
                         </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setExpandedUser(isExpanded ? null : user.id);
-                              setExpandedSession(null);
-                              setExpandedPlan(null);
-                            }}
-                          >
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title={`Invia messaggio a ${user.display_name ?? "utente"}`}
+                              className="text-primary hover:bg-primary/10 h-8 w-8"
+                              onClick={() => {
+                                setSelectedUserForMessage(user.id);
+                                setSendDialogOpen(true);
+                              }}
+                            >
+                              <Mail className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setExpandedUser(isExpanded ? null : user.id);
+                                setExpandedSession(null);
+                                setExpandedPlan(null);
+                              }}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                       {isExpanded && (
                         <TableRow key={`${user.id}-details`}>
                           <TableCell colSpan={6} className="bg-muted/50">
-                            <div className="space-y-3 text-sm">
-                              <div className="flex items-center gap-4">
-                                <span className="text-muted-foreground">ID:</span>
-                                <code className="font-mono text-xs">{user.id}</code>
+                            <div className="space-y-4 text-sm">
+                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
+                                <div className="flex items-center gap-4">
+                                  <span className="text-muted-foreground">ID:</span>
+                                  <code className="font-mono text-xs">{user.id}</code>
+                                  <span className="text-muted-foreground">Onboarding:</span>
+                                  <Badge variant={user.onboarded ? "default" : "destructive"}>
+                                    {user.onboarded ? "Completato" : "Non completato"}
+                                  </Badge>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedUserForMessage(user.id);
+                                    setSendDialogOpen(true);
+                                  }}
+                                  className="gap-1.5 text-xs h-8"
+                                >
+                                  <Mail className="h-3.5 w-3.5" />
+                                  <span>Invia messaggio diretto</span>
+                                </Button>
                               </div>
-                              <div className="flex items-center gap-4">
-                                <span className="text-muted-foreground">Onboarding:</span>
-                                <Badge variant={user.onboarded ? "default" : "destructive"}>
-                                  {user.onboarded ? "Completato" : "Non completato"}
-                                </Badge>
-                              </div>
+
+                              {/* Messaggi diretti inviati a questo utente */}
+                              {(() => {
+                                const userMessages = allNotifications.filter(
+                                  (n) => n.user_id === user.id,
+                                );
+                                if (userMessages.length === 0) return null;
+                                return (
+                                  <div className="rounded-xl border border-primary/20 bg-background/80 p-3 space-y-2">
+                                    <p className="text-xs font-semibold flex items-center gap-1.5 text-primary">
+                                      <Mail className="h-3.5 w-3.5" />
+                                      Messaggi diretti inviati ({userMessages.length})
+                                    </p>
+                                    <div className="space-y-1.5">
+                                      {userMessages.map((msg) => (
+                                        <div
+                                          key={msg.id}
+                                          className="flex items-start justify-between gap-3 rounded-lg border bg-muted/30 p-2.5 text-xs"
+                                        >
+                                          <div className="space-y-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-bold text-foreground">
+                                                {msg.title}
+                                              </span>
+                                              <Badge
+                                                variant={msg.read ? "secondary" : "default"}
+                                                className="text-[9px] h-4 px-1"
+                                              >
+                                                {msg.read ? "Letto" : "Non letto"}
+                                              </Badge>
+                                            </div>
+                                            <p className="text-muted-foreground whitespace-pre-line text-[11px]">
+                                              {msg.message}
+                                            </p>
+                                            <span className="text-[10px] text-muted-foreground">
+                                              {format(
+                                                new Date(msg.created_at),
+                                                "dd MMM yyyy, HH:mm",
+                                                { locale: it },
+                                              )}
+                                            </span>
+                                          </div>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                            onClick={() =>
+                                              deleteNotificationMutation.mutate(msg.id)
+                                            }
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                               {(() => {
                                 const sessionsForUser = sessions
                                   .filter((s) => s.user_id === user.id)
@@ -720,7 +895,188 @@ function AdminDashboard() {
             </Table>
           </div>
         </TabsContent>
+
+        {/* Notifications Tab */}
+        <TabsContent value="notifications" className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 max-w-lg">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Cerca notifica, titolo o utente..."
+                  value={notifSearchQuery}
+                  onChange={(e) => setNotifSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Select
+                value={notifTypeFilter}
+                onValueChange={(v) => setNotifTypeFilter(v as typeof notifTypeFilter)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tutte ({allNotifications.length})</SelectItem>
+                  <SelectItem value="direct">Solo Diretti ({totalDirectMessages})</SelectItem>
+                  <SelectItem value="system">Solo Sistema ({totalSystemBroadcast})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={() => {
+                setSelectedUserForMessage(null);
+                setSendDialogOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Send className="h-4 w-4" />
+              <span>Invia Nuova Notifica</span>
+            </Button>
+          </div>
+
+          <div className="rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Destinatario</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Titolo & Messaggio</TableHead>
+                  <TableHead className="text-center">Stato</TableHead>
+                  <TableHead className="w-[60px] text-right">Azioni</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(() => {
+                  const filtered = allNotifications.filter((n) => {
+                    if (notifTypeFilter === "direct" && n.user_id === null) return false;
+                    if (notifTypeFilter === "system" && n.user_id !== null) return false;
+                    if (notifSearchQuery.trim()) {
+                      const q = notifSearchQuery.toLowerCase();
+                      const targetUser = users.find((u) => u.id === n.user_id);
+                      const matchesTitle = n.title.toLowerCase().includes(q);
+                      const matchesMessage = n.message.toLowerCase().includes(q);
+                      const matchesUser =
+                        targetUser?.display_name?.toLowerCase().includes(q) ||
+                        (n.user_id && n.user_id.toLowerCase().includes(q));
+                      if (!matchesTitle && !matchesMessage && !matchesUser) return false;
+                    }
+                    return true;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                          Nessun messaggio o notifica trovata.
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  return filtered.map((notif) => {
+                    const recipientUser = notif.user_id
+                      ? users.find((u) => u.id === notif.user_id)
+                      : null;
+                    const isDirect = Boolean(notif.user_id);
+
+                    return (
+                      <TableRow key={notif.id}>
+                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                          {format(new Date(notif.created_at), "dd MMM yyyy HH:mm", { locale: it })}
+                        </TableCell>
+                        <TableCell>
+                          {isDirect ? (
+                            <div>
+                              <div className="font-medium text-sm">
+                                {recipientUser?.display_name || "Utente"}
+                              </div>
+                              <div className="text-xs text-muted-foreground font-mono">
+                                {notif.user_id?.slice(0, 8)}...
+                              </div>
+                            </div>
+                          ) : (
+                            <Badge variant="outline" className="gap-1 text-xs">
+                              <Users className="h-3 w-3" />
+                              Tutti gli utenti (Broadcast)
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isDirect ? (
+                            <Badge variant="default" className="gap-1 text-[11px]">
+                              <Mail className="h-3 w-3" />
+                              Diretto
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary" className="gap-1 text-[11px]">
+                              <Megaphone className="h-3 w-3" />
+                              Sistema
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-md">
+                          <div className="font-semibold text-sm text-foreground mb-0.5">
+                            {notif.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground whitespace-pre-line line-clamp-2">
+                            {notif.message}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {isDirect ? (
+                            notif.read ? (
+                              <Badge
+                                variant="outline"
+                                className="gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 border-emerald-500/40"
+                              >
+                                <CheckCircle2 className="h-3 w-3" />
+                                Letto
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="secondary"
+                                className="gap-1 text-[10px] text-amber-600 dark:text-amber-400"
+                              >
+                                <Clock className="h-3 w-3" />
+                                In attesa
+                              </Badge>
+                            )
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Broadcast</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteNotificationMutation.mutate(notif.id)}
+                            title="Elimina notifica"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+                })()}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
       </Tabs>
+
+      {/* Dialog per invio notifica / messaggio */}
+      <SendNotificationDialog
+        open={sendDialogOpen}
+        onOpenChange={setSendDialogOpen}
+        users={users}
+        preselectedUserId={selectedUserForMessage}
+        onSuccess={() => qc.invalidateQueries({ queryKey: ["admin", "notifications"] })}
+      />
     </div>
   );
 }
