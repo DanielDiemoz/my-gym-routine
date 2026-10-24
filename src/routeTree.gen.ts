@@ -9,38 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AppRouteRouteImport } from './routes/app/route'
-import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthIndexRouteImport } from './routes/auth.index'
-import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as AppRouteRouteImport } from './routes/app/route'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
-import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
-import { Route as AuthResetRouteImport } from './routes/auth.reset'
-import { Route as AppStoricoRouteImport } from './routes/app/storico'
-import { Route as AppProfiloRouteImport } from './routes/app/profilo'
-import { Route as AppPrRouteImport } from './routes/app/pr'
-import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
-import { Route as AppMuscoliRouteImport } from './routes/app/muscoli'
+import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppHeatmapRouteImport } from './routes/app/heatmap'
-import { Route as AppSchedeIndexRouteImport } from './routes/app/schede.index'
-import { Route as AppCerchiaIndexRouteImport } from './routes/app/cerchia.index'
-import { Route as AppSchedePlanIdRouteImport } from './routes/app/schede.$planId'
-import { Route as AppProfiloImpostazioniRouteImport } from './routes/app/profilo.impostazioni'
-import { Route as AppProfiloDownloadRouteImport } from './routes/app/profilo.download'
-import { Route as AppProfiloAccountRouteImport } from './routes/app/profilo.account'
-import { Route as AppCerchiaCircleIdRouteImport } from './routes/app/cerchia.$circleId'
+import { Route as AppMuscoliRouteImport } from './routes/app/muscoli'
+import { Route as AppOnboardingRouteImport } from './routes/app/onboarding'
+import { Route as AppPrRouteImport } from './routes/app/pr'
+import { Route as AppProfiloRouteImport } from './routes/app/profilo'
+import { Route as AppStoricoRouteImport } from './routes/app/storico'
+import { Route as AuthIndexRouteImport } from './routes/auth.index'
+import { Route as AuthResetRouteImport } from './routes/auth.reset'
+import { Route as AuthVerifyRouteImport } from './routes/auth.verify'
 import { Route as AppAllenaPlanIdRouteImport } from './routes/app/allena.$planId'
+import { Route as AppCerchiaIndexRouteImport } from './routes/app/cerchia.index'
+import { Route as AppCerchiaCircleIdRouteImport } from './routes/app/cerchia.$circleId'
+import { Route as AppProfiloAccountRouteImport } from './routes/app/profilo.account'
+import { Route as AppProfiloDownloadRouteImport } from './routes/app/profilo.download'
+import { Route as AppProfiloImpostazioniRouteImport } from './routes/app/profilo.impostazioni'
+import { Route as AppSchedeIndexRouteImport } from './routes/app/schede.index'
+import { Route as AppSchedePlanIdRouteImport } from './routes/app/schede.$planId'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRouteRoute = AppRouteRouteImport.update({
-  id: '/app',
-  path: '/app',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -48,59 +43,24 @@ const AdminRouteRoute = AdminRouteRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthIndexRoute = AuthIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppRouteRoute,
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AuthVerifyRoute = AuthVerifyRouteImport.update({
-  id: '/verify',
-  path: '/verify',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthResetRoute = AuthResetRouteImport.update({
-  id: '/reset',
-  path: '/reset',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AppStoricoRoute = AppStoricoRouteImport.update({
-  id: '/storico',
-  path: '/storico',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppProfiloRoute = AppProfiloRouteImport.update({
-  id: '/profilo',
-  path: '/profilo',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppPrRoute = AppPrRouteImport.update({
-  id: '/pr',
-  path: '/pr',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppOnboardingRoute = AppOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => AppRouteRoute,
-} as any)
-const AppMuscoliRoute = AppMuscoliRouteImport.update({
-  id: '/muscoli',
-  path: '/muscoli',
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppHeatmapRoute = AppHeatmapRouteImport.update({
@@ -108,9 +68,49 @@ const AppHeatmapRoute = AppHeatmapRouteImport.update({
   path: '/heatmap',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppSchedeIndexRoute = AppSchedeIndexRouteImport.update({
-  id: '/schede/',
-  path: '/schede/',
+const AppMuscoliRoute = AppMuscoliRouteImport.update({
+  id: '/muscoli',
+  path: '/muscoli',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppPrRoute = AppPrRouteImport.update({
+  id: '/pr',
+  path: '/pr',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppProfiloRoute = AppProfiloRouteImport.update({
+  id: '/profilo',
+  path: '/profilo',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppStoricoRoute = AppStoricoRouteImport.update({
+  id: '/storico',
+  path: '/storico',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AuthIndexRoute = AuthIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthResetRoute = AuthResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AppAllenaPlanIdRoute = AppAllenaPlanIdRouteImport.update({
+  id: '/allena/$planId',
+  path: '/allena/$planId',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppCerchiaIndexRoute = AppCerchiaIndexRouteImport.update({
@@ -118,14 +118,14 @@ const AppCerchiaIndexRoute = AppCerchiaIndexRouteImport.update({
   path: '/cerchia/',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppSchedePlanIdRoute = AppSchedePlanIdRouteImport.update({
-  id: '/schede/$planId',
-  path: '/schede/$planId',
+const AppCerchiaCircleIdRoute = AppCerchiaCircleIdRouteImport.update({
+  id: '/cerchia/$circleId',
+  path: '/cerchia/$circleId',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppProfiloImpostazioniRoute = AppProfiloImpostazioniRouteImport.update({
-  id: '/impostazioni',
-  path: '/impostazioni',
+const AppProfiloAccountRoute = AppProfiloAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AppProfiloRoute,
 } as any)
 const AppProfiloDownloadRoute = AppProfiloDownloadRouteImport.update({
@@ -133,19 +133,19 @@ const AppProfiloDownloadRoute = AppProfiloDownloadRouteImport.update({
   path: '/download',
   getParentRoute: () => AppProfiloRoute,
 } as any)
-const AppProfiloAccountRoute = AppProfiloAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+const AppProfiloImpostazioniRoute = AppProfiloImpostazioniRouteImport.update({
+  id: '/impostazioni',
+  path: '/impostazioni',
   getParentRoute: () => AppProfiloRoute,
 } as any)
-const AppCerchiaCircleIdRoute = AppCerchiaCircleIdRouteImport.update({
-  id: '/cerchia/$circleId',
-  path: '/cerchia/$circleId',
+const AppSchedeIndexRoute = AppSchedeIndexRouteImport.update({
+  id: '/schede/',
+  path: '/schede/',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const AppAllenaPlanIdRoute = AppAllenaPlanIdRouteImport.update({
-  id: '/allena/$planId',
-  path: '/allena/$planId',
+const AppSchedePlanIdRoute = AppSchedePlanIdRouteImport.update({
+  id: '/schede/$planId',
+  path: '/schede/$planId',
   getParentRoute: () => AppRouteRoute,
 } as any)
 
@@ -306,18 +306,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -327,26 +320,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/': {
-      id: '/auth/'
-      path: '/'
-      fullPath: '/auth/'
-      preLoaderRoute: typeof AuthIndexRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/app/': {
-      id: '/app/'
-      path: '/'
-      fullPath: '/app/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRouteRoute
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/': {
       id: '/admin/'
@@ -355,53 +341,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/auth/verify': {
-      id: '/auth/verify'
-      path: '/verify'
-      fullPath: '/auth/verify'
-      preLoaderRoute: typeof AuthVerifyRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/auth/reset': {
-      id: '/auth/reset'
-      path: '/reset'
-      fullPath: '/auth/reset'
-      preLoaderRoute: typeof AuthResetRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/app/storico': {
-      id: '/app/storico'
-      path: '/storico'
-      fullPath: '/app/storico'
-      preLoaderRoute: typeof AppStoricoRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/app/profilo': {
-      id: '/app/profilo'
-      path: '/profilo'
-      fullPath: '/app/profilo'
-      preLoaderRoute: typeof AppProfiloRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/app/pr': {
-      id: '/app/pr'
-      path: '/pr'
-      fullPath: '/app/pr'
-      preLoaderRoute: typeof AppPrRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/app/onboarding': {
-      id: '/app/onboarding'
-      path: '/onboarding'
-      fullPath: '/app/onboarding'
-      preLoaderRoute: typeof AppOnboardingRouteImport
-      parentRoute: typeof AppRouteRoute
-    }
-    '/app/muscoli': {
-      id: '/app/muscoli'
-      path: '/muscoli'
-      fullPath: '/app/muscoli'
-      preLoaderRoute: typeof AppMuscoliRouteImport
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/heatmap': {
@@ -411,11 +355,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHeatmapRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/schede/': {
-      id: '/app/schede/'
-      path: '/schede'
-      fullPath: '/app/schede/'
-      preLoaderRoute: typeof AppSchedeIndexRouteImport
+    '/app/muscoli': {
+      id: '/app/muscoli'
+      path: '/muscoli'
+      fullPath: '/app/muscoli'
+      preLoaderRoute: typeof AppMuscoliRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/onboarding': {
+      id: '/app/onboarding'
+      path: '/onboarding'
+      fullPath: '/app/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/pr': {
+      id: '/app/pr'
+      path: '/pr'
+      fullPath: '/app/pr'
+      preLoaderRoute: typeof AppPrRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/profilo': {
+      id: '/app/profilo'
+      path: '/profilo'
+      fullPath: '/app/profilo'
+      preLoaderRoute: typeof AppProfiloRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/app/storico': {
+      id: '/app/storico'
+      path: '/storico'
+      fullPath: '/app/storico'
+      preLoaderRoute: typeof AppStoricoRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/auth/': {
+      id: '/auth/'
+      path: '/'
+      fullPath: '/auth/'
+      preLoaderRoute: typeof AuthIndexRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/reset': {
+      id: '/auth/reset'
+      path: '/reset'
+      fullPath: '/auth/reset'
+      preLoaderRoute: typeof AuthResetRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/auth/verify': {
+      id: '/auth/verify'
+      path: '/verify'
+      fullPath: '/auth/verify'
+      preLoaderRoute: typeof AuthVerifyRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/app/allena/$planId': {
+      id: '/app/allena/$planId'
+      path: '/allena/$planId'
+      fullPath: '/app/allena/$planId'
+      preLoaderRoute: typeof AppAllenaPlanIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/app/cerchia/': {
@@ -425,18 +425,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCerchiaIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/schede/$planId': {
-      id: '/app/schede/$planId'
-      path: '/schede/$planId'
-      fullPath: '/app/schede/$planId'
-      preLoaderRoute: typeof AppSchedePlanIdRouteImport
+    '/app/cerchia/$circleId': {
+      id: '/app/cerchia/$circleId'
+      path: '/cerchia/$circleId'
+      fullPath: '/app/cerchia/$circleId'
+      preLoaderRoute: typeof AppCerchiaCircleIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/profilo/impostazioni': {
-      id: '/app/profilo/impostazioni'
-      path: '/impostazioni'
-      fullPath: '/app/profilo/impostazioni'
-      preLoaderRoute: typeof AppProfiloImpostazioniRouteImport
+    '/app/profilo/account': {
+      id: '/app/profilo/account'
+      path: '/account'
+      fullPath: '/app/profilo/account'
+      preLoaderRoute: typeof AppProfiloAccountRouteImport
       parentRoute: typeof AppProfiloRoute
     }
     '/app/profilo/download': {
@@ -446,25 +446,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfiloDownloadRouteImport
       parentRoute: typeof AppProfiloRoute
     }
-    '/app/profilo/account': {
-      id: '/app/profilo/account'
-      path: '/account'
-      fullPath: '/app/profilo/account'
-      preLoaderRoute: typeof AppProfiloAccountRouteImport
+    '/app/profilo/impostazioni': {
+      id: '/app/profilo/impostazioni'
+      path: '/impostazioni'
+      fullPath: '/app/profilo/impostazioni'
+      preLoaderRoute: typeof AppProfiloImpostazioniRouteImport
       parentRoute: typeof AppProfiloRoute
     }
-    '/app/cerchia/$circleId': {
-      id: '/app/cerchia/$circleId'
-      path: '/cerchia/$circleId'
-      fullPath: '/app/cerchia/$circleId'
-      preLoaderRoute: typeof AppCerchiaCircleIdRouteImport
+    '/app/schede/': {
+      id: '/app/schede/'
+      path: '/schede'
+      fullPath: '/app/schede/'
+      preLoaderRoute: typeof AppSchedeIndexRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/app/allena/$planId': {
-      id: '/app/allena/$planId'
-      path: '/allena/$planId'
-      fullPath: '/app/allena/$planId'
-      preLoaderRoute: typeof AppAllenaPlanIdRouteImport
+    '/app/schede/$planId': {
+      id: '/app/schede/$planId'
+      path: '/schede/$planId'
+      fullPath: '/app/schede/$planId'
+      preLoaderRoute: typeof AppSchedePlanIdRouteImport
       parentRoute: typeof AppRouteRoute
     }
   }
