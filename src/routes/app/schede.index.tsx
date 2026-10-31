@@ -3,52 +3,70 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Plus, ChevronRight, Dumbbell, Play, Sparkles } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { Plus, Dumbbell, Play, Sparkles, Clock, Pencil } from "lucide-react";
 import { SchedeSkeleton } from "@/components/skeletons/SchedeSkeleton";
 import { ScanPreviewDialog } from "@/components/ScanPreviewDialog";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { NotificationsSheet } from "@/components/NotificationsSheet";
+import { muscleColor, MUSCLE_EN } from "@/lib/muscleColors";
 import { useLanguage } from "@/lib/i18n";
 
 export const Route = createFileRoute("/app/schede/")({
   component: Schede,
 });
 
+type PlanExerciseSummary = {
+  muscle_group: string | null;
+  sets: number;
+};
+
+type PlanRow = {
+  id: string;
+  name: string;
+  exercises: PlanExerciseSummary[] | null;
+};
+
 function Schede() {
   const { user } = Route.useRouteContext();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, dateLocale } = useLanguage();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [scanning, setScanning] = useState(false);
-
-  const activeQ = useQuery({
-    queryKey: ["active-session", user.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("sessions")
-        .select("id, plan_id, plan_name")
-        .eq("user_id", user.id)
-        .is("completed_at", null)
-        .order("started_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      return data;
-    },
-    staleTime: 0,
-  });
 
   const plansQ = useQuery({
     queryKey: ["plans-all", user.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("plans")
-        .select("id, name, exercises(count)")
+        .select("id, name, exercises(muscle_group, sets)")
         .eq("user_id", user.id)
         .order("name", { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as unknown as PlanRow[];
+    },
+  });
+
+  const lastDoneQ = useQuery({
+    queryKey: ["plans-last-done", user.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("sessions")
+        .select("plan_id, completed_at")
+        .eq("user_id", user.id)
+        .not("completed_at", "is", null)
+        .not("plan_id", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(100);
+      const map = new Map<string, string>();
+      for (const s of data ?? []) {
+        if (s.plan_id && s.completed_at && !map.has(s.plan_id)) {
+          map.set(s.plan_id, s.completed_at);
+        }
+      }
+      return map;
     },
   });
 
@@ -75,35 +93,16 @@ function Schede() {
     return <SchedeSkeleton />;
   }
 
+  const lastDoneMap = lastDoneQ.data ?? new Map<string, string>();
+
   return (
     <div className="container-app pt-safe-lg">
-      {!!activeQ.data?.plan_id && (
-        <Link
-          to="/app/allena/$planId"
-          params={{ planId: activeQ.data.plan_id }}
-          className="no-tap-highlight mb-4 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-5 py-4 active:scale-[0.99]"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15">
-            <Dumbbell className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1">
-            <div className="text-sm font-bold text-foreground">{activeQ.data.plan_name}</div>
-            <div className="text-xs text-muted-foreground">
-              {t("Allenamento in corso", "Workout in progress")}
-            </div>
-          </div>
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-            <Play className="h-4 w-4 fill-current text-primary-foreground" />
-          </div>
-        </Link>
-      )}
-
       <header className="mb-6 flex items-start justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            {t("Le tue", "Your")}
+          <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+            {t("Programmi", "Programs")}
           </p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight">{t("Schede", "Plans")}</h1>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight">{t("Le tue Schede", "Your Plans")}</h1>
         </div>
         <div className="flex items-center gap-2">
           <NotificationsSheet userId={user.id} />
@@ -112,79 +111,160 @@ function Schede() {
       </header>
 
       {creating ? (
-        <div className="mb-4 rounded-2xl border border-border bg-card p-4">
+        <div className="bento-card mb-5 rounded-3xl p-5">
+          <label className="mb-2 block text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
+            {t("Nome della nuova scheda", "New plan name")}
+          </label>
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && createPlan()}
-            placeholder={t("Inserisci il nome della scheda…", "Enter the plan name…")}
-            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-base outline-none focus:border-foreground"
+            placeholder={t("Es. Push Day A, Upper Body…", "E.g. Push Day A, Upper Body…")}
+            className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-base font-semibold outline-none focus:border-primary"
           />
-          <div className="mt-3 flex gap-2">
+          <div className="mt-3.5 flex gap-2">
             <button
               onClick={() => {
                 setCreating(false);
                 setName("");
               }}
-              className="flex-1 rounded-full border border-border py-3 text-sm font-semibold"
+              className="flex-1 rounded-full border border-border py-3 text-sm font-bold"
             >
               {t("Annulla", "Cancel")}
             </button>
             <button
               onClick={createPlan}
-              className="flex-1 rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground"
+              className="flex-1 rounded-full bg-primary py-3 text-sm font-extrabold text-primary-foreground shadow-xs"
             >
-              {t("Crea", "Create")}
+              {t("Crea scheda", "Create plan")}
             </button>
           </div>
         </div>
       ) : (
-        <div className="mb-4 flex gap-2">
+        <div className="mb-5 grid grid-cols-[1fr_auto] gap-2.5">
           <button
             onClick={() => setCreating(true)}
-            className="no-tap-highlight flex-1 flex items-center justify-center gap-2 rounded-full bg-primary py-4 text-sm font-bold uppercase tracking-wide text-primary-foreground active:scale-[0.98]"
+            className="no-tap-highlight flex items-center justify-center gap-2 rounded-full bg-primary py-4 px-5 text-sm font-extrabold uppercase tracking-wider text-primary-foreground shadow-sm transition active:scale-[0.98]"
           >
-            <Plus className="h-4 w-4" /> {t("Nuova scheda", "New plan")}
+            <Plus className="h-4 w-4 stroke-[2.5]" /> {t("Nuova scheda", "New plan")}
           </button>
           <button
             onClick={() => setScanning(true)}
-            className="no-tap-highlight flex items-center justify-center gap-2 rounded-full border-2 border-dashed border-border px-5 py-4 text-sm font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground active:scale-[0.98]"
+            className="no-tap-highlight bento-card flex items-center justify-center gap-2 rounded-full border-primary/30 bg-primary/5 px-5 py-4 text-sm font-extrabold text-primary transition hover:bg-primary/10 active:scale-[0.98]"
           >
-            <Sparkles className="h-4 w-4" /> {t("Crea con AI", "AI")}
+            <Sparkles className="h-4 w-4" /> {t("Scan AI", "AI Scan")}
           </button>
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {plansQ.data?.map((p) => {
-          const count = (p.exercises as unknown as { count: number }[])?.[0]?.count ?? 0;
+          const exList = Array.isArray(p.exercises) ? p.exercises : [];
+          const count = exList.length;
+          const totalSets = exList.reduce((acc, e) => acc + (Number(e.sets) || 0), 0);
+          const uniqueMuscles = [
+            ...new Set(exList.map((e) => e.muscle_group?.trim()).filter((m): m is string => !!m)),
+          ].slice(0, 4);
+          const lastIso = lastDoneMap.get(p.id);
+          const lastWhen = lastIso
+            ? formatDistanceToNow(new Date(lastIso), { addSuffix: true, locale: dateLocale })
+            : null;
+
           return (
-            <Link
+            <div
               key={p.id}
-              to="/app/schede/$planId"
-              params={{ planId: p.id }}
-              className="no-tap-highlight flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 active:scale-[0.99]"
+              className="bento-card group relative flex items-center justify-between gap-3 rounded-3xl p-4 sm:p-5 transition hover:border-primary/30"
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                  <Dumbbell className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="font-semibold">{p.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {count} {count === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}
+              <Link
+                to="/app/schede/$planId"
+                params={{ planId: p.id }}
+                className="no-tap-highlight flex-1 min-w-0"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+                    <Dumbbell className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="truncate text-base font-extrabold">{p.name}</h2>
+                      <Pencil className="h-3 w-3 shrink-0 text-muted-foreground opacity-60 group-hover:opacity-100" />
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground/80 tabular-nums">
+                        {count}{" "}
+                        {count === 1 ? t("esercizio", "exercise") : t("esercizi", "exercises")}
+                      </span>
+                      {totalSets > 0 && (
+                        <>
+                          <span>·</span>
+                          <span className="tabular-nums">
+                            {totalSets} {t("serie", "sets")}
+                          </span>
+                        </>
+                      )}
+                      {lastWhen && (
+                        <>
+                          <span>·</span>
+                          <span className="inline-flex items-center gap-1 text-[11px]">
+                            <Clock className="h-3 w-3" /> {lastWhen}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
-            </Link>
+
+                {uniqueMuscles.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5 pl-14">
+                    {uniqueMuscles.map((m) => (
+                      <span
+                        key={m}
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                        style={{
+                          backgroundColor: `${muscleColor(m)} / 15%`,
+                          color: muscleColor(m),
+                        }}
+                      >
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ backgroundColor: muscleColor(m) }}
+                        />
+                        {t(m, MUSCLE_EN[m] ?? m)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </Link>
+
+              <Link
+                to="/app/allena/$planId"
+                params={{ planId: p.id }}
+                aria-label={t(`Avvia ${p.name}`, `Start ${p.name}`)}
+                title={t("Inizia allenamento", "Start workout")}
+                className="no-tap-highlight flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition hover:scale-105 active:scale-95"
+              >
+                <Play className="h-4 w-4 fill-current ml-0.5" />
+              </Link>
+            </div>
           );
         })}
+
         {plansQ.data?.length === 0 && !creating && (
-          <p className="py-12 text-center text-sm text-muted-foreground">
-            {t("Nessuna scheda. Creane una per iniziare.", "No plans. Create one to get started.")}
-          </p>
+          <div className="bento-card flex flex-col items-center justify-center rounded-3xl py-14 px-6 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/12 text-primary">
+              <Dumbbell className="h-8 w-8" />
+            </div>
+            <p className="mt-4 text-base font-extrabold">
+              {t("Nessuna scheda ancora", "No plans yet")}
+            </p>
+            <p className="mt-1 max-w-xs text-xs text-muted-foreground">
+              {t(
+                "Crea la tua prima scheda manualmente o scansiona una foto con l'AI.",
+                "Create your first plan manually or scan a photo with AI.",
+              )}
+            </p>
+          </div>
         )}
       </div>
 

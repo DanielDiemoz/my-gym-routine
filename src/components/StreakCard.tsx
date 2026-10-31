@@ -1,4 +1,4 @@
-import { Flame, Trophy, Target } from "lucide-react";
+import { Flame, Trophy, Target, Sparkles } from "lucide-react";
 import { differenceInCalendarDays, format, subDays } from "date-fns";
 import {
   Select,
@@ -38,71 +38,101 @@ export function StreakCard({ sessions, weeklyGoal, weeklyCount, onChangeGoal, is
   const goalReached = weeklyCount >= safeWeeklyGoal;
 
   return (
-    <section className="mt-4 rounded-2xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          {t("Streak", "Streak")}
-        </h3>
-        <Flame className={`h-4 w-4 ${current > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
-      </div>
+    <section className="bento-card mt-3 relative overflow-hidden rounded-3xl p-5">
+      {current > 0 && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-orange-500/10 blur-2xl"
+        />
+      )}
 
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-3xl font-black tracking-tight">{isLoading ? "—" : current}</span>
-        <span className="text-sm text-muted-foreground">
-          {current === 1 ? t("giorno", "day") : t("giorni", "days")}
-        </span>
-      </div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+              current > 0
+                ? "bg-orange-500/15 text-orange-500 ring-1 ring-orange-500/25"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <Flame className={`h-5 w-5 ${current > 0 ? "fill-orange-500/20" : ""}`} />
+          </div>
+          <div>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {t("Streak attiva", "Active streak")}
+            </h3>
+            <div className="mt-0.5 flex items-baseline gap-1.5">
+              <span className="text-3xl font-black tracking-tight tabular-nums">
+                {isLoading ? "—" : current}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground">
+                {current === 1 ? t("giorno", "day") : t("giorni", "days")}
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Trophy className="h-3 w-3" />
-        <span>
-          {t("Record", "Record")}:{" "}
-          <span className="font-semibold text-foreground">{isLoading ? "—" : record}</span>
-        </span>
+        <div className="flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1.5 text-xs">
+          <Trophy className="h-3.5 w-3.5 text-amber-500" />
+          <span className="text-muted-foreground">{t("Record", "Best")}:</span>
+          <span className="font-bold text-foreground tabular-nums">
+            {isLoading ? "—" : record}
+          </span>
+        </div>
       </div>
 
       {/* Helper se lo streak è rotto ma esiste un record passato. */}
       {!isLoading && current === 0 && record > 0 && (
-        <p className="mt-2 text-xs italic text-muted-foreground">
-          {t("Allena oggi per ricostruire lo streak.", "Train today to rebuild your streak.")}
+        <p className="mt-3 text-xs text-muted-foreground">
+          {t("Allena oggi per riaccendere la tua serie positiva.", "Train today to reignite your streak.")}
         </p>
       )}
       {!isLoading && current > 0 && current === record && (
-        <p className="mt-2 text-xs font-semibold text-[oklch(0.55_0.16_145)]">
-          🏆 {t("Nuovo record!", "New record!")}
-        </p>
+        <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+          <Sparkles className="h-3 w-3" /> {t("Nuovo record personale!", "New personal best!")}
+        </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-4 pt-3 border-t border-border/60">
         <div className="flex items-center justify-between text-xs">
-          <span className="flex items-center gap-1.5 text-muted-foreground">
-            <Target className="h-3 w-3" /> {t("Questa settimana", "This week")}
+          <span className="flex items-center gap-1.5 font-medium text-muted-foreground">
+            <Target className="h-3.5 w-3.5 text-primary" />{" "}
+            {t("Obiettivo settimanale", "Weekly goal")}
           </span>
           <div className="flex items-center gap-2">
             <span
-              className={`font-semibold ${goalReached ? "text-[oklch(0.55_0.16_145)]" : "text-foreground"}`}
+              className={`font-bold tabular-nums ${
+                goalReached ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
+              }`}
             >
               {weeklyCount}/{safeWeeklyGoal}
             </span>
             <Select value={String(safeWeeklyGoal)} onValueChange={(v) => onChangeGoal(Number(v))}>
               <SelectTrigger
                 aria-label={t("Obiettivo settimanale", "Weekly goal")}
-                className="h-7 w-auto rounded-full border px-2 text-xs font-semibold"
+                className="h-7 w-auto rounded-full border-border bg-muted/60 px-2.5 text-[11px] font-bold"
               >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                   <SelectItem key={n} value={String(n)}>
-                    {n}/sett
+                    {n}/{t("sett", "wk")}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
         </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div className="h-full bg-primary transition-all" style={{ width: `${ratio * 100}%` }} />
+        <div className="mt-2.5 h-2.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${
+              goalReached
+                ? "bg-gradient-to-r from-emerald-500 to-teal-400"
+                : "bg-gradient-to-r from-primary to-violet-500"
+            }`}
+            style={{ width: `${ratio * 100}%` }}
+          />
         </div>
       </div>
     </section>
